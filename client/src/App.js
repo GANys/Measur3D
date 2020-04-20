@@ -8,13 +8,15 @@ import ThreeScene from "./Component/ThreeScene";
 import Modal from "./Component/Modal";
 import Dropzone from "./Component/Dropzone";
 import Alert from "@material-ui/lab/Alert";
-import Collapse from '@material-ui/core/Collapse';
+import Collapse from "@material-ui/core/Collapse";
 
 import Container from "@material-ui/core/container";
 import { makeStyles } from "@material-ui/core/styles";
 import HomeRoundedIcon from "@material-ui/icons/HomeRounded";
 import SettingsRoundedIcon from "@material-ui/icons/SettingsRounded";
 import GitHubIcon from "@material-ui/icons/GitHub";
+
+import { EventEmitter } from "./Component/events"
 
 // eslint-disable-next-line
 import styles from "./App.css";
@@ -42,9 +44,16 @@ class App extends Component {
     super();
 
     this.showError = this.showError.bind();
-    this.showError = this.showError.bind();
+    this.showSuccess = this.showSuccess.bind();
+    this.showInfo = this.showInfo.bind();
     this.showModal = this.showModal.bind();
     this.useStyles = this.useStyles.bind();
+
+    this.uploadFile = this.uploadFile.bind();
+
+    EventEmitter.subscribe("error", event => this.showError(event));
+    EventEmitter.subscribe("success", event => this.showSuccess(event));
+    EventEmitter.subscribe("info", event => this.showInfo(event));
   }
 
   state = {
@@ -52,6 +61,7 @@ class App extends Component {
     modal: ["", ""],
     errorMessage: "",
     successMessage: "",
+    infoMessage: "",
     showingAlert: false
   };
 
@@ -71,6 +81,19 @@ class App extends Component {
   showSuccess = msg => {
     this.setState({
       successMessage: msg,
+      showingAlert: true
+    });
+
+    setTimeout(() => {
+      this.setState({
+        showingAlert: false
+      });
+    }, 3000);
+  };
+
+  showInfo = msg => {
+    this.setState({
+      infoMessage: msg,
       showingAlert: true
     });
 
@@ -105,33 +128,39 @@ class App extends Component {
     }
   }));
 
+  uploadFile = file => {
+    this.setState({file: file})
+  };
+
   render() {
     const classes = this.useStyles;
 
     return (
       <Container>
         <div className={classes.root}>
-        <Collapse in={this.state.showingAlert}>
-          {this.state.errorMessage && this.state.showingAlert ? (
-            <Alert className="Alert" severity="error">
-              {this.state.errorMessage}
-            </Alert>
-          ) : null}
-          {this.state.successMessage && this.state.showingAlert ? (
-            <Alert className="Alert" severity="success">
-              {this.state.successMessage}
-            </Alert>
-          ) : null}
+          <Collapse in={this.state.showingAlert}>
+            {this.state.errorMessage && this.state.showingAlert ? (
+              <Alert className="Alert" severity="error">
+                {this.state.errorMessage}
+              </Alert>
+            ) : null}
+            {this.state.successMessage && this.state.showingAlert ? (
+              <Alert className="Alert" severity="success">
+                {this.state.successMessage}
+              </Alert>
+            ) : null}
+            {this.state.infoMessage && this.state.showingAlert ? (
+              <Alert className="Alert" severity="info">
+                {this.state.infoMessage}
+              </Alert>
+            ) : null}
           </Collapse>
         </div>
         <React.Fragment>
-          <SplitPane split="vertical" minSize={200} defaultSize="15%">
+          <SplitPane split="vertical" minSize={200} defaultSize="20%">
             <div className="sidebar">
               <SplitPane split="horizontal">
-                <Dropzone
-                  showError={this.showError}
-                  showSuccess={this.showSuccess}
-                />
+                <Dropzone  />
                 <Sidebar
                   items={items}
                   depthStep={12}
@@ -147,7 +176,7 @@ class App extends Component {
               primary="second"
             >
               <ThreeScene />
-              <Chart onClick={this.showError} />
+              <Chart />
             </SplitPane>
           </SplitPane>
           <Modal

@@ -1,23 +1,39 @@
 import React from "react";
 import Dropzone from "react-dropzone";
 
-class BasicDropzone extends React.Component {
+import { EventEmitter } from "./events";
+
+class Dropzone_mod extends React.Component {
   constructor() {
     super();
 
     this.onDrop = this.onDrop.bind(this);
   }
 
-  onDrop = acceptedFile => {
+  onDrop = async acceptedFile => {
+    //acceptedFile is a File Object
     if (
       // eslint-disable-next-line
       acceptedFile[0] == undefined ||
       // eslint-disable-next-line
-      acceptedFile[0].type != "application/json"
+      acceptedFile[0].type != "application/json" ||
+      // eslint-disable-next-line
+      acceptedFile[0] == null
     ) {
-      this.props.showError("Une erreur est survenue !");
+      EventEmitter.dispatch("error", "An error occured while loading file !");
     } else {
-      this.props.showSuccess("Ca marche !");
+      EventEmitter.dispatch("info", "Loading JSON file ...");
+
+      let reader = new FileReader();
+
+      reader.readAsText(acceptedFile[0]);
+
+      reader.onloadend = function() {
+        EventEmitter.dispatch("uploadFile", {
+          jsonName: acceptedFile[0].name.split(".")[0],
+          content: JSON.parse(reader.result)
+        });
+      };
     }
   };
 
@@ -40,4 +56,4 @@ class BasicDropzone extends React.Component {
   }
 }
 
-export default BasicDropzone;
+export default Dropzone_mod;

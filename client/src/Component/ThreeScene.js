@@ -2,15 +2,22 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import * as THREE from "three";
 
+import { EventEmitter } from "./events";
+import * as Functions from "./functions";
+
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 class ThreeScene extends Component {
   constructor(props) {
     super();
-    this._handleWindowResize = this._debounce(
-      this._handleWindowResize.bind(this),
+
+    this.handleWindowResize = this.debounce(
+      this.handleWindowResize.bind(this),
       100
     );
+
+    EventEmitter.subscribe("uploadFile", event => this.handleFile(event));
+    this.handleFile = this.handleFile.bind(this);
 
     this.state = {
       containerWidth: 0,
@@ -18,11 +25,16 @@ class ThreeScene extends Component {
     };
 
     this._isMounted = false;
+
+    // JSON variables
+    this.boolJSONload = false //checks if jsondata is loaded
+    this.meshes = [] //contains the meshes of the objects
+    this.geoms = {} //contains the geometries of the objects
   }
 
   componentDidMount() {
     this._isMounted = true;
-    window.addEventListener("resize", this._handleWindowResize);
+    window.addEventListener("resize", this.handleWindowResize);
 
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
@@ -63,7 +75,7 @@ class ThreeScene extends Component {
 
   componentWillUnmount() {
     this._isMounted = false;
-    window.removeEventListener("resize", this._handleWindowResize);
+    window.removeEventListener("resize", this.handleWindowResize);
     this.stop();
     this.mount.removeChild(this.renderer.domElement);
   }
@@ -93,7 +105,7 @@ class ThreeScene extends Component {
     this.renderer.render(this.scene, this.camera);
   };
 
-  _handleWindowResize() {
+  handleWindowResize() {
     if (this._isMounted) {
       this.setState({
         containerWidth: ReactDOM.findDOMNode(this.mount).offsetWidth
@@ -116,7 +128,7 @@ class ThreeScene extends Component {
     }
   }
 
-  _debounce = (func, delay) => {
+  debounce = (func, delay) => {
     let debounceTimer;
     return function() {
       const context = this;
@@ -124,6 +136,18 @@ class ThreeScene extends Component {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => func.apply(context, args), delay);
     };
+  };
+
+  handleFile = async file => {
+    var jsonName = file.jsonName;
+    var json = file.content;
+
+    //load the cityObjects into the viewer
+    await Functions.loadCityObjects(json, jsonName, this.geoms, this.meshes, this.scene, this.camera, this.controls);
+
+    //already render loaded objects
+    this.renderer.render(this.scene, this.camera);
+    console.log("JSON file '" + jsonName + "' loaded");
   };
 
   render() {
@@ -138,7 +162,7 @@ class ThreeScene extends Component {
             this.mount = mount;
             if (!this._isMounted) {
               this._isMounted = true;
-              this._handleWindowResize();
+              this.handleWindowResize();
             }
           }
         }}
