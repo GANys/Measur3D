@@ -1,0 +1,14 @@
+{
+  "name": "nodemongocityjson",
+  "version": "0.1.0",
+  "description": "Fullstack MERN for CityJSON management",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"cd backend && node server.js\" \"cd client && npm start\""
+  },
+  "author": "Gilles-Antoine Nys <gilles.antoine.nys@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^5.1.0"
+  }
+}

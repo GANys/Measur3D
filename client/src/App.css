@@ -1,0 +1,30 @@
+html, body {
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw
+}
+
+.modal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.sidebar {
+  height: 100vh;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.split {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.uploader {
+  width: 100%;
+}
+
+.alert {
+  position: absolute;
+}
