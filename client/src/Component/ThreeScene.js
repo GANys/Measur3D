@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import * as THREE from "three";
+import axios from "axios";
 
 import { EventEmitter } from "./events";
 import * as Functions from "./functions";
@@ -16,18 +17,22 @@ class ThreeScene extends Component {
       100
     );
 
+    this.element = React.createRef()
+
     EventEmitter.subscribe("uploadFile", event => this.handleFile(event));
     this.handleFile = this.handleFile.bind(this);
 
+    this.handleClick = this.handleClick.bind(this);
+
     this.state = {
       containerWidth: 0,
-      containerHeight: 0
+      containerHeight: 0,
+      boolJSONload: false
     };
 
     this._isMounted = false;
 
     // JSON variables
-    this.boolJSONload = false //checks if jsondata is loaded
     this.meshes = [] //contains the meshes of the objects
     this.geoms = {} //contains the geometries of the objects
   }
@@ -35,14 +40,20 @@ class ThreeScene extends Component {
   componentDidMount() {
     this._isMounted = true;
     window.addEventListener("resize", this.handleWindowResize);
+    document.getElementById("ThreeScene").addEventListener("mousedown", this.handleClick);
 
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
     //ADD SCENE
     this.scene = new THREE.Scene();
     //ADD CAMERA
-    this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    this.camera.position.z = 4;
+    this.camera = new THREE.PerspectiveCamera(
+      60, // Field of view
+      width / height, // Aspect ratio
+      0.001, // Near clipping pane
+      10000 // Far clipping pane
+    );
+    this.camera.position.z = 2;
 
     //ADD RENDERER
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -50,25 +61,31 @@ class ThreeScene extends Component {
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
 
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // add raycaster and mouse (for clickable objects)
+    this.raycaster = new THREE.Raycaster()
+    this.mouse = new THREE.Vector2();
+
+    //add AmbientLight (light that is only there that there's a minimum of light and you can see color)
+    //kind of the natural daylight
+    this.am_light = new THREE.AmbientLight(0xFFFFFF, 0.7); // soft white light
+    this.scene.add(this.am_light);
+
+    //this.hemiLight = new THREE.HemisphereLight( 0x0000ff, 0x00ff00, 0.6 );
+    //this.scene.add(this.hemilight);
+
+    // Add directional light
+    this.spot_light = new THREE.SpotLight(0xDDDDDD);
+    this.spot_light.position.set(84616, -1, 447422);
+    this.spot_light.target = this.scene;
+    this.spot_light.castShadow = true;
+    this.spot_light.intensity = 0.4
+    this.spot_light.position.normalize()
+    this.scene.add(this.spot_light);
+
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-
-    //ADD CUBE
-    const geometry = new THREE.BoxGeometry(2, 2, 2);
-    var material = new THREE.MeshPhongMaterial({
-      color: 0x555555,
-      specular: 0x111,
-      shininess: 50
-    });
-    this.cube = new THREE.Mesh(geometry, material);
-    this.scene.add(this.cube);
-
-    var light1 = new THREE.PointLight(0xeb9234, 2, 0);
-    light1.position.set(200, 100, 300);
-    this.scene.add(light1);
-
-    var light2 = new THREE.PointLight(0x3235ba, 1, 0);
-    light2.position.set(-150, 150, 200);
-    this.scene.add(light2);
 
     this.start();
   }
@@ -93,8 +110,7 @@ class ThreeScene extends Component {
   };
 
   animate = () => {
-    this.cube.rotation.x += 0.01;
-    this.cube.rotation.y += 0.01;
+
     this.renderScene();
     this.frameId = window.requestAnimationFrame(this.animate);
 
@@ -142,12 +158,23 @@ class ThreeScene extends Component {
     var jsonName = file.jsonName;
     var json = file.content;
 
+    //INSERT POP DB HERE
+    axios.post("http://localhost:3001/api/putCityModel", json);
+
     //load the cityObjects into the viewer
     await Functions.loadCityObjects(json, jsonName, this.geoms, this.meshes, this.scene, this.camera, this.controls);
 
     //already render loaded objects
     this.renderer.render(this.scene, this.camera);
     console.log("JSON file '" + jsonName + "' loaded");
+
+    this.setState({
+      boolJSONload : true
+    });
+  };
+
+  handleClick = (evt) => {
+      Functions.getAttributes(evt, this.state.boolJSONload, this)
   };
 
   render() {
@@ -163,6 +190,7 @@ class ThreeScene extends Component {
             if (!this._isMounted) {
               this._isMounted = true;
               this.handleWindowResize();
+              this.handleClick();
             }
           }
         }}

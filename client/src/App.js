@@ -7,16 +7,19 @@ import Chart from "./Component/Chart";
 import ThreeScene from "./Component/ThreeScene";
 import Modal from "./Component/Modal";
 import Dropzone from "./Component/Dropzone";
+import Table from "./Component/Object_Manager";
 import Alert from "@material-ui/lab/Alert";
 import Collapse from "@material-ui/core/Collapse";
+import Container from "@material-ui/core/Container";
 
-import Container from "@material-ui/core/container";
 import { makeStyles } from "@material-ui/core/styles";
 import HomeRoundedIcon from "@material-ui/icons/HomeRounded";
 import SettingsRoundedIcon from "@material-ui/icons/SettingsRounded";
 import GitHubIcon from "@material-ui/icons/GitHub";
 
-import { EventEmitter } from "./Component/events"
+import { EventEmitter } from "./Component/events";
+
+import logo from "./logo-geomatics.png";
 
 // eslint-disable-next-line
 import styles from "./App.css";
@@ -129,7 +132,7 @@ class App extends Component {
   }));
 
   uploadFile = file => {
-    this.setState({file: file})
+    this.setState({ file: file });
   };
 
   render() {
@@ -157,25 +160,28 @@ class App extends Component {
           </Collapse>
         </div>
         <React.Fragment>
-          <SplitPane split="vertical" minSize={200} defaultSize="20%">
+          <SplitPane
+            split="vertical"
+            minSize={200}
+            maxSize={500}
+            defaultSize="20%"
+          >
             <div className="sidebar">
               <SplitPane split="horizontal">
-                <Dropzone  />
-                <Sidebar
-                  items={items}
-                  depthStep={12}
-                  depth={0}
-                  showModal={this.showModal}
-                />
+                <img src={logo} className="logo" alt="Logo" />
+                <SplitPane split="horizontal" minSize={100} defaultSize={100}>
+                  <Dropzone minSize={100} defaultSize={100}/>
+                  <SplitPane split="horizontal" minSize={150} defaultSize={150}>
+                    <Sidebar items={items} showModal={this.showModal} />
+                    <Table />
+                  </SplitPane>
+                </SplitPane>
               </SplitPane>
             </div>
-            <SplitPane
-              split="horizontal"
-              minSize={200}
-              defaultSize="20%"
-              primary="second"
-            >
+            <SplitPane split="horizontal" defaultSize="25%" primary="second">
+            <div id="ThreeScene">
               <ThreeScene />
+              </div>
               <Chart />
             </SplitPane>
           </SplitPane>

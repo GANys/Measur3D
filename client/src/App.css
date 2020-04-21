@@ -17,14 +17,19 @@ html, body {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+.sidebar-item-text {
+  margin-left: 20px
+}
+
 .split {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.uploader {
-  width: 100%;
+.logo {
+  width: 80%
 }
 
-.alert {
-  position: absolute;
+.dropzone {
+  width: 100%;
+  height: 200px
 }

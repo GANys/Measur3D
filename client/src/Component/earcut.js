@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = earcut;
 module.exports.default = earcut;
 
@@ -483,7 +481,9 @@ function equals(p1, p2) {
 function intersects(p1, q1, p2, q2) {
     if ((equals(p1, q1) && equals(p2, q2)) ||
         (equals(p1, q2) && equals(p2, q1))) return true;
+    // eslint-disable-next-line
     return area(p1, q1, p2) > 0 !== area(p1, q1, q2) > 0 &&
+    // eslint-disable-next-line
            area(p2, q2, p1) > 0 !== area(p2, q2, q1) > 0;
 }
 

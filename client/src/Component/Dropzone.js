@@ -1,6 +1,8 @@
 import React from "react";
 import Dropzone from "react-dropzone";
 
+import GetAppRoundedIcon from '@material-ui/icons/GetAppRounded';
+
 import { EventEmitter } from "./events";
 
 class Dropzone_mod extends React.Component {
@@ -40,11 +42,13 @@ class Dropzone_mod extends React.Component {
   render() {
     return (
       <div className="dropzone">
+
         <Dropzone onDrop={this.onDrop} accept="application/json">
           {({ getRootProps, getInputProps, isDragActive, isDragReject }) => {
             return (
               <div {...getRootProps()}>
                 <input {...getInputProps()} />
+                <GetAppRoundedIcon />
                 {!isDragActive && "Drop JSON file or click to browse."}
                 {isDragActive && !isDragReject && "Drop JSON file here."}
               </div>

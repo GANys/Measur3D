@@ -7,10 +7,11 @@ It has been slightly modified to handle React components and integrated within t
 import * as THREE from "three";
 import * as earcut from "./earcut";
 
+import { EventEmitter } from "./events";
+
 //convert CityObjects to mesh and add them to the viewer
 export async function loadCityObjects(json, jsonName, geoms, meshes, scene, camera, controls) {
 
-  //console.log("TODO: REMOVE NORMGEOM");
   //create one geometry that contains all vertices (in normalized form)
   //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size
   var normGeom = new THREE.Geometry();
@@ -26,22 +27,21 @@ export async function loadCityObjects(json, jsonName, geoms, meshes, scene, came
 
   normGeom.normalize();
 
-  for (var i = 0; i < json.vertices.length; i++) {
+  for (i = 0; i < json.vertices.length; i++) {
     json.vertices[i][0] = normGeom.vertices[i].x;
     json.vertices[i][1] = normGeom.vertices[i].y;
     json.vertices[i][2] = normGeom.vertices[i].z;
   }
 
   var stats = getStats(json.vertices);
-  var minX = stats[0];
-  var minY = stats[1];
-  var minZ = stats[2];
   var avgX = stats[3];
   var avgY = stats[4];
   var avgZ = stats[5];
 
   camera.position.set(0, 0, 2);
   camera.lookAt(avgX, avgY, avgZ);
+
+  camera.updateProjectionMatrix();
 
   controls.target.set(avgX, avgY, avgZ);
 
@@ -62,7 +62,7 @@ export async function loadCityObjects(json, jsonName, geoms, meshes, scene, came
       var returnChildren = await parseObject(cityObj, json, jsonName, geoms);
 
       //if object has children add them to the childrendict
-      for (var i in returnChildren) {
+      for (i in returnChildren) {
         children[jsonName + "_" + returnChildren[i]] = cityObj;
       }
     } catch (e) {
@@ -76,7 +76,6 @@ export async function loadCityObjects(json, jsonName, geoms, meshes, scene, came
     material.color.setHex(ALLCOLOURS[coType]);
 
     //create mesh
-    //geoms[cityObj].normalize()
     var _id = jsonName + "_" + cityObj;
     var coMesh = new THREE.Mesh(geoms[_id], material);
     coMesh.name = cityObj;
@@ -112,76 +111,6 @@ var ALLCOLOURS = {
   WaterBody: 0x4da6ff
 };
 
-//not used can be deleted prob
-function sortVert(pList, type) {
-  // Array of points;
-  const points = [];
-  for (var i = 0; i < pList.length; i = i + 3) {
-    points.push({
-      x: pList[i],
-      y: pList[i + 1],
-      z: pList[i + 2]
-    });
-  }
-
-  // Find min max to get center
-  // Sort from top to bottom
-  points.sort((a, b) => a.y - b.y);
-
-  // Get center y
-  const cy = (points[0].y + points[points.length - 1].y) / 2;
-
-  // Sort from right to left
-  points.sort((a, b) => b.x - a.x);
-
-  // Get center x
-  const cx = (points[0].x + points[points.length - 1].x) / 2;
-
-  // Center point
-  const center = {
-    x: cx,
-    y: cy
-  };
-
-  // Starting angle used to reference other angles
-  var startAng;
-  points.forEach(point => {
-    var ang = Math.atan2(point.y - center.y, point.x - center.x);
-    if (!startAng) {
-      startAng = ang;
-    } else {
-      if (ang < startAng) {
-        // ensure that all points are clockwise of the start point
-        ang += Math.PI * 2;
-      }
-    }
-    point.angle = ang; // add the angle to the point
-  });
-
-  if (type == "cw") {
-    // Sort clockwise;
-    points.sort((a, b) => a.angle - b.angle);
-  } else if (type == "ccw") {
-    // first sort clockwise
-    points.sort((a, b) => a.angle - b.angle);
-
-    // then reverse the order
-    points = points.reverse();
-
-    // move the last point back to the start
-    points.unshift(points.pop());
-  }
-  pList = [];
-
-  for (i = 0; i < points.length; i++) {
-    pList.push(points[i].x);
-    pList.push(points[i].y);
-    pList.push(points[i].z);
-  }
-
-  return pList;
-}
-
 //-- calculate normal of a set of points
 function get_normal_newell(indices) {
   // find normal with Newell's method
@@ -189,6 +118,7 @@ function get_normal_newell(indices) {
 
   for (var i = 0; i < indices.length; i++) {
     var nex = i + 1;
+    // eslint-disable-next-line
     if (nex == indices.length) {
       nex = 0;
     }
@@ -262,6 +192,7 @@ function getStats(vertices) {
 async function parseObject(cityObj, json, jsonName, geoms) {
   var boundaries;
 
+  // eslint-disable-next-line
   if (json.CityObjects[cityObj].children != undefined) {
     return json.CityObjects[cityObj].children;
   }
@@ -271,10 +202,15 @@ async function parseObject(cityObj, json, jsonName, geoms) {
 
   //each geometrytype must be handled different
   var geomType = json.CityObjects[cityObj].geometry[0].type;
+  // eslint-disable-next-line
   if (geomType == "Solid") {
+    // eslint-disable-next-line
     boundaries = json.CityObjects[cityObj].geometry[0].boundaries[0];
+    // eslint-disable-next-line
   } else if (geomType == "MultiSurface" || geomType == "CompositeSurface") {
+    // eslint-disable-next-line
     boundaries = json.CityObjects[cityObj].geometry[0].boundaries;
+    // eslint-disable-next-line
   } else if (geomType == "MultiSolid" || geomType == "CompositeSolid") {
     boundaries = json.CityObjects[cityObj].geometry[0].boundaries;
   }
@@ -314,15 +250,9 @@ async function parseObject(cityObj, json, jsonName, geoms) {
       }
     }
 
-    /*
-    console.log("Vert", vertices);
-    console.log("Indi", indices);
-    console.log("bound", boundary);
-    console.log("geom", geom.vertices);
-    */
-
     //create face
     //triangulated faces
+    // eslint-disable-next-line
     if (boundary.length == 3) {
       geom.faces.push(new THREE.Face3(boundary[0], boundary[1], boundary[2]));
 
@@ -330,7 +260,7 @@ async function parseObject(cityObj, json, jsonName, geoms) {
     } else if (boundary.length > 3) {
       //create list of points
       var pList = [];
-      for (var j = 0; j < boundary.length; j++) {
+      for (j = 0; j < boundary.length; j++) {
         pList.push({
           x: json.vertices[vertices[boundary[j]]][0],
           y: json.vertices[vertices[boundary[j]]][1],
@@ -342,7 +272,7 @@ async function parseObject(cityObj, json, jsonName, geoms) {
 
       //convert to 2d (for triangulation)
       var pv = [];
-      for (var j = 0; j < pList.length; j++) {
+      for (j = 0; j < pList.length; j++) {
         var re = await to_2d(pList[j], normal);
         pv.push(re.x);
         pv.push(re.y);
@@ -352,7 +282,7 @@ async function parseObject(cityObj, json, jsonName, geoms) {
       var tr = await earcut(pv, null, 2);
 
       //create faces based on triangulation
-      for (var j = 0; j < tr.length; j += 3) {
+      for (j = 0; j < tr.length; j += 3) {
         geom.faces.push(
           new THREE.Face3(
             boundary[tr[j]],
@@ -375,4 +305,32 @@ async function parseObject(cityObj, json, jsonName, geoms) {
   geoms[_id] = geom;
 
   return "";
+}
+
+//action if mouseclick (for getting attributes ofobjects)
+export function getAttributes(event, boolJSONload, threescene) {
+
+  //if no cityjson is loaded return
+  // eslint-disable-next-line
+  if (boolJSONload == false) {
+    return
+  }
+
+  threescene.mouse.x = ( event.offsetX / threescene.renderer.domElement.clientWidth ) * 2 - 1;
+  threescene.mouse.y = - ( event.offsetY / threescene.renderer.domElement.clientHeight ) * 2 + 1;
+
+  //get cameraposition
+  threescene.raycaster.setFromCamera(threescene.mouse, threescene.camera);
+
+  //calculate intersects
+  var intersects = threescene.raycaster.intersectObjects(threescene.meshes);
+
+  //if clicked on nothing return
+  // eslint-disable-next-line
+  if (intersects.length == 0) {
+    return
+  }
+
+  //get the id of the first object that intersects (equals the clicked object)
+  EventEmitter.dispatch("buildInfoDiv", intersects[0].object);
 }

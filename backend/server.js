@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const logger = require("morgan");
 const Data = require("./data");
 
+let Cities = require("./src/Schemas/citymodel.js");
+
 const server = "127.0.0.1:27017"; // REPLACE WITH YOUR DB SERVER
 const database = "citymodel"; // REPLACE WITH YOUR DB NAME
 
@@ -12,6 +14,10 @@ const API_PORT = 3001;
 const app = express();
 app.use(cors());
 const router = express.Router();
+
+// Limit of file exchanges set to 50 Mb.
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true }));
 
 mongoose
   .connect(`mongodb://${server}/${database}`, {
@@ -30,7 +36,7 @@ mongoose
 
 let db = mongoose.connection;
 
-db.once("open", () => console.log("connected to the database"));
+//db.once("open", () => console.log("connected to the database"));
 
 // checks if connection with the database is successful
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
@@ -90,6 +96,19 @@ router.post("/putData", (req, res) => {
     return res.json({ success: true });
   });
 });
+
+router.post("/putCityModel", (req, res) => {
+  console.log(req.body)
+  Cities.insertCity(req.body);
+});
+
+/* InserCity - to be linked
+try {
+  Cities.insertCity(json);
+} catch (err) {
+  console.error(err.message);
+}
+*/
 
 // append /api for our http requests
 app.use("/api", router);
