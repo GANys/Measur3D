@@ -7,7 +7,7 @@ import Chart from "./Component/Chart";
 import ThreeScene from "./Component/ThreeScene";
 import Modal from "./Component/Modal";
 import Dropzone from "./Component/Dropzone";
-import Table from "./Component/Object_Manager";
+import Table from "./Component/Attributes_Manager";
 import Alert from "@material-ui/lab/Alert";
 import Collapse from "@material-ui/core/Collapse";
 import Container from "@material-ui/core/Container";

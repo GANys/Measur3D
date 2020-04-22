@@ -3,6 +3,7 @@ let mongoose = require("mongoose");
 let Geometry = require("./utilities.js");
 
 let BuildingSchema = new mongoose.Schema({
+  name: { type: String, required: true },
   type: { type: String, default: "Building" },
   geographicalExtent: [Number],
   geometry: {

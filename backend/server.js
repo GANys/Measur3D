@@ -6,6 +6,7 @@ const logger = require("morgan");
 const Data = require("./data");
 
 let Cities = require("./src/Schemas/citymodel.js");
+let Building = require("./src/Schemas/building.js");
 
 const server = "127.0.0.1:27017"; // REPLACE WITH YOUR DB SERVER
 const database = "citymodel"; // REPLACE WITH YOUR DB NAME
@@ -16,8 +17,9 @@ app.use(cors());
 const router = express.Router();
 
 // Limit of file exchanges set to 50 Mb.
-app.use(bodyParser.json({limit: '50mb'}));
-app.use(bodyParser.urlencoded({limit: '50mb', extended: true }));
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+app.use(logger("dev"));
 
 mongoose
   .connect(`mongodb://${server}/${database}`, {
@@ -40,12 +42,6 @@ let db = mongoose.connection;
 
 // checks if connection with the database is successful
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
-
-// (optional) only made for logging and
-// bodyParser, parses the request body to be a readable json format
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(logger("dev"));
 
 // this is our get method
 // this method fetches all available data in our database
@@ -98,8 +94,22 @@ router.post("/putData", (req, res) => {
 });
 
 router.post("/putCityModel", (req, res) => {
-  console.log(req.body)
   Cities.insertCity(req.body);
+});
+
+router.get("/getBuildingObject", (req, res) => {
+  mongoose.model("Building").find({ name: req.query.name }, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  });
+});
+
+router.get("/getBuildingAttribute", (req, res) => {
+  mongoose.model("Building").find({ name: req.query.name }, 'attributes', (err, data) => {
+    if (err) return res.json(err);
+
+    return res.json(data);
+  });
 });
 
 /* InserCity - to be linked

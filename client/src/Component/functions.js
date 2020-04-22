@@ -7,11 +7,20 @@ It has been slightly modified to handle React components and integrated within t
 import * as THREE from "three";
 import * as earcut from "./earcut";
 
+import axios from "axios";
+
 import { EventEmitter } from "./events";
 
 //convert CityObjects to mesh and add them to the viewer
-export async function loadCityObjects(json, jsonName, geoms, meshes, scene, camera, controls) {
-
+export async function loadCityObjects(
+  json,
+  jsonName,
+  geoms,
+  meshes,
+  scene,
+  camera,
+  controls
+) {
   //create one geometry that contains all vertices (in normalized form)
   //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size
   var normGeom = new THREE.Geometry();
@@ -308,16 +317,17 @@ async function parseObject(cityObj, json, jsonName, geoms) {
 }
 
 //action if mouseclick (for getting attributes ofobjects)
-export function getAttributes(event, boolJSONload, threescene) {
-
+export async function getAttributes(event, boolJSONload, threescene) {
   //if no cityjson is loaded return
   // eslint-disable-next-line
   if (boolJSONload == false) {
-    return
+    return;
   }
 
-  threescene.mouse.x = ( event.offsetX / threescene.renderer.domElement.clientWidth ) * 2 - 1;
-  threescene.mouse.y = - ( event.offsetY / threescene.renderer.domElement.clientHeight ) * 2 + 1;
+  threescene.mouse.x =
+    (event.offsetX / threescene.renderer.domElement.clientWidth) * 2 - 1;
+  threescene.mouse.y =
+    -(event.offsetY / threescene.renderer.domElement.clientHeight) * 2 + 1;
 
   //get cameraposition
   threescene.raycaster.setFromCamera(threescene.mouse, threescene.camera);
@@ -328,9 +338,18 @@ export function getAttributes(event, boolJSONload, threescene) {
   //if clicked on nothing return
   // eslint-disable-next-line
   if (intersects.length == 0) {
-    return
+    return;
   }
 
-  //get the id of the first object that intersects (equals the clicked object)
-  EventEmitter.dispatch("buildInfoDiv", intersects[0].object);
+  EventEmitter.dispatch("attObjectTitle", intersects[0].object.name);
+
+  axios
+    .get("http://localhost:3001/api/getBuildingAttribute", {
+      params: {
+        name: intersects[0].object.name
+      }
+    })
+    .then(response => {
+      EventEmitter.dispatch("attObject", response.data[0].attributes);
+    });
 }

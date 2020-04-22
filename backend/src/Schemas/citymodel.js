@@ -38,8 +38,8 @@ module.exports = {
       try {
         switch (element.type) {
           case "Building":
+            element["name"] = key; // Add a reference to the building for the client
             var element_id = await Buildings.insertBuilding(element);
-
             break;
           case "Bridge":
             throw new Error(
@@ -131,7 +131,7 @@ module.exports = {
     city.save(function(err, element) {
       if (err) return console.error(err.message);
 
-      return console.log("SUCCESS - insertCity: CityModel inserted.");
+      return console.log("insertCity: CityModel inserted.");
     });
   },
   Model: CityModel,
