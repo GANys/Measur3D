@@ -87,6 +87,8 @@ class ThreeScene extends Component {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
+    Functions.loadCityObjectsStartup(this)
+
     this.start();
   }
 
@@ -159,10 +161,10 @@ class ThreeScene extends Component {
     var json = file.content;
 
     //INSERT POP DB HERE
-    axios.post("http://localhost:3001/api/putCityModel", json);
+    axios.post("http://localhost:3001/api/putCityModel", {json: json, jsonName: jsonName});
 
     //load the cityObjects into the viewer
-    await Functions.loadCityObjects(json, jsonName, this.geoms, this.meshes, this.scene, this.camera, this.controls);
+    await Functions.loadCityObjects(json, jsonName, this.geoms, this.meshes, this.scene, this.camera, this.controls, false);
 
     //already render loaded objects
     this.renderer.render(this.scene, this.camera);

@@ -3,6 +3,7 @@ let mongoose = require("mongoose");
 let Buildings = require("./building.js");
 
 let CityModelSchema = new mongoose.Schema({
+  name: { type: String, required: true },
   type: { type: String, default: "CityJSON", required: true },
   version: { type: String, default: "1.0", required: true },
   CityObjects: { type: {}, required: true },
@@ -32,13 +33,15 @@ CityModel = mongoose.model("CityModel", CityModelSchema);
 
 module.exports = {
   insertCity: async object => {
-    var new_object = {};
+    var new_objects = {};
 
-    for ([key, element] of Object.entries(object.CityObjects)) {
+    object.json["name"] = object.jsonName
+
+    for ([key, element] of Object.entries(object.json.CityObjects)) {
       try {
         switch (element.type) {
           case "Building":
-            element["name"] = key; // Add a reference to the building for the client
+            element["name"] = object.jsonName + '_' + key; // Add a reference to the building for the client - attribute in document
             var element_id = await Buildings.insertBuilding(element);
             break;
           case "Bridge":
@@ -113,12 +116,12 @@ module.exports = {
         console.warn(err.message);
       }
 
-      new_object[key] = element_id;
+      new_objects[object.jsonName + '_' + key] = element_id; // Add a reference to the building for the client - name of document
     }
 
-    object.CityObjects = new_object;
+    object.json.CityObjects = new_objects;
 
-    var city = new CityModel(object);
+    var city = new CityModel(object.json);
 
     try {
       if (mongoose.connection.readyState == 0) {

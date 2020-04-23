@@ -1,7 +1,7 @@
 /*
-This file comes mainly from the 3D GeoInformaiton Group from TU Delft
+This file comes partially from the 3D GeoInformaiton Group from TU Delft
 Code is available on https://github.com/tudelft3d/CityJSON-viewer/
-
+This concerns the functions related to the object rendering.
 It has been slightly modified to handle React components and integrated within the MERN app.
 */
 import * as THREE from "three";
@@ -11,6 +11,30 @@ import axios from "axios";
 
 import { EventEmitter } from "./events";
 
+var ALLCOLOURS = {
+  Building: 0xcc0000,
+  BuildingPart: 0xcc0000,
+  BuildingInstallation: 0xcc0000,
+  Bridge: 0x999999,
+  BridgePart: 0x999999,
+  BridgeInstallation: 0x999999,
+  BridgeConstructionElement: 0x999999,
+  CityObjectGroup: 0xffffb3,
+  CityFurniture: 0xcc0000,
+  GenericCityObject: 0xcc0000,
+  LandUse: 0xffffb3,
+  PlantCover: 0x39ac39,
+  Railway: 0x000000,
+  Road: 0x999999,
+  SolitaryVegetationObject: 0x39ac39,
+  TINRelief: 0x3fd43f,
+  TransportSquare: 0x999999,
+  Tunnel: 0x999999,
+  TunnelPart: 0x999999,
+  TunnelInstallation: 0x999999,
+  WaterBody: 0x4da6ff
+};
+
 //convert CityObjects to mesh and add them to the viewer
 export async function loadCityObjects(
   json,
@@ -19,7 +43,8 @@ export async function loadCityObjects(
   meshes,
   scene,
   camera,
-  controls
+  controls,
+  startup
 ) {
   //create one geometry that contains all vertices (in normalized form)
   //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size
@@ -66,9 +91,32 @@ export async function loadCityObjects(
 
   //iterate through all cityObjects
   for (var cityObj in json.CityObjects) {
+    var object;
+
+    if (startup) {
+      object = await axios.get("http://localhost:3001/api/getBuildingObject", {
+        params: {
+          id: json.CityObjects[cityObj]
+        }
+      });
+      object = object.data
+    } else {
+      object = json.CityObjects[cityObj];
+      // eslint-disable-next-line
+      if (object.children != undefined) {
+        return object.children;
+      }
+    }
+
     try {
       //parse cityObj that it can be displayed in three js
-      var returnChildren = await parseObject(cityObj, json, jsonName, geoms);
+      var returnChildren = await parseObject(
+        cityObj,
+        object,
+        json,
+        jsonName,
+        geoms
+      );
 
       //if object has children add them to the childrendict
       for (i in returnChildren) {
@@ -80,7 +128,7 @@ export async function loadCityObjects(
     }
 
     //set color of object
-    var coType = json.CityObjects[cityObj].type;
+    var coType = object.type;
     var material = new THREE.MeshLambertMaterial();
     material.color.setHex(ALLCOLOURS[coType]);
 
@@ -95,30 +143,6 @@ export async function loadCityObjects(
     meshes.push(coMesh);
   }
 }
-
-var ALLCOLOURS = {
-  Building: 0xcc0000,
-  BuildingPart: 0xcc0000,
-  BuildingInstallation: 0xcc0000,
-  Bridge: 0x999999,
-  BridgePart: 0x999999,
-  BridgeInstallation: 0x999999,
-  BridgeConstructionElement: 0x999999,
-  CityObjectGroup: 0xffffb3,
-  CityFurniture: 0xcc0000,
-  GenericCityObject: 0xcc0000,
-  LandUse: 0xffffb3,
-  PlantCover: 0x39ac39,
-  Railway: 0x000000,
-  Road: 0x999999,
-  SolitaryVegetationObject: 0x39ac39,
-  TINRelief: 0x3fd43f,
-  TransportSquare: 0x999999,
-  Tunnel: 0x999999,
-  TunnelPart: 0x999999,
-  TunnelInstallation: 0x999999,
-  WaterBody: 0x4da6ff
-};
 
 //-- calculate normal of a set of points
 function get_normal_newell(indices) {
@@ -198,30 +222,27 @@ function getStats(vertices) {
 }
 
 //convert json file to viwer-object
-async function parseObject(cityObj, json, jsonName, geoms) {
-  var boundaries;
+async function parseObject(cityObj, object, json, jsonName, geoms) {
+  //if (startup) cityObj = cityObj.substring(cityObj.indexOf("_") + 1, cityObj.length);
 
-  // eslint-disable-next-line
-  if (json.CityObjects[cityObj].children != undefined) {
-    return json.CityObjects[cityObj].children;
-  }
+  var boundaries;
 
   //create geometry and empty list for the vertices
   var geom = new THREE.Geometry();
 
   //each geometrytype must be handled different
-  var geomType = json.CityObjects[cityObj].geometry[0].type;
+  var geomType = object.geometry[0].type;
   // eslint-disable-next-line
   if (geomType == "Solid") {
     // eslint-disable-next-line
-    boundaries = json.CityObjects[cityObj].geometry[0].boundaries[0];
+    boundaries = object.geometry[0].boundaries[0];
     // eslint-disable-next-line
   } else if (geomType == "MultiSurface" || geomType == "CompositeSurface") {
     // eslint-disable-next-line
-    boundaries = json.CityObjects[cityObj].geometry[0].boundaries;
+    boundaries = object.geometry[0].boundaries;
     // eslint-disable-next-line
   } else if (geomType == "MultiSolid" || geomType == "CompositeSolid") {
-    boundaries = json.CityObjects[cityObj].geometry[0].boundaries;
+    boundaries = object.geometry[0].boundaries;
   }
 
   //needed for assocation of global and local vertices
@@ -351,5 +372,28 @@ export async function getAttributes(event, boolJSONload, threescene) {
     })
     .then(response => {
       EventEmitter.dispatch("attObject", response.data[0].attributes);
+    });
+}
+
+export async function loadCityObjectsStartup(threeScene) {
+  axios
+    .get("http://localhost:3001/api/getAllCityModelObject")
+    .then(async responseCities => {
+      var jsonName;
+
+      for (var i = 0; i < responseCities.data.length; i++) {
+        jsonName = responseCities.data[i].name;
+
+        await loadCityObjects(
+          responseCities.data[i],
+          jsonName,
+          threeScene.geoms,
+          threeScene.meshes,
+          threeScene.scene,
+          threeScene.camera,
+          threeScene.controls,
+          true //true if startup
+        );
+      }
     });
 }

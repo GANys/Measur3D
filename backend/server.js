@@ -97,8 +97,34 @@ router.post("/putCityModel", (req, res) => {
   Cities.insertCity(req.body);
 });
 
+router.get("/getAllCityModelObject", (req, res) => {
+  mongoose.model("CityModel").find({}, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  });
+});
+
 router.get("/getBuildingObject", (req, res) => {
-  mongoose.model("Building").find({ name: req.query.name }, (err, data) => {
+
+  if (typeof req.query.name != "undefined") {
+    mongoose.model("Building").find({ name: req.query.name }, (err, data) => {
+      if (err) return res.json(err);
+      return res.json(data);
+    });
+  }
+
+  if (typeof req.query.id != "undefined") {
+    mongoose.model("Building").findById(req.query.id, (err, data) => {
+      if (err) return res.json(err);
+      return res.json(data);
+    });
+  }
+
+
+});
+
+router.get("/getAllBuildingObject", (req, res) => {
+  mongoose.model("Building").find({}, (err, data) => {
     if (err) return res.json(err);
     return res.json(data);
   });
