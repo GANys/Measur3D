@@ -17,7 +17,7 @@ class ThreeScene extends Component {
       100
     );
 
-    this.element = React.createRef()
+    this.element = React.createRef();
 
     EventEmitter.subscribe("uploadFile", event => this.handleFile(event));
     this.handleFile = this.handleFile.bind(this);
@@ -33,14 +33,16 @@ class ThreeScene extends Component {
     this._isMounted = false;
 
     // JSON variables
-    this.meshes = [] //contains the meshes of the objects
-    this.geoms = {} //contains the geometries of the objects
+    this.meshes = []; //contains the meshes of the objects
+    this.geoms = {}; //contains the geometries of the objects
   }
 
   componentDidMount() {
     this._isMounted = true;
     window.addEventListener("resize", this.handleWindowResize);
-    document.getElementById("ThreeScene").addEventListener("mousedown", this.handleClick);
+    document
+      .getElementById("ThreeScene")
+      .addEventListener("mousedown", this.handleClick);
 
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
@@ -65,29 +67,29 @@ class ThreeScene extends Component {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     // add raycaster and mouse (for clickable objects)
-    this.raycaster = new THREE.Raycaster()
+    this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
     //add AmbientLight (light that is only there that there's a minimum of light and you can see color)
     //kind of the natural daylight
-    this.am_light = new THREE.AmbientLight(0xFFFFFF, 0.7); // soft white light
+    this.am_light = new THREE.AmbientLight(0xffffff, 0.7); // soft white light
     this.scene.add(this.am_light);
 
     //this.hemiLight = new THREE.HemisphereLight( 0x0000ff, 0x00ff00, 0.6 );
     //this.scene.add(this.hemilight);
 
     // Add directional light
-    this.spot_light = new THREE.SpotLight(0xDDDDDD);
+    this.spot_light = new THREE.SpotLight(0xdddddd);
     this.spot_light.position.set(84616, -1, 447422);
     this.spot_light.target = this.scene;
     this.spot_light.castShadow = true;
-    this.spot_light.intensity = 0.4
-    this.spot_light.position.normalize()
+    this.spot_light.intensity = 0.4;
+    this.spot_light.position.normalize();
     this.scene.add(this.spot_light);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    Functions.loadCityObjectsStartup(this)
+    Functions.loadCityObjects(this);
 
     this.start();
   }
@@ -112,7 +114,6 @@ class ThreeScene extends Component {
   };
 
   animate = () => {
-
     this.renderScene();
     this.frameId = window.requestAnimationFrame(this.animate);
 
@@ -157,26 +158,25 @@ class ThreeScene extends Component {
   };
 
   handleFile = async file => {
-    var jsonName = file.jsonName;
-    var json = file.content;
-
-    //INSERT POP DB HERE
-    axios.post("http://localhost:3001/api/putCityModel", {json: json, jsonName: jsonName});
+    await axios.post("http://localhost:3001/api/putCityModel", {
+      json: file.content,
+      jsonName: file.jsonName
+    });
 
     //load the cityObjects into the viewer
-    await Functions.loadCityObjects(json, jsonName, this.geoms, this.meshes, this.scene, this.camera, this.controls, false);
+    await Functions.loadCityObjects(this);
 
     //already render loaded objects
     this.renderer.render(this.scene, this.camera);
-    console.log("JSON file '" + jsonName + "' loaded");
+    console.log("JSON file loaded");
 
     this.setState({
-      boolJSONload : true
+      boolJSONload: true
     });
   };
 
-  handleClick = (evt) => {
-      Functions.getAttributes(evt, this.state.boolJSONload, this)
+  handleClick = evt => {
+    Functions.getObjectAttributes(evt, this.state.boolJSONload, this);
   };
 
   render() {

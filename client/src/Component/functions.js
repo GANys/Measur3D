@@ -36,112 +36,110 @@ var ALLCOLOURS = {
 };
 
 //convert CityObjects to mesh and add them to the viewer
-export async function loadCityObjects(
-  json,
-  jsonName,
-  geoms,
-  meshes,
-  scene,
-  camera,
-  controls,
-  startup
-) {
-  //create one geometry that contains all vertices (in normalized form)
-  //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size
-  var normGeom = new THREE.Geometry();
+export async function loadCityObjects(threescene) {
+  axios
+    .get("http://localhost:3001/api/getAllCityModelObject")
+    .then(async responseCities => {
 
-  for (var i = 0; i < json.vertices.length; i++) {
-    var point = new THREE.Vector3(
-      json.vertices[i][0],
-      json.vertices[i][1],
-      json.vertices[i][2]
-    );
-    normGeom.vertices.push(point);
-  }
-
-  normGeom.normalize();
-
-  for (i = 0; i < json.vertices.length; i++) {
-    json.vertices[i][0] = normGeom.vertices[i].x;
-    json.vertices[i][1] = normGeom.vertices[i].y;
-    json.vertices[i][2] = normGeom.vertices[i].z;
-  }
-
-  var stats = getStats(json.vertices);
-  var avgX = stats[3];
-  var avgY = stats[4];
-  var avgZ = stats[5];
-
-  camera.position.set(0, 0, 2);
-  camera.lookAt(avgX, avgY, avgZ);
-
-  camera.updateProjectionMatrix();
-
-  controls.target.set(avgX, avgY, avgZ);
-
-  //enable movement parallel to ground
-  controls.screenSpacePanning = true;
-
-  //count number of objects
-  var totalco = Object.keys(json.CityObjects).length;
-  console.log("Total # City Objects: ", totalco);
-
-  //create dictionary
-  var children = {};
-
-  //iterate through all cityObjects
-  for (var cityObj in json.CityObjects) {
-    var object;
-
-    if (startup) {
-      object = await axios.get("http://localhost:3001/api/getBuildingObject", {
-        params: {
-          id: json.CityObjects[cityObj]
-        }
-      });
-      object = object.data
-    } else {
-      object = json.CityObjects[cityObj];
       // eslint-disable-next-line
-      if (object.children != undefined) {
-        return object.children;
+      if(responseCities.data === undefined || responseCities.data.length == 0) return; // If server response empty -> Server does not store any citymodel
+
+      var json;
+
+      for (var i = 0; i < responseCities.data.length; i++) {
+        json = responseCities.data[i];
+
+        //create one geometry that contains all vertices (in normalized form)
+        //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size
+        var normGeom = new THREE.Geometry();
+
+        for (i = 0; i < json.vertices.length; i++) {
+          var point = new THREE.Vector3(
+            json.vertices[i][0],
+            json.vertices[i][1],
+            json.vertices[i][2]
+          );
+          normGeom.vertices.push(point);
+        }
+
+        normGeom.normalize();
+
+        for (i = 0; i < json.vertices.length; i++) {
+          json.vertices[i][0] = normGeom.vertices[i].x;
+          json.vertices[i][1] = normGeom.vertices[i].y;
+          json.vertices[i][2] = normGeom.vertices[i].z;
+        }
+
+        var stats = getStats(json.vertices);
+        var avgX = stats[3];
+        var avgY = stats[4];
+        var avgZ = stats[5];
+
+        threescene.camera.position.set(0, 0, 2);
+        threescene.camera.lookAt(avgX, avgY, avgZ);
+
+        threescene.camera.updateProjectionMatrix();
+
+        threescene.controls.target.set(avgX, avgY, avgZ);
+
+        //enable movement parallel to ground
+        threescene.controls.screenSpacePanning = true;
+
+        //count number of objects
+        var totalco = Object.keys(json.CityObjects).length;
+        console.log("Total # City Objects: ", totalco);
+
+        //create dictionary
+        var children = {};
+
+        //iterate through all cityObjects
+        for (var cityObj in json.CityObjects) {
+          var object;
+
+          object = await axios.get(
+            "http://localhost:3001/api/getBuildingObject",
+            {
+              params: {
+                id: json.CityObjects[cityObj]
+              }
+            }
+          );
+
+          object = object.data;
+
+          try {
+            //parse cityObj that it can be displayed in three js
+            var returnChildren = await parseObject(
+              object,
+              json,
+              threescene.geoms
+            );
+
+            //if object has children add them to the childrendict
+            for (i in returnChildren) {
+              children[returnChildren[i]] = cityObj;
+            }
+          } catch (e) {
+            console.log("ERROR at creating: " + cityObj);
+            continue;
+          }
+
+          //set color of object
+          var coType = object.type;
+          var material = new THREE.MeshLambertMaterial();
+          material.color.setHex(ALLCOLOURS[coType]);
+
+          //create mesh
+          var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
+          coMesh.name = cityObj;
+          coMesh.jsonName = json.name;
+          coMesh.castShadow = true;
+          coMesh.receiveShadow = true;
+          threescene.scene.add(coMesh);
+          threescene.meshes.push(coMesh);
+        }
       }
-    }
-
-    try {
-      //parse cityObj that it can be displayed in three js
-      var returnChildren = await parseObject(
-        cityObj,
-        object,
-        json,
-        jsonName,
-        geoms
-      );
-
-      //if object has children add them to the childrendict
-      for (i in returnChildren) {
-        children[jsonName + "_" + returnChildren[i]] = cityObj;
-      }
-    } catch (e) {
-      console.log("ERROR at creating: " + cityObj);
-      continue;
-    }
-
-    //set color of object
-    var coType = object.type;
-    var material = new THREE.MeshLambertMaterial();
-    material.color.setHex(ALLCOLOURS[coType]);
-
-    //create mesh
-    var _id = jsonName + "_" + cityObj;
-    var coMesh = new THREE.Mesh(geoms[_id], material);
-    coMesh.name = cityObj;
-    coMesh.jsonName = jsonName;
-    coMesh.castShadow = true;
-    coMesh.receiveShadow = true;
-    scene.add(coMesh);
-    meshes.push(coMesh);
-  }
+    });
 }
 
 //-- calculate normal of a set of points
@@ -222,9 +220,7 @@ function getStats(vertices) {
 }
 
 //convert json file to viwer-object
-async function parseObject(cityObj, object, json, jsonName, geoms) {
-  //if (startup) cityObj = cityObj.substring(cityObj.indexOf("_") + 1, cityObj.length);
-
+async function parseObject(object, json, geoms) {
   var boundaries;
 
   //create geometry and empty list for the vertices
@@ -330,15 +326,13 @@ async function parseObject(cityObj, object, json, jsonName, geoms) {
   //needed for shadow
   geom.computeFaceNormals();
 
-  //add geom to the list
-  var _id = jsonName + "_" + cityObj;
-  geoms[_id] = geom;
+  geoms[object.name] = geom;
 
   return "";
 }
 
 //action if mouseclick (for getting attributes ofobjects)
-export async function getAttributes(event, boolJSONload, threescene) {
+export async function getObjectAttributes(event, boolJSONload, threescene) {
   //if no cityjson is loaded return
   // eslint-disable-next-line
   if (boolJSONload == false) {
@@ -362,6 +356,8 @@ export async function getAttributes(event, boolJSONload, threescene) {
     return;
   }
 
+  console.log(intersects[0].object.name)
+
   EventEmitter.dispatch("attObjectTitle", intersects[0].object.name);
 
   axios
@@ -372,28 +368,5 @@ export async function getAttributes(event, boolJSONload, threescene) {
     })
     .then(response => {
       EventEmitter.dispatch("attObject", response.data[0].attributes);
-    });
-}
-
-export async function loadCityObjectsStartup(threeScene) {
-  axios
-    .get("http://localhost:3001/api/getAllCityModelObject")
-    .then(async responseCities => {
-      var jsonName;
-
-      for (var i = 0; i < responseCities.data.length; i++) {
-        jsonName = responseCities.data[i].name;
-
-        await loadCityObjects(
-          responseCities.data[i],
-          jsonName,
-          threeScene.geoms,
-          threeScene.meshes,
-          threeScene.scene,
-          threeScene.camera,
-          threeScene.controls,
-          true //true if startup
-        );
-      }
     });
 }

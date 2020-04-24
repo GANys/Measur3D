@@ -94,7 +94,9 @@ router.post("/putData", (req, res) => {
 });
 
 router.post("/putCityModel", (req, res) => {
-  Cities.insertCity(req.body);
+  Cities.insertCity(req.body).then(function(){
+    return res.sendStatus(200);
+  });
 });
 
 router.get("/getAllCityModelObject", (req, res) => {
