@@ -35,13 +35,13 @@ module.exports = {
   insertCity: async object => {
     var new_objects = {};
 
-    object.json["name"] = object.jsonName
+    object.json["name"] = object.jsonName;
 
     for ([key, element] of Object.entries(object.json.CityObjects)) {
       try {
         switch (element.type) {
           case "Building":
-            element["name"] = object.jsonName + '_' + key; // Add a reference to the building for the client - attribute in document
+            element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
             var element_id = await Buildings.insertBuilding(element);
             break;
           case "Bridge":
@@ -116,26 +116,18 @@ module.exports = {
         console.warn(err.message);
       }
 
-      new_objects[object.jsonName + '_' + key] = element_id; // Add a reference to the building for the client - name of document
+      new_objects[object.jsonName + "_" + key] = element_id; // Add a reference to the building for the client - name of document
     }
 
     object.json.CityObjects = new_objects;
 
     var city = new CityModel(object.json);
 
-    try {
-      if (mongoose.connection.readyState == 0) {
-        throw "insertCity: disconnected from server.";
-      }
-    } catch (err) {
-      console.error(err);
-    }
-
-    city.save(function(err, element) {
+    await city.save(function(err, element) {
       if (err) return console.error(err.message);
-
-      return console.log("insertCity: CityModel inserted.");
     });
+
+    return console.log("insertCity: CityModel inserted.");
   },
   Model: CityModel,
   Schema: CityModelSchema

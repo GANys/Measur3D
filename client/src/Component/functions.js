@@ -37,7 +37,7 @@ var ALLCOLOURS = {
 
 //convert CityObjects to mesh and add them to the viewer
 export async function loadCityObjects(threescene) {
-  axios
+  await axios
     .get("http://localhost:3001/api/getAllCityModelObject")
     .then(async responseCities => {
 
@@ -139,6 +139,10 @@ export async function loadCityObjects(threescene) {
           threescene.meshes.push(coMesh);
         }
       }
+    }).then(() => {
+      threescene.setState({
+        boolJSONload: true //enable function as click on objects
+      })
     });
 }
 
@@ -356,8 +360,6 @@ export async function getObjectAttributes(event, boolJSONload, threescene) {
     return;
   }
 
-  console.log(intersects[0].object.name)
-
   EventEmitter.dispatch("attObjectTitle", intersects[0].object.name);
 
   axios
@@ -367,6 +369,6 @@ export async function getObjectAttributes(event, boolJSONload, threescene) {
       }
     })
     .then(response => {
-      EventEmitter.dispatch("attObject", response.data[0].attributes);
+      EventEmitter.dispatch("attObject", response.data.attributes);
     });
 }

@@ -94,7 +94,8 @@ router.post("/putData", (req, res) => {
 });
 
 router.post("/putCityModel", (req, res) => {
-  Cities.insertCity(req.body).then(function(){
+  Cities.insertCity(req.body).then(function() {
+    console.log("After InserCity " + Date.now());
     return res.sendStatus(200);
   });
 });
@@ -107,7 +108,6 @@ router.get("/getAllCityModelObject", (req, res) => {
 });
 
 router.get("/getBuildingObject", (req, res) => {
-
   if (typeof req.query.name != "undefined") {
     mongoose.model("Building").find({ name: req.query.name }, (err, data) => {
       if (err) return res.json(err);
@@ -121,8 +121,6 @@ router.get("/getBuildingObject", (req, res) => {
       return res.json(data);
     });
   }
-
-
 });
 
 router.get("/getAllBuildingObject", (req, res) => {
@@ -133,11 +131,37 @@ router.get("/getAllBuildingObject", (req, res) => {
 });
 
 router.get("/getBuildingAttribute", (req, res) => {
-  mongoose.model("Building").find({ name: req.query.name }, 'attributes', (err, data) => {
-    if (err) return res.json(err);
+  mongoose
+    .model("Building")
+    .findOne({ name: req.query.name }, "attributes", (err, data) => {
+      if (err) return res.json(err);
 
-    return res.json(data);
-  });
+      return res.json(data);
+    });
+});
+
+router.post("/putBuildingAttribute", async (req, res) => {
+  mongoose
+    .model("Building")
+    .findOne({ name: req.body.jsonName }, (err, data) => {
+      if (err) return res.json(err);
+
+      var attributes = data.attributes
+
+      console.log(attributes)
+
+      attributes[req.body.key] = req.body.value;
+
+      console.log(attributes)
+
+      mongoose
+        .model("Building")
+        .update({ name: req.body.jsonName }, {attributes}, (err, data) => {
+          if (err) return res.json(err);
+
+          return res.sendStatus(200);
+        });
+    });
 });
 
 /* InserCity - to be linked

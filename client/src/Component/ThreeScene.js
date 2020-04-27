@@ -163,6 +163,10 @@ class ThreeScene extends Component {
       jsonName: file.jsonName
     });
 
+    console.log('After putCityModel ' + Date.now())
+
+    //window.location.reload() is the easiest way but not the better as it impose to reload the whole app.
+
     //load the cityObjects into the viewer
     await Functions.loadCityObjects(this);
 

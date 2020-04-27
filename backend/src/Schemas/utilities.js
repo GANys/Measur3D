@@ -15,7 +15,7 @@ let GeometrySchema = new mongoose.Schema({
 Geometry = mongoose.model("Geometry", GeometrySchema);
 
 module.exports = {
-  insertGeometry: object => {
+  insertGeometry: async object => {
     var geometry = new Geometry(object);
 
     geometry.save(function(err, element) {

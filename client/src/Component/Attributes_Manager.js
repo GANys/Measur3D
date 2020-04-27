@@ -3,6 +3,8 @@ import MaterialTable from "material-table";
 
 import { EventEmitter } from "./events";
 
+import axios from "axios";
+
 import AddBox from "@material-ui/icons/AddBox";
 import ArrowUpward from "@material-ui/icons/ArrowUpward";
 import Check from "@material-ui/icons/Check";
@@ -47,10 +49,12 @@ class BasicMaterialTable extends React.Component {
   constructor() {
     super();
 
-    this.onRowAdd = this.onRowAdd.bind(this);
-    this.updateTitle = this.updateTitle.bind(this)
+    this.onRowAddServ = this.onRowAddServ.bind(this);
 
-    EventEmitter.subscribe("attObject", event => this.onRowAdd(event));
+    this.updateTable = this.updateTable.bind(this);
+    this.updateTitle = this.updateTitle.bind(this);
+
+    EventEmitter.subscribe("attObject", event => this.updateTable(event));
     EventEmitter.subscribe("attObjectTitle", event => this.updateTitle(event));
   }
 
@@ -63,8 +67,7 @@ class BasicMaterialTable extends React.Component {
     tableTitle: "Object attributes"
   };
 
-  onRowAdd = newData => {
-    // delete previous state
+  deleteRows = () => {
     new Promise(resolve => {
       setTimeout(() => {
         resolve();
@@ -74,6 +77,11 @@ class BasicMaterialTable extends React.Component {
         });
       }, 600);
     });
+  };
+
+  updateTable = async newData => {
+    // delete previous state
+    this.deleteRows();
 
     // update table with new attributes
     for (var x in newData) {
@@ -81,24 +89,32 @@ class BasicMaterialTable extends React.Component {
       attribute["key"] = x;
       attribute["value"] = newData[x];
 
-      new Promise(resolve => {
-        setTimeout(() => {
-          resolve();
           this.setState(prevState => {
             const data = [...prevState.data];
             data.push(attribute);
             return { ...prevState, data };
           });
-        }, 600);
-      });
+      }
     }
-  };
+
 
   updateTitle = title => {
     this.setState({
       tableTitle: title
-    })
-  }
+    });
+  };
+
+  onRowAddServ = async newData => {
+    await axios.post("http://localhost:3001/api/putBuildingAttribute", {
+      key: newData.key,
+      value:newData.value,
+      jsonName: this.state.tableTitle
+    });
+  };
+
+  onRowUpdateServ = async (newData, oldData) => {};
+
+  onRowDeleteServ = async oldData => {};
 
   render() {
     return (
@@ -118,12 +134,13 @@ class BasicMaterialTable extends React.Component {
             new Promise(resolve => {
               setTimeout(() => {
                 resolve();
+                this.onRowAddServ(newData);
                 this.setState(prevState => {
                   const data = [...prevState.data];
                   data.push(newData);
                   return { ...prevState, data };
                 });
-              }, 600);
+              }, 250);
             }),
           onRowUpdate: (newData, oldData) =>
             new Promise(resolve => {
@@ -136,7 +153,7 @@ class BasicMaterialTable extends React.Component {
                     return { ...prevState, data };
                   });
                 }
-              }, 600);
+              }, 250);
             }),
           onRowDelete: oldData =>
             new Promise(resolve => {
@@ -147,7 +164,7 @@ class BasicMaterialTable extends React.Component {
                   data.splice(data.indexOf(oldData), 1);
                   return { ...prevState, data };
                 });
-              }, 600);
+              }, 250);
             })
         }}
       />
