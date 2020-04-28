@@ -30,17 +30,6 @@ const tableIcons = {
     <ChevronRight {...props} ref={ref} />
   )),
   Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
-  Export: forwardRef((props, ref) => <SaveAlt {...props} ref={ref} />),
-  Filter: forwardRef((props, ref) => <FilterList {...props} ref={ref} />),
-  FirstPage: forwardRef((props, ref) => <FirstPage {...props} ref={ref} />),
-  LastPage: forwardRef((props, ref) => <LastPage {...props} ref={ref} />),
-  NextPage: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-  PreviousPage: forwardRef((props, ref) => (
-    <ChevronLeft {...props} ref={ref} />
-  )),
-  ResetSearch: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-  Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
-  SortArrow: forwardRef((props, ref) => <ArrowUpward {...props} ref={ref} />),
   ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
   ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
 };
@@ -49,7 +38,9 @@ class BasicMaterialTable extends React.Component {
   constructor() {
     super();
 
-    this.onRowAddServ = this.onRowAddServ.bind(this);
+    this.addAttribute = this.addAttribute.bind(this)
+    this.updateAttribute = this.updateAttribute.bind(this);
+    this.deleteAttribute = this.deleteAttribute.bind(this);
 
     this.updateTable = this.updateTable.bind(this);
     this.updateTitle = this.updateTitle.bind(this);
@@ -68,14 +59,9 @@ class BasicMaterialTable extends React.Component {
   };
 
   deleteRows = () => {
-    new Promise(resolve => {
-      setTimeout(() => {
-        resolve();
-        this.setState(prevState => {
-          const data = [];
-          return { ...prevState, data };
-        });
-      }, 600);
+    this.setState(prevState => {
+      const data = [];
+      return { ...prevState, data };
     });
   };
 
@@ -83,20 +69,23 @@ class BasicMaterialTable extends React.Component {
     // delete previous state
     this.deleteRows();
 
+    var attributes = [];
+
     // update table with new attributes
     for (var x in newData) {
       var attribute = {};
       attribute["key"] = x;
       attribute["value"] = newData[x];
 
-          this.setState(prevState => {
-            const data = [...prevState.data];
-            data.push(attribute);
-            return { ...prevState, data };
-          });
-      }
+      attributes.push(attribute);
     }
 
+    this.setState(prevState => {
+      var data = [...prevState.data];
+      data = data.concat(attributes);
+      return { ...prevState, data };
+    });
+  };
 
   updateTitle = title => {
     this.setState({
@@ -104,17 +93,30 @@ class BasicMaterialTable extends React.Component {
     });
   };
 
-  onRowAddServ = async newData => {
-    await axios.post("http://localhost:3001/api/putBuildingAttribute", {
+  addAttribute = async newData => {
+    await axios.post("http://localhost:3001/api/updateBuildingAttribute", {
       key: newData.key,
-      value:newData.value,
+      value: newData.value,
       jsonName: this.state.tableTitle
     });
   };
 
-  onRowUpdateServ = async (newData, oldData) => {};
+  updateAttribute = async (newData, oldData) => {
+    await axios.post("http://localhost:3001/api/updateBuildingAttribute", {
+      old_key: oldData.key,
+      key: newData.key,
+      value: newData.value,
+      jsonName: this.state.tableTitle
+    });
+  };
 
-  onRowDeleteServ = async oldData => {};
+  deleteAttribute = async oldData => {
+    await axios.post("http://localhost:3001/api/updateBuildingAttribute", {
+      key: oldData.key,
+      value: '',
+      jsonName: this.state.tableTitle
+    });
+  };
 
   render() {
     return (
@@ -132,9 +134,13 @@ class BasicMaterialTable extends React.Component {
         editable={{
           onRowAdd: newData =>
             new Promise(resolve => {
+              if (!isAllowed(newData.key) || !isAllowed(newData.value)) {
+                console.log('Inputs are invalid. Please refer to doc.')
+                throw 'Error on inputs.';
+              }
+              this.addAttribute(newData);
               setTimeout(() => {
                 resolve();
-                this.onRowAddServ(newData);
                 this.setState(prevState => {
                   const data = [...prevState.data];
                   data.push(newData);
@@ -144,6 +150,11 @@ class BasicMaterialTable extends React.Component {
             }),
           onRowUpdate: (newData, oldData) =>
             new Promise(resolve => {
+              if (!isAllowed(newData.key) || !isAllowed(newData.value)) {
+                console.log('Inputs are invalid. Please refer to doc.')
+                throw 'Error on inputs.';
+              }
+              this.updateAttribute(newData, oldData);
               setTimeout(() => {
                 resolve();
                 if (oldData) {
@@ -157,6 +168,7 @@ class BasicMaterialTable extends React.Component {
             }),
           onRowDelete: oldData =>
             new Promise(resolve => {
+              this.deleteAttribute(oldData);
               setTimeout(() => {
                 resolve();
                 this.setState(prevState => {
@@ -170,6 +182,11 @@ class BasicMaterialTable extends React.Component {
       />
     );
   }
+}
+
+function isAllowed(string) {
+  var RegEx = /^[a-z0-9_]+$/i;
+  return RegEx.test(string);
 }
 
 export default BasicMaterialTable;

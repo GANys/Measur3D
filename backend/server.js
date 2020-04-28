@@ -95,7 +95,6 @@ router.post("/putData", (req, res) => {
 
 router.post("/putCityModel", (req, res) => {
   Cities.insertCity(req.body).then(function() {
-    console.log("After InserCity " + Date.now());
     return res.sendStatus(200);
   });
 });
@@ -140,7 +139,7 @@ router.get("/getBuildingAttribute", (req, res) => {
     });
 });
 
-router.post("/putBuildingAttribute", async (req, res) => {
+router.post("/updateBuildingAttribute", async (req, res) => {
   mongoose
     .model("Building")
     .findOne({ name: req.body.jsonName }, (err, data) => {
@@ -148,11 +147,15 @@ router.post("/putBuildingAttribute", async (req, res) => {
 
       var attributes = data.attributes
 
-      console.log(attributes)
-
-      attributes[req.body.key] = req.body.value;
-
-      console.log(attributes)
+      if(req.body.value == "") { // delete
+        delete attributes[req.body.key]
+      } else if (req.body.old_key) { //update
+        delete attributes[req.body.old_key]
+        attributes[req.body.key] = req.body.value;
+      }
+      else { // add
+        attributes[req.body.key] = req.body.value;
+      }
 
       mongoose
         .model("Building")

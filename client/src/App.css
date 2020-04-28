@@ -52,6 +52,18 @@ div.Pane.horizontal.Pane1 > ul {
   margin: auto
 }
 
+.AttributeManager {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 tbody.MuiTableBody-root > tr:hover {
     background-color: #efefef;
+}
+
+div.MTableToolbar-title-84 > h6 {
+  font-size: 1rem
+}
+
+table > tbody > tr > td:nth-child(2) > h6 {
+  font-size: 0.8rem
 }

@@ -25,7 +25,6 @@ import logo from "./logo-geomatics.png";
 import styles from "./App.css";
 
 const items = [
-  "divider",
   { name: "home", label: "Home", content: "modal_home", Icon: HomeRoundedIcon },
   {
     name: "props",
@@ -173,7 +172,9 @@ class App extends Component {
                   <Dropzone minSize={100} defaultSize={100}/>
                   <SplitPane split="horizontal" minSize={150} defaultSize={150}>
                     <Sidebar items={items} showModal={this.showModal} />
+                    <div className="AttributeManager">
                     <Table />
+                    </div>
                   </SplitPane>
                 </SplitPane>
               </SplitPane>
