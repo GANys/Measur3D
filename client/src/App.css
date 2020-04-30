@@ -1,8 +1,28 @@
-html, body {
+:root {
+  --background-color: rgba(54, 54, 54, 1);
+  --background-color-hover: rgba(62, 62, 62, 0.75);
+  --border-color: rgba(18, 18, 18, 0.75);
+  --font-color: rgba(255, 255, 255, 1);
+  --font-color-highlight: rgba(255, 255, 255, 0.75);
+  --icon-color: rgba(255, 255, 255, 0.6);
+}
+
+html,
+body {
   margin: 0;
   overflow: hidden;
   height: 100vh;
-  width: 100vw
+  width: 100vw;
+  background: var(--background-color);
+  color: var(--font-color);
+}
+
+canvas:focus {
+  outline: none !important;
+}
+
+a {
+  color: var(--font-color-highlight);
 }
 
 .modal {
@@ -10,60 +30,165 @@ html, body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  background: var(--background-color);
+  background-color: var(--background-color);
+  color: var(--font-color);
+  border: 1px solid var(--border-color);
+}
+
+.modal_content {
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal .modal_actions button {
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--font-color);
+}
+
+.modal .modal_actions button:hover {
+  background: var(--background-color-hover);
 }
 
 .sidebar {
   height: 100vh;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  border-right: 1px solid var(--border-color);
 }
 
 .sidebar-item-text {
-  margin-left: 20px
+  margin-left: 20px;
 }
 
 .split {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
 }
 
-.dropzone, .dropzone > div {
+.dropzone,
+.dropzone > div {
   width: 100%;
   height: auto;
   text-align: center;
-  margin: auto
+  margin: auto;
+  border-right: 1px solid rgba(0, 0, 0, 0);
 }
 
-#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div > div.Pane.horizontal.Pane1 {
+.dropzone:hover {
+  background: var(--background-color-hover);
+  border-right: 1px solid var(--border-color);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: var(--icon-color) !important;
+  border: 0px !important;
+  border-radius: 0px !important;
+}
+
+.MuiButtonBase-root.MuiListItem-root:hover {
+  border-right: 1px solid var(--border-color);
+}
+
+.MuiButtonBase-root:hover {
+  background: var(--background-color-hover) !important;
+}
+
+#root
+  > div
+  > div.SplitPane.vertical
+  > div.Pane.vertical.Pane1
+  > div
+  > div
+  > div.Pane.horizontal.Pane1 {
   width: 100%;
   height: 80px;
-  margin-top: 10px
+  margin-top: 10px;
 }
 
 div.Pane.horizontal.Pane1 > ul {
-  width: 100%
+  width: 100%;
 }
 
-#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane2 > div > div.Pane.horizontal.Pane2 {
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.logo {
+.logo_app {
   height: 100%;
   width: auto;
-  margin: auto
+  margin: auto;
+}
+
+.logo_ugeom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  height: 48px;
+}
+
+.MuiDivider-root {
+  background-color: var(--border-color);
+}
+
+.MuiSvgIcon-root {
+  color: var(--icon-color);
 }
 
 .AttributeManager {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+}
+
+.MuiPaper-root {
+  background: var(--background-color) !important;
+  color: var(--font-color) !important;
+}
+
+.MuiPaper-elevation2 {
+  box-shadow: none !important;
+}
+
+.MuiPaper-rounded {
+  border-radius: 0px !important;
+}
+
+.MuiTable-root {
+  border-collapse: 0 !important;
+}
+
+.MuiTableRow-root {
+  border: none !important;
+  color: var(--font-color) !important;
+}
+
+.MuiInputBase-input {
+  color: var(--font-color) !important;
+  border-bottom: 1px solid var(--icon-color) !important;
+}
+
+.MuiTableBody-root {
+  color: var(--icon-color) !important;
+}
+
+.MuiTableCell-root {
+  background: var(--background-color) !important;
+  color: var(--font-color) !important;
+  border: none !important;
 }
 
 tbody.MuiTableBody-root > tr:hover {
-    background-color: #efefef;
+  background-color: var(--background-color-hover);
 }
 
-div.MTableToolbar-title-84 > h6 {
-  font-size: 1rem
+.MTableToolbar-title-84 > h6 {
+  font-size: 1rem;
 }
 
-table > tbody > tr > td:nth-child(2) > h6 {
-  font-size: 0.8rem
+td:nth-child(2) > h6 {
+  font-size: 0.8rem;
+}
+
+#root
+  > div
+  > div.SplitPane.vertical
+  > div.Pane.vertical.Pane2
+  > div
+  > div.Pane.horizontal.Pane2 {
+  border-top: 1px solid var(--border-color);
 }

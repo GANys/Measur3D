@@ -27,7 +27,8 @@ class ThreeScene extends Component {
     this.state = {
       containerWidth: 0,
       containerHeight: 0,
-      boolJSONload: false
+      boolJSONload: false,
+      selectedItem: undefined
     };
 
     this._isMounted = false;
@@ -59,7 +60,7 @@ class ThreeScene extends Component {
 
     //ADD RENDERER
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setClearColor("#ffffff");
+    this.renderer.setClearColor("#363636");
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
 
@@ -69,6 +70,7 @@ class ThreeScene extends Component {
     // add raycaster and mouse (for clickable objects)
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
+    this.HIGHLIGHTED = null;
 
     //add AmbientLight (light that is only there that there's a minimum of light and you can see color)
     //kind of the natural daylight
@@ -180,7 +182,7 @@ class ThreeScene extends Component {
   };
 
   handleClick = evt => {
-    Functions.getObjectAttributes(evt, this.state.boolJSONload, this);
+    Functions.getObjectAttributes(evt, this)
   };
 
   render() {

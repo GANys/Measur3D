@@ -19,7 +19,8 @@ import GitHubIcon from "@material-ui/icons/GitHub";
 
 import { EventEmitter } from "./Component/events";
 
-import logo from "./logo-geomatics.png";
+import logo_ugeom from "./logo_geomatics.png";
+import logo_app from "./logo_app.png";
 
 // eslint-disable-next-line
 import styles from "./App.css";
@@ -167,7 +168,7 @@ class App extends Component {
           >
             <div className="sidebar">
               <SplitPane split="horizontal">
-                <img src={logo} className="logo" alt="Logo" />
+                <img src={logo_app} className="logo_app" alt="logo_app"/>
                 <SplitPane split="horizontal" minSize={100} defaultSize={100}>
                   <Dropzone minSize={100} defaultSize={100}/>
                   <SplitPane split="horizontal" minSize={150} defaultSize={150}>
@@ -181,6 +182,9 @@ class App extends Component {
             </div>
             <SplitPane split="horizontal" defaultSize="25%" primary="second">
             <div id="ThreeScene">
+            <a href="http://geomatics.ulg.ac.be/home.php" rel="noopener">
+            <img src={logo_ugeom} className="logo_ugeom" alt="logo_ugeom"/>
+            </a >
               <ThreeScene />
               </div>
               <Chart />

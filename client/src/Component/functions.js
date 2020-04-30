@@ -40,9 +40,9 @@ export async function loadCityObjects(threescene) {
   await axios
     .get("http://localhost:3001/api/getAllCityModelObject")
     .then(async responseCities => {
-
       // eslint-disable-next-line
-      if(responseCities.data === undefined || responseCities.data.length == 0) return; // If server response empty -> Server does not store any citymodel
+      if (responseCities.data === undefined || responseCities.data.length == 0)
+        return; // If server response empty -> Server does not store any citymodel
 
       var json;
 
@@ -139,10 +139,11 @@ export async function loadCityObjects(threescene) {
           threescene.meshes.push(coMesh);
         }
       }
-    }).then(() => {
+    })
+    .then(() => {
       threescene.setState({
         boolJSONload: true //enable function as click on objects
-      })
+      });
     });
 }
 
@@ -336,10 +337,10 @@ async function parseObject(object, json, geoms) {
 }
 
 //action if mouseclick (for getting attributes ofobjects)
-export async function getObjectAttributes(event, boolJSONload, threescene) {
+export async function getObjectAttributes(event, threescene) {
   //if no cityjson is loaded return
   // eslint-disable-next-line
-  if (boolJSONload == false) {
+  if (threescene.state.boolJSONload == false) {
     return;
   }
 
@@ -360,6 +361,28 @@ export async function getObjectAttributes(event, boolJSONload, threescene) {
     return;
   }
 
+  if (intersects.length > 0) {
+    // eslint-disable-next-line
+    if (threescene.HIGHLIGHTED != intersects[0].object) {
+      if (threescene.HIGHLIGHTED)
+        threescene.HIGHLIGHTED.material.emissive.setHex(
+          threescene.HIGHLIGHTED.currentHex
+        );
+
+      threescene.HIGHLIGHTED = intersects[0].object;
+      threescene.HIGHLIGHTED.currentHex = threescene.HIGHLIGHTED.material.emissive.getHex();
+      threescene.HIGHLIGHTED.material.emissive.setHex(0xff0000);
+      threescene.HIGHLIGHTED.material.emissiveIntensity = 0.25
+    }
+  } else {
+    if (threescene.HIGHLIGHTED)
+      threescene.HIGHLIGHTED.material.emissive.setHex(
+        threescene.HIGHLIGHTED.currentHex
+      );
+
+    threescene.HIGHLIGHTED = null;
+  }
+
   EventEmitter.dispatch("attObjectTitle", intersects[0].object.name);
 
   axios
@@ -371,4 +394,6 @@ export async function getObjectAttributes(event, boolJSONload, threescene) {
     .then(response => {
       EventEmitter.dispatch("attObject", response.data.attributes);
     });
+
+  return intersects[0].object.name;
 }
