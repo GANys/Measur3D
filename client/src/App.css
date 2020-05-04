@@ -57,6 +57,11 @@ a {
   width: 20% !important
 }
 
+#root > div > div.MuiCollapse-container.MuiCollapse-entered {
+  z-index: 3 !important;
+  position: relative;
+}
+
 #ThreeScene, #ThreeScene > div {
   height: 100%;
 }
@@ -200,8 +205,19 @@ div.sidebar-item-text {
 }
 
 /* Material-UI icons style */
-.MuiSvgIcon-root {
+.MuiSvgIcon-root.sidebar-item-icon,
+span.MuiIconButton-label > svg {
   color: var(--icon-color);
+}
+
+.MuiCircularProgress-colorPrimary {
+    color: var(--icon-color) !important;
+}
+
+#ThreeScene > div.MuiCircularProgress-root.MuiCircularProgress-colorPrimary.MuiCircularProgress-indeterminate {
+  position: absolute;
+  left: 50%;
+  top: 50%;
 }
 
 /* -------------------------
@@ -214,8 +230,7 @@ div.sidebar-item-text {
 }
 
 /* General component colors */
-.MuiPaper-root {
-  height: 100%;
+.MuiPaper-root.MuiPaper-elevation2 {
   background: var(--background-color) !important;
   color: var(--font-color) !important;
 }

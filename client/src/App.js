@@ -136,29 +136,8 @@ class App extends Component {
   };
 
   render() {
-    const classes = this.useStyles;
-
     return (
       <Container>
-        <div className={classes.root}>
-          <Collapse in={this.state.showingAlert}>
-            {this.state.errorMessage && this.state.showingAlert ? (
-              <Alert className="Alert" severity="error">
-                {this.state.errorMessage}
-              </Alert>
-            ) : null}
-            {this.state.successMessage && this.state.showingAlert ? (
-              <Alert className="Alert" severity="success">
-                {this.state.successMessage}
-              </Alert>
-            ) : null}
-            {this.state.infoMessage && this.state.showingAlert ? (
-              <Alert className="Alert" severity="info">
-                {this.state.infoMessage}
-              </Alert>
-            ) : null}
-          </Collapse>
-        </div>
         <React.Fragment>
           <SplitPane split="vertical">
             <SplitPane split="horizontal">
@@ -185,8 +164,8 @@ class App extends Component {
                 <ThreeScene />
               </div>
               <SplitPane split="vertical">
-              <Chart />
-              <Chart />
+                <Chart />
+                <Chart />
               </SplitPane>
             </SplitPane>
           </SplitPane>
@@ -198,6 +177,23 @@ class App extends Component {
             {this.state.modal}
           </Modal>
         </React.Fragment>
+          <Collapse in={this.state.showingAlert}>
+            {this.state.errorMessage && this.state.showingAlert ? (
+              <Alert className="Alert" severity="error">
+                {this.state.errorMessage}
+              </Alert>
+            ) : null}
+            {this.state.successMessage && this.state.showingAlert ? (
+              <Alert className="Alert" severity="success">
+                {this.state.successMessage}
+              </Alert>
+            ) : null}
+            {this.state.infoMessage && this.state.showingAlert ? (
+              <Alert className="Alert" severity="info">
+                {this.state.infoMessage}
+              </Alert>
+            ) : null}
+          </Collapse>
       </Container>
     );
   }

@@ -128,7 +128,7 @@ class BasicMaterialTable extends React.Component {
           onRowAdd: newData =>
             new Promise(resolve => {
               if (!isAllowed(newData.key) || !isAllowed(newData.value)) {
-                console.log('Inputs are invalid. Please refer to doc.')
+                EventEmitter.dispatch('error', 'Inputs are invalid. Please refer to doc.');
                 throw new Error('Error on inputs.');
               }
               this.addAttribute(newData);
@@ -139,12 +139,12 @@ class BasicMaterialTable extends React.Component {
                   data.push(newData);
                   return { ...prevState, data };
                 });
-              }, 250);
+              }, 500);
             }),
           onRowUpdate: (newData, oldData) =>
             new Promise(resolve => {
               if (!isAllowed(newData.key) || !isAllowed(newData.value)) {
-                console.log('Inputs are invalid. Please refer to doc.')
+                EventEmitter.dispatch('error', 'Inputs are invalid. Please refer to doc.');
                 throw new Error('Error on inputs.');
               }
               this.updateAttribute(newData, oldData);
@@ -157,7 +157,7 @@ class BasicMaterialTable extends React.Component {
                     return { ...prevState, data };
                   });
                 }
-              }, 250);
+              }, 500);
             }),
           onRowDelete: oldData =>
             new Promise(resolve => {
@@ -169,7 +169,7 @@ class BasicMaterialTable extends React.Component {
                   data.splice(data.indexOf(oldData), 1);
                   return { ...prevState, data };
                 });
-              }, 250);
+              }, 500);
             })
         }}
       />

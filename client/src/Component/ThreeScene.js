@@ -6,6 +6,8 @@ import axios from "axios";
 import { EventEmitter } from "./events";
 import * as Functions from "./functions";
 
+import CircularProgress from "@material-ui/core/CircularProgress";
+
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 class ThreeScene extends Component {
@@ -28,10 +30,9 @@ class ThreeScene extends Component {
       containerWidth: 0,
       containerHeight: 0,
       boolJSONload: false,
-      selectedItem: undefined
+      selectedItem: undefined,
+      isMounted: false
     };
-
-    this._isMounted = false;
 
     // JSON variables
     this.meshes = []; //contains the meshes of the objects
@@ -39,7 +40,7 @@ class ThreeScene extends Component {
   }
 
   componentDidMount() {
-    this._isMounted = true;
+
     window.addEventListener("resize", this.handleWindowResize);
     document
       .getElementById("ThreeScene")
@@ -93,11 +94,18 @@ class ThreeScene extends Component {
 
     Functions.loadCityObjects(this);
 
+    this.setState({
+      isMounted: true
+    });
+
     this.start();
   }
 
   componentWillUnmount() {
-    this._isMounted = false;
+    this.setState({
+      isMounted: false
+    });
+
     window.removeEventListener("resize", this.handleWindowResize);
     this.stop();
     this.mount.removeChild(this.renderer.domElement);
@@ -127,7 +135,7 @@ class ThreeScene extends Component {
   };
 
   handleWindowResize() {
-    if (this._isMounted) {
+    if (this.state.isMounted) {
       this.setState({
         containerWidth: ReactDOM.findDOMNode(this.mount).offsetWidth
       });
@@ -165,7 +173,7 @@ class ThreeScene extends Component {
       jsonName: file.jsonName
     });
 
-    console.log('After putCityModel ' + Date.now())
+    console.log("After putCityModel " + Date.now());
 
     //window.location.reload() is the easiest way but not the better as it impose to reload the whole app.
 
@@ -182,23 +190,28 @@ class ThreeScene extends Component {
   };
 
   handleClick = evt => {
-    Functions.getObjectAttributes(evt, this)
+    Functions.getObjectAttributes(evt, this);
   };
 
   render() {
     return (
-      <div
-        ref={mount => {
-          if (mount !== null) {
-            this.mount = mount;
-            if (!this._isMounted) {
-              this._isMounted = true;
-              this.handleWindowResize();
-              this.handleClick();
+      <React.Fragment>
+        <div
+          ref={mount => {
+            if (mount !== null) {
+              this.mount = mount;
+              if (!this.state.isMounted) {
+                this.setState({
+                  isMounted: true
+                });
+                this.handleWindowResize();
+                this.handleClick();
+              }
             }
-          }
-        }}
-      />
+          }}
+        />
+        {!this.state.boolJSONload ? <CircularProgress size={"4rem"} /> : null}
+      </React.Fragment>
     );
   }
 }
