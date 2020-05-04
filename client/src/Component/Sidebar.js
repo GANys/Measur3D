@@ -12,7 +12,7 @@ class Sidebar extends React.Component {
         {items.map((sidebarItem, index) => (
           <React.Fragment key={`${sidebarItem.name}${index}`}>
             {sidebarItem === "divider" ? (
-              <Divider className="divider" style={{ margin: "6px 0" }} />
+              <Divider className="divider" />
             ) : (
               <ListItem
                 key={index}

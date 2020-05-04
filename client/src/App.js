@@ -160,34 +160,34 @@ class App extends Component {
           </Collapse>
         </div>
         <React.Fragment>
-          <SplitPane
-            split="vertical"
-            minSize={200}
-            maxSize={500}
-            defaultSize="20%"
-          >
-            <div className="sidebar">
+          <SplitPane split="vertical">
+            <SplitPane split="horizontal">
+              <img src={logo_app} className="logo_app" alt="logo_app" />
               <SplitPane split="horizontal">
-                <img src={logo_app} className="logo_app" alt="logo_app"/>
-                <SplitPane split="horizontal" minSize={100} defaultSize={100}>
-                  <Dropzone minSize={100} defaultSize={100}/>
-                  <SplitPane split="horizontal" minSize={150} defaultSize={150}>
-                    <Sidebar items={items} showModal={this.showModal} />
-                    <div className="AttributeManager">
+                <Dropzone />
+                <SplitPane split="horizontal">
+                  <Sidebar items={items} showModal={this.showModal} />
+                  <div className="AttributeManager">
                     <Table />
-                    </div>
-                  </SplitPane>
+                  </div>
                 </SplitPane>
               </SplitPane>
-            </div>
-            <SplitPane split="horizontal" defaultSize="25%" primary="second">
-            <div id="ThreeScene">
-            <a href="http://geomatics.ulg.ac.be/home.php" rel="noopener">
-            <img src={logo_ugeom} className="logo_ugeom" alt="logo_ugeom"/>
-            </a >
-              <ThreeScene />
+            </SplitPane>
+            <SplitPane split="horizontal" primary="second">
+              <div id="ThreeScene">
+                <a href="http://geomatics.ulg.ac.be/home.php" rel="noopener">
+                  <img
+                    src={logo_ugeom}
+                    className="logo_ugeom"
+                    alt="logo_ugeom"
+                  />
+                </a>
+                <ThreeScene />
               </div>
+              <SplitPane split="vertical">
               <Chart />
+              <Chart />
+              </SplitPane>
             </SplitPane>
           </SplitPane>
           <Modal

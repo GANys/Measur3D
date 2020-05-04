@@ -188,10 +188,6 @@ class ThreeScene extends Component {
   render() {
     return (
       <div
-        style={{
-          width: window.innerWidth * 0.8,
-          height: window.innerHeight * 0.8
-        }}
         ref={mount => {
           if (mount !== null) {
             this.mount = mount;
