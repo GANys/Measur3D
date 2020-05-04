@@ -138,6 +138,7 @@ export async function loadCityObjects(threescene) {
           threescene.scene.add(coMesh);
           threescene.meshes.push(coMesh);
         }
+        
       }
     })
     .then(() => {
