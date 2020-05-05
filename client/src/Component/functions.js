@@ -96,6 +96,8 @@ export async function loadCityObjects(threescene) {
         for (var cityObj in json.CityObjects) {
           var object;
 
+          console.log(cityObj)
+
           object = await axios.get(
             "http://localhost:3001/api/getBuildingObject",
             {
@@ -104,6 +106,19 @@ export async function loadCityObjects(threescene) {
               }
             }
           );
+
+          console.log(object)
+
+          if (object.data == null) {
+            object = await axios.get(
+              "http://localhost:3001/api/getTINReliefObject",
+              {
+                params: {
+                  id: json.CityObjects[cityObj]
+                }
+              }
+            );
+          }
 
           object = object.data;
 
@@ -138,7 +153,7 @@ export async function loadCityObjects(threescene) {
           threescene.scene.add(coMesh);
           threescene.meshes.push(coMesh);
         }
-        
+
       }
     })
     .then(() => {
@@ -372,7 +387,7 @@ export async function getObjectAttributes(event, threescene) {
 
       threescene.HIGHLIGHTED = intersects[0].object;
       threescene.HIGHLIGHTED.currentHex = threescene.HIGHLIGHTED.material.emissive.getHex();
-      threescene.HIGHLIGHTED.material.emissive.setHex(0xff0000);
+      threescene.HIGHLIGHTED.material.emissive.setHex(0xffffff);
       threescene.HIGHLIGHTED.material.emissiveIntensity = 0.25
     }
   } else {

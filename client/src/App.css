@@ -139,6 +139,10 @@ div.AttributeManager {
   background: var(--background-color-hover);
 }
 
+.modal .modal_actions button:focus {
+  outline: none !important
+}
+
 /* -------------------------
   Sidebar general style
  ------------------------- */
@@ -170,7 +174,7 @@ div.sidebar-item-text {
 }
 
 /* Dropzone style on hover */
-.dropzone:hover {
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1:hover {
   background: var(--background-color-hover);
   cursor: pointer
 }
@@ -206,7 +210,8 @@ div.sidebar-item-text {
 
 /* Material-UI icons style */
 .MuiSvgIcon-root.sidebar-item-icon,
-span.MuiIconButton-label > svg {
+span.MuiIconButton-label > svg,
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1 > div > div > div > svg {
   color: var(--icon-color);
 }
 

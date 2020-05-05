@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
 let Buildings = require("./building.js");
+let TINRelief = require("./tinrelief.js");
 
 let CityModelSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -90,9 +91,8 @@ module.exports = {
             );
             break;
           case "TINRelief":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
+            var element_id = await TINRelief.insertTINRelief(element);
             break;
           case "TransportSquare":
             throw new Error(

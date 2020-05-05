@@ -122,6 +122,22 @@ router.get("/getBuildingObject", (req, res) => {
   }
 });
 
+router.get("/getTINReliefObject", (req, res) => {
+  if (typeof req.query.name != "undefined") {
+    mongoose.model("TINRelief").find({ name: req.query.name }, (err, data) => {
+      if (err) return res.json(err);
+      return res.json(data);
+    });
+  }
+
+  if (typeof req.query.id != "undefined") {
+    mongoose.model("TINRelief").findById(req.query.id, (err, data) => {
+      if (err) return res.json(err);
+      return res.json(data);
+    });
+  }
+});
+
 router.get("/getAllBuildingObject", (req, res) => {
   mongoose.model("Building").find({}, (err, data) => {
     if (err) return res.json(err);
@@ -145,21 +161,23 @@ router.post("/updateBuildingAttribute", async (req, res) => {
     .findOne({ name: req.body.jsonName }, (err, data) => {
       if (err) return res.json(err);
 
-      var attributes = data.attributes
+      var attributes = data.attributes;
 
-      if(req.body.value == "") { // delete
-        delete attributes[req.body.key]
-      } else if (req.body.old_key) { //update
-        delete attributes[req.body.old_key]
+      if (req.body.value == "") {
+        // delete
+        delete attributes[req.body.key];
+      } else if (req.body.old_key) {
+        //update
+        delete attributes[req.body.old_key];
         attributes[req.body.key] = req.body.value;
-      }
-      else { // add
+      } else {
+        // add
         attributes[req.body.key] = req.body.value;
       }
 
       mongoose
         .model("Building")
-        .update({ name: req.body.jsonName }, {attributes}, (err, data) => {
+        .update({ name: req.body.jsonName }, { attributes }, (err, data) => {
           if (err) return res.json(err);
 
           return res.sendStatus(200);

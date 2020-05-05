@@ -20,10 +20,6 @@ module.exports = {
   insertBuilding: async object => {
     var building = new Building(object);
 
-    if (mongoose.connection.readyState == 0) {
-      throw new Error("insertBuilding: disconnected from server.");
-    }
-
     try {
       let element = await building.save();
       return element.id;

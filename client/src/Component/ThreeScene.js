@@ -40,7 +40,6 @@ class ThreeScene extends Component {
   }
 
   componentDidMount() {
-
     window.addEventListener("resize", this.handleWindowResize);
     document
       .getElementById("ThreeScene")
@@ -190,6 +189,9 @@ class ThreeScene extends Component {
   };
 
   handleClick = evt => {
+    if (evt != undefined) {
+      if (evt.button != 0) return; // Only works if left mouse button is used
+    }
     Functions.getObjectAttributes(evt, this);
   };
 

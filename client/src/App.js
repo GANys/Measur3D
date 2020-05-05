@@ -26,6 +26,7 @@ import logo_app from "./logo_app.png";
 import styles from "./App.css";
 
 const items = [
+  "divider",
   { name: "home", label: "Home", content: "modal_home", Icon: HomeRoundedIcon },
   {
     name: "props",
