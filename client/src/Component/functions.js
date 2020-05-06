@@ -96,25 +96,23 @@ export async function loadCityObjects(threescene) {
         for (var cityObj in json.CityObjects) {
           var object;
 
-          console.log(cityObj)
-
           object = await axios.get(
-            "http://localhost:3001/api/getBuildingObject",
+            "http://localhost:3001/api/getObject",
             {
               params: {
-                id: json.CityObjects[cityObj]
+                id: json.CityObjects[cityObj],
+                CityObjectType: "Building"
               }
             }
           );
 
-          console.log(object)
-
           if (object.data == null) {
             object = await axios.get(
-              "http://localhost:3001/api/getTINReliefObject",
+              "http://localhost:3001/api/getObject",
               {
                 params: {
-                  id: json.CityObjects[cityObj]
+                  id: json.CityObjects[cityObj],
+                  CityObjectType: "TINRelief"
                 }
               }
             );
@@ -147,6 +145,7 @@ export async function loadCityObjects(threescene) {
           //create mesh
           var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
           coMesh.name = cityObj;
+          coMesh.CityObjectType = object.type
           coMesh.jsonName = json.name;
           coMesh.castShadow = true;
           coMesh.receiveShadow = true;
@@ -353,7 +352,7 @@ async function parseObject(object, json, geoms) {
 }
 
 //action if mouseclick (for getting attributes ofobjects)
-export async function getObjectAttributes(event, threescene) {
+export async function intersectMeshes(event, threescene) {
   //if no cityjson is loaded return
   // eslint-disable-next-line
   if (threescene.state.boolJSONload == false) {
@@ -374,6 +373,12 @@ export async function getObjectAttributes(event, threescene) {
   //if clicked on nothing return
   // eslint-disable-next-line
   if (intersects.length == 0) {
+    if (threescene.HIGHLIGHTED)
+      threescene.HIGHLIGHTED.material.emissive.setHex(
+        threescene.HIGHLIGHTED.currentHex
+      );
+
+    threescene.HIGHLIGHTED = null;
     return;
   }
 
@@ -402,9 +407,10 @@ export async function getObjectAttributes(event, threescene) {
   EventEmitter.dispatch("attObjectTitle", intersects[0].object.name);
 
   axios
-    .get("http://localhost:3001/api/getBuildingAttribute", {
+    .get("http://localhost:3001/api/getObjectAttribute", {
       params: {
-        name: intersects[0].object.name
+        name: intersects[0].object.name,
+        CityObjectType: intersects[0].object.CityObjectType
       }
     })
     .then(response => {

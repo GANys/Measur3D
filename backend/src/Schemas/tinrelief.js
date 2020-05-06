@@ -8,9 +8,8 @@ let TINGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       required: true,
-      default: "CompositeSolid"
-    },
-    lod: Number
+      enum: ["CompositeSurface"]
+    }
   })
 );
 

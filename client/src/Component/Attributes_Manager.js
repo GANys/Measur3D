@@ -87,27 +87,30 @@ class BasicMaterialTable extends React.Component {
   };
 
   addAttribute = async newData => {
-    await axios.post("http://localhost:3001/api/updateBuildingAttribute", {
+    await axios.post("http://localhost:3001/api/updateObjectAttribute", {
       key: newData.key,
       value: newData.value,
-      jsonName: this.state.tableTitle
+      jsonName: this.state.tableTitle,
+      CityObjectType: "Building"
     });
   };
 
   updateAttribute = async (newData, oldData) => {
-    await axios.post("http://localhost:3001/api/updateBuildingAttribute", {
+    await axios.post("http://localhost:3001/api/updateObjectAttribute", {
       old_key: oldData.key,
       key: newData.key,
       value: newData.value,
-      jsonName: this.state.tableTitle
+      jsonName: this.state.tableTitle,
+      CityObjectType: "Building"
     });
   };
 
   deleteAttribute = async oldData => {
-    await axios.post("http://localhost:3001/api/updateBuildingAttribute", {
+    await axios.post("http://localhost:3001/api/updateObjectAttribute", {
       key: oldData.key,
       value: '',
-      jsonName: this.state.tableTitle
+      jsonName: this.state.tableTitle,
+      CityObjectType: "Building"
     });
   };
 

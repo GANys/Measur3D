@@ -192,7 +192,7 @@ class ThreeScene extends Component {
     if (evt != undefined) {
       if (evt.button != 0) return; // Only works if left mouse button is used
     }
-    Functions.getObjectAttributes(evt, this);
+    Functions.intersectMeshes(evt, this);
   };
 
   render() {
