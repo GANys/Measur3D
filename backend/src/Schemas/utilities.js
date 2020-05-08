@@ -4,12 +4,23 @@ let GeometrySchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ["Solid", "CompositeSolid", "MultiSurface"],
+    enum: [
+      "MultiPoint",
+      "MultiLineString",
+      "MultiSurface",
+      "CompositeSurface",
+      "Solid",
+      "MultiSolid",
+      "CompositeSolid",
+      "GeometryInstance"
+    ], // Often erased. Still saved as documentation
     default: "Solid"
   },
-  lod: Number,
-  boundaries: [[Array]],
-  semantics: { surfaces: [Array], values: [Array] }
+  lod: { type: Number, required: true },
+  boundaries: { type: [[Array]], required: true },
+  semantics: { surfaces: [Array], values: [Array] },
+  material: {},
+  texture: {}
 });
 
 Geometry = mongoose.model("Geometry", GeometrySchema);

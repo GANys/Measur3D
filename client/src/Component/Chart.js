@@ -1,5 +1,4 @@
 import React from "react";
-import axios from "axios";
 
 class Chart extends React.Component {
   // initialize our state
@@ -39,7 +38,7 @@ class Chart extends React.Component {
   render() {
     const { data } = this.state;
 
-    return <div> </div>;
+    return <div> This panel will host the tools for managing data from sensors. </div>;
   }
 }
 

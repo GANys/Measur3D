@@ -110,13 +110,19 @@ module.exports = {
             );
             break;
           default:
-            throw new Error("insertCity: object is not a CityObject.");
+            throw new Error("insertCity: " + key + " is not a CityObject.");
         }
+
+        var cityobject = {}
+
+        cityobject["id"] = element_id
+        cityobject["type"] = element.type
+
       } catch (err) {
         console.warn(err.message);
       }
 
-      new_objects[object.jsonName + "_" + key] = element_id; // Add a reference to the building for the client - name of document
+      new_objects[object.jsonName + "_" + key] = cityobject; // Add a reference to the building for the client - name of document
     }
 
     object.json.CityObjects = new_objects;

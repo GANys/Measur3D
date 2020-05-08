@@ -6,7 +6,6 @@ const logger = require("morgan");
 const Data = require("./data");
 
 let Cities = require("./src/Schemas/citymodel.js");
-let Building = require("./src/Schemas/building.js");
 
 const server = "127.0.0.1:27017"; // REPLACE WITH YOUR DB SERVER
 const database = "citymodel"; // REPLACE WITH YOUR DB NAME
@@ -56,30 +55,23 @@ router.get("/getAllCityModelObject", (req, res) => {
 
 router.get("/getObject", (req, res) => {
   if (typeof req.query.name != "undefined") {
-    mongoose.model(req.query.CityObjectType).find({ name: req.query.name }, (err, data) => {
+    mongoose.model(req.query.CityObjectClass).find({ name: req.query.name }, (err, data) => {
       if (err) return res.json(err);
       return res.json(data);
     });
   }
 
   if (typeof req.query.id != "undefined") {
-    mongoose.model(req.query.CityObjectType).findById(req.query.id, (err, data) => {
+    mongoose.model(req.query.CityObjectClass).findById(req.query.id, (err, data) => {
       if (err) return res.json(err);
       return res.json(data);
     });
   }
 });
 
-router.get("/getAllBuildingObject", (req, res) => {
-  mongoose.model("Building").find({}, (err, data) => {
-    if (err) return res.json(err);
-    return res.json(data);
-  });
-});
-
 router.get("/getObjectAttribute", (req, res) => {
   mongoose
-    .model(req.query.CityObjectType)
+    .model(req.query.CityObjectClass)
     .findOne({ name: req.query.name }, "attributes", (err, data) => {
       if (err) return res.json(err);
 
@@ -89,7 +81,7 @@ router.get("/getObjectAttribute", (req, res) => {
 
 router.post("/updateObjectAttribute", async (req, res) => {
   mongoose
-    .model(req.body.CityObjectType)
+    .model(req.body.CityObjectClass)
     .findOne({ name: req.body.jsonName }, (err, data) => {
       if (err) return res.json(err);
 
@@ -112,7 +104,7 @@ router.post("/updateObjectAttribute", async (req, res) => {
       }
 
       mongoose
-        .model(req.body.CityObjectType)
+        .model(req.body.CityObjectClass)
         .update({ name: req.body.jsonName }, { attributes }, (err, data) => {
           if (err) return res.json(err);
 

@@ -49,6 +49,7 @@ class BasicMaterialTable extends React.Component {
     ],
     data: [],
     tableTitle: "Object attributes",
+    CityObjectClass: null
   };
 
   deleteRows = () => {
@@ -80,9 +81,12 @@ class BasicMaterialTable extends React.Component {
     });
   };
 
-  updateTitle = title => {
+  updateTitle = data => {
+    if (data == null) return;
+
     this.setState({
-      tableTitle: title
+      tableTitle: data.title,
+      CityObjectClass: data.type
     });
   };
 
@@ -91,7 +95,7 @@ class BasicMaterialTable extends React.Component {
       key: newData.key,
       value: newData.value,
       jsonName: this.state.tableTitle,
-      CityObjectType: "Building"
+      CityObjectClass: this.state.CityObjectClass
     });
   };
 
@@ -101,7 +105,7 @@ class BasicMaterialTable extends React.Component {
       key: newData.key,
       value: newData.value,
       jsonName: this.state.tableTitle,
-      CityObjectType: "Building"
+      CityObjectClass: this.state.CityObjectClass
     });
   };
 
@@ -110,7 +114,7 @@ class BasicMaterialTable extends React.Component {
       key: oldData.key,
       value: '',
       jsonName: this.state.tableTitle,
-      CityObjectType: "Building"
+      CityObjectClass: this.state.CityObjectClass
     });
   };
 

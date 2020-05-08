@@ -96,27 +96,12 @@ export async function loadCityObjects(threescene) {
         for (var cityObj in json.CityObjects) {
           var object;
 
-          object = await axios.get(
-            "http://localhost:3001/api/getObject",
-            {
-              params: {
-                id: json.CityObjects[cityObj],
-                CityObjectType: "Building"
-              }
+          object = await axios.get("http://localhost:3001/api/getObject", {
+            params: {
+              id: json.CityObjects[cityObj].id,
+              CityObjectClass: json.CityObjects[cityObj].type
             }
-          );
-
-          if (object.data == null) {
-            object = await axios.get(
-              "http://localhost:3001/api/getObject",
-              {
-                params: {
-                  id: json.CityObjects[cityObj],
-                  CityObjectType: "TINRelief"
-                }
-              }
-            );
-          }
+          });
 
           object = object.data;
 
@@ -145,14 +130,13 @@ export async function loadCityObjects(threescene) {
           //create mesh
           var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
           coMesh.name = cityObj;
-          coMesh.CityObjectType = object.type
+          coMesh.CityObjectClass = object.type;
           coMesh.jsonName = json.name;
           coMesh.castShadow = true;
           coMesh.receiveShadow = true;
           threescene.scene.add(coMesh);
           threescene.meshes.push(coMesh);
         }
-
       }
     })
     .then(() => {
@@ -378,6 +362,9 @@ export async function intersectMeshes(event, threescene) {
         threescene.HIGHLIGHTED.currentHex
       );
 
+      EventEmitter.dispatch("attObjectTitle", ("Object attributes", null));
+      EventEmitter.dispatch("attObject", {});
+
     threescene.HIGHLIGHTED = null;
     return;
   }
@@ -393,7 +380,7 @@ export async function intersectMeshes(event, threescene) {
       threescene.HIGHLIGHTED = intersects[0].object;
       threescene.HIGHLIGHTED.currentHex = threescene.HIGHLIGHTED.material.emissive.getHex();
       threescene.HIGHLIGHTED.material.emissive.setHex(0xffffff);
-      threescene.HIGHLIGHTED.material.emissiveIntensity = 0.25
+      threescene.HIGHLIGHTED.material.emissiveIntensity = 0.25;
     }
   } else {
     if (threescene.HIGHLIGHTED)
@@ -404,13 +391,13 @@ export async function intersectMeshes(event, threescene) {
     threescene.HIGHLIGHTED = null;
   }
 
-  EventEmitter.dispatch("attObjectTitle", intersects[0].object.name);
+  EventEmitter.dispatch("attObjectTitle", {title: intersects[0].object.name, type: intersects[0].object.CityObjectClass});
 
   axios
     .get("http://localhost:3001/api/getObjectAttribute", {
       params: {
         name: intersects[0].object.name,
-        CityObjectType: intersects[0].object.CityObjectType
+        CityObjectClass: intersects[0].object.CityObjectClass
       }
     })
     .then(response => {

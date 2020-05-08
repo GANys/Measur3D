@@ -9,6 +9,9 @@ import * as Functions from "./functions";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
 class ThreeScene extends Component {
   constructor(props) {
@@ -53,14 +56,14 @@ class ThreeScene extends Component {
     this.camera = new THREE.PerspectiveCamera(
       60, // Field of view
       width / height, // Aspect ratio
-      0.001, // Near clipping pane
+      0.01, // Near clipping pane
       10000 // Far clipping pane
     );
     this.camera.position.z = 2;
 
     //ADD RENDERER
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setClearColor("#363636");
+    this.renderer.setClearColor("#000000");
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
 
