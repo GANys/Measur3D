@@ -17,7 +17,7 @@ let GenericCityObjectSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, required: true, default: "GenericCityObject" },
   geometry: {
-    type: [mongoose.model("GenericCityObjectGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
+    type: [mongoose.model("GenericCityObjectGeometry").schema],
     required: true
   },
   attributes: {}

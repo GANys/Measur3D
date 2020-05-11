@@ -9,9 +9,6 @@ import * as Functions from "./functions";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
 class ThreeScene extends Component {
   constructor(props) {
@@ -192,7 +189,9 @@ class ThreeScene extends Component {
   };
 
   handleClick = evt => {
+    // eslint-disable-next-line
     if (evt != undefined) {
+      // eslint-disable-next-line
       if (evt.button != 0) return; // Only works if left mouse button is used
     }
     Functions.intersectMeshes(evt, this);

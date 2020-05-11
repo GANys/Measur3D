@@ -20,7 +20,7 @@ import GitHubIcon from "@material-ui/icons/GitHub";
 import { EventEmitter } from "./Component/events";
 
 import logo_ugeom from "./logo_geomatics.png";
-import logo_app from "./logo_app.png";
+import logo_app from "./logo_app_white.png";
 
 // eslint-disable-next-line
 import styles from "./App.css";

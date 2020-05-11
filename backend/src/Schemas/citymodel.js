@@ -1,7 +1,17 @@
 let mongoose = require("mongoose");
 
-let Buildings = require("./building.js");
+let Bridge = require("./bridge.js");
+let Building = require("./building.js");
+let CityFurniture = require("./cityfurniture.js");
+let CityObjectGroup = require("./cityobjectgroup.js");
+let GenericCityObject = require("./genericcityobject.js");
+let LandUse = require("./landuse.js");
+let PlantCover = require("./plantcover.js");
+let SolitaryVegetationObject = require("./solitaryvegetationobject.js");
 let TINRelief = require("./tinrelief.js");
+let Transportation = require("./transportation.js");
+let Tunnel = require("./tunnel.js");
+let WaterBody = require("./waterbody.js");
 
 let CityModelSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -43,81 +53,68 @@ module.exports = {
         switch (element.type) {
           case "Building":
             element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
-            var element_id = await Buildings.insertBuilding(element);
+            var element_id = await Building.insertBuilding(element);
             break;
           case "Bridge":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Bridge.insertBridge(element);
             break;
           case "CityObjectGroup":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await CityObjectGroup.insertCityObjectGroup(element);
             break;
           case "CityFurniture":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await CityFurniture.insertCityFurniture(element);
             break;
           case "GenericCityObject":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await GenericCityObject.insertGenericCityObject(element);
             break;
           case "LandUse":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await LandUse.insertLandUse(element);
             break;
           case "PlantCover":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await PlantCover.insertPlantCover(element);
             break;
           case "Railway":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Transportation.insertTransportation(element);
             break;
           case "Road":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Transportation.insertTransportation(element);
             break;
           case "SolitaryVegetationObject":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(element);
             break;
           case "TINRelief":
             element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
             var element_id = await TINRelief.insertTINRelief(element);
             break;
           case "TransportSquare":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Transportation.insertTransportation(element);
             break;
           case "Tunnel":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Tunnel.insertTunnel(element);
             break;
           case "WaterBody":
-            throw new Error(
-              element.type + " are not supported in the current version."
-            );
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await WaterBody.insertWaterBody(element);
             break;
           default:
             throw new Error("insertCity: " + key + " is not a CityObject.");
         }
 
-        var cityobject = {}
+        var cityobject = {};
 
-        cityobject["id"] = element_id
-        cityobject["type"] = element.type
-
+        cityobject["id"] = element_id;
+        cityobject["type"] = element.type;
       } catch (err) {
         console.warn(err.message);
       }

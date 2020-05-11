@@ -17,7 +17,7 @@ let CityFurnitureSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, required: true, default: "CityFurniture" },
   geometry: {
-    type: [mongoose.model("CityFurnitureGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
+    type: [mongoose.model("CityFurnitureGeometry").schema],
     required: true
   },
   attributes: {}

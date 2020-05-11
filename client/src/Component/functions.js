@@ -4,6 +4,7 @@ Code is available on https://github.com/tudelft3d/CityJSON-viewer/
 This concerns the functions related to the object rendering.
 It has been slightly modified to handle React components and integrated within the MERN app.
 */
+
 import * as THREE from "three";
 import * as earcut from "./earcut";
 
@@ -96,10 +97,19 @@ export async function loadCityObjects(threescene) {
         for (var cityObj in json.CityObjects) {
           var object;
 
+          var cityObjectType = json.CityObjects[cityObj].type;
+
+          if (
+            ["Road", "Railway", "TransportSquare"].includes(
+              json.CityObjects[cityObj].type
+            )
+          )
+            cityObjectType = "Transportation";
+
           object = await axios.get("http://localhost:3001/api/getObject", {
             params: {
               id: json.CityObjects[cityObj].id,
-              CityObjectClass: json.CityObjects[cityObj].type
+              CityObjectClass: cityObjectType
             }
           });
 
@@ -110,6 +120,7 @@ export async function loadCityObjects(threescene) {
             var returnChildren = await parseObject(
               object,
               json,
+              cityObj,
               threescene.geoms
             );
 
@@ -224,8 +235,12 @@ function getStats(vertices) {
 }
 
 //convert json file to viwer-object
-async function parseObject(object, json, geoms) {
+async function parseObject(object, json, cityObj, geoms) {
   var boundaries;
+
+  if (json.CityObjects[cityObj].children != undefined) {
+    return json.CityObjects[cityObj].children;
+  }
 
   //create geometry and empty list for the vertices
   var geom = new THREE.Geometry();
@@ -362,8 +377,8 @@ export async function intersectMeshes(event, threescene) {
         threescene.HIGHLIGHTED.currentHex
       );
 
-      EventEmitter.dispatch("attObjectTitle", ("Object attributes", null));
-      EventEmitter.dispatch("attObject", {});
+    EventEmitter.dispatch("attObjectTitle", ("Object attributes", null));
+    EventEmitter.dispatch("attObject", {});
 
     threescene.HIGHLIGHTED = null;
     return;
@@ -391,7 +406,10 @@ export async function intersectMeshes(event, threescene) {
     threescene.HIGHLIGHTED = null;
   }
 
-  EventEmitter.dispatch("attObjectTitle", {title: intersects[0].object.name, type: intersects[0].object.CityObjectClass});
+  EventEmitter.dispatch("attObjectTitle", {
+    title: intersects[0].object.name,
+    type: intersects[0].object.CityObjectClass
+  });
 
   axios
     .get("http://localhost:3001/api/getObjectAttribute", {

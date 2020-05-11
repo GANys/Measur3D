@@ -18,7 +18,7 @@ let TINReliefSchema = new mongoose.Schema({
   type: { type: String, required: true, default: "TINRelief" },
   geographicalExtent: [Number],
   geometry: {
-    type: [mongoose.model("TINGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
+    type: [mongoose.model("TINGeometry").schema],
     required: true
   },
   attributes: {}

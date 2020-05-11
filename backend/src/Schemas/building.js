@@ -27,7 +27,7 @@ let BuildingSchema = new mongoose.Schema({
   type: { type: String, default: "Building" },
   geographicalExtent: [Number],
   geometry: {
-    type: [mongoose.model("BuildingGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
+    type: [mongoose.model("BuildingGeometry").schema],
     required: true
   },
   children: [],

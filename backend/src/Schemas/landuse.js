@@ -17,7 +17,7 @@ let LandUseSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, required: true, default: "LandUse" },
   geometry: {
-    type: [mongoose.model("LandUseGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
+    type: [mongoose.model("LandUseGeometry").schema],
     required: true
   },
   attributes: {}

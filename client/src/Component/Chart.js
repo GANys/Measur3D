@@ -36,8 +36,6 @@ class Chart extends React.Component {
   // it is easy to understand their functions when you
   // see them render into our screen
   render() {
-    const { data } = this.state;
-
     return <div> This panel will host the tools for managing data from sensors. </div>;
   }
 }

@@ -17,7 +17,7 @@ let PlantCoverSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, required: true, default: "PlantCover" },
   geometry: {
-    type: [mongoose.model("PlantCoverGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
+    type: [mongoose.model("PlantCoverGeometry").schema],
     required: true
   },
   attributes: {}

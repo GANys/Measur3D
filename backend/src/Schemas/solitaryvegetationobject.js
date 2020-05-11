@@ -5,11 +5,7 @@ let Geometry = require("./utilities.js");
 let SolitaryVegetationObjectGeometry = mongoose.model("Geometry").discriminator(
   "SolitaryVegetationObjectGeometry",
   new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: ["MultiPoint", "MultiLineString", "MultiSurface", "CompositeSurface", "Solid", "CompositeSolid"]
-    }
+    lod: {required: false}
   })
 );
 
@@ -17,8 +13,8 @@ let SolitaryVegetationObjectSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, required: true, default: "SolitaryVegetationObject" },
   geometry: {
-    type: [mongoose.model("SolitaryVegetationObjectGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
-    required: true
+    type: [mongoose.model("SolitaryVegetationObjectGeometry").schema],
+    required: false
   },
   attributes: {}
 });

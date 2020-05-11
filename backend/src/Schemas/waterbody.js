@@ -26,7 +26,7 @@ let WaterBodySchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, required: true, default: "WaterBody" },
   geometry: {
-    type: [mongoose.model("WaterBodyGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
+    type: [mongoose.model("WaterBodyGeometry").schema],
     required: true
   },
   attributes: {}

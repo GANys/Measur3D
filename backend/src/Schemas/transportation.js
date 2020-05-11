@@ -32,7 +32,7 @@ let TransportationSchema = new mongoose.Schema({
     enum: ["Road", "Railway", "TransportSquare"]
   },
   geometry: {
-    type: [mongoose.model("TransportationGeometry").schema], // type: [mongoose.Schema.Types.ObjectId], if new collections is needed in the future
+    type: [mongoose.model("TransportationGeometry").schema],
     required: true
   },
   attributes: {}
