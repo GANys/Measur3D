@@ -99,12 +99,26 @@ export async function loadCityObjects(threescene) {
 
           var cityObjectType = json.CityObjects[cityObj].type;
 
-          if (
-            ["Road", "Railway", "TransportSquare"].includes(
-              json.CityObjects[cityObj].type
-            )
-          )
-            cityObjectType = "Transportation";
+          switch (json.CityObjects[cityObj].type) {
+            case "BuildingPart":
+              cityObjectType = "Building";
+              break;
+            case "Road":
+            case "Railway":
+            case "TransportSquare":
+              cityObjectType = "Transportation";
+              break;
+            case "TunnelPart":
+              cityObjectType = "Tunnel";
+              break;
+            case "BridgePart":
+              cityObjectType = "Bridge";
+              break;
+            case "BridgeConstructionElement":
+              cityObjectType = "BridgeInstallation";
+              break;
+            default:
+          }
 
           object = await axios.get("http://localhost:3001/api/getObject", {
             params: {
@@ -411,11 +425,31 @@ export async function intersectMeshes(event, threescene) {
     type: intersects[0].object.CityObjectClass
   });
 
+  var cityObjectType = intersects[0].object.CityObjectClass;
+
+  switch (cityObjectType) {
+    case "Road":
+    case "Railway":
+    case "TransportSquare":
+      cityObjectType = "Transportation";
+      break;
+    case "TunnelPart":
+      cityObjectType = "Tunnel";
+      break;
+    case "BridgePart":
+      cityObjectType = "Bridge";
+      break;
+    case "BridgeConstructionElement":
+      cityObjectType = "BridgeInstallation";
+      break;
+    default:
+  }
+
   axios
     .get("http://localhost:3001/api/getObjectAttribute", {
       params: {
         name: intersects[0].object.name,
-        CityObjectClass: intersects[0].object.CityObjectClass
+        CityObjectClass: cityObjectType
       }
     })
     .then(response => {
