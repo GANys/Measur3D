@@ -91,7 +91,7 @@ class BasicMaterialTable extends React.Component {
   };
 
   addAttribute = async newData => {
-    await axios.post("http://localhost:3001/api/updateObjectAttribute", {
+    await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       key: newData.key,
       value: newData.value,
       jsonName: this.state.tableTitle,
@@ -100,7 +100,7 @@ class BasicMaterialTable extends React.Component {
   };
 
   updateAttribute = async (newData, oldData) => {
-    await axios.post("http://localhost:3001/api/updateObjectAttribute", {
+    await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       old_key: oldData.key,
       key: newData.key,
       value: newData.value,
@@ -110,7 +110,7 @@ class BasicMaterialTable extends React.Component {
   };
 
   deleteAttribute = async oldData => {
-    await axios.post("http://localhost:3001/api/updateObjectAttribute", {
+    await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       key: oldData.key,
       value: '',
       jsonName: this.state.tableTitle,

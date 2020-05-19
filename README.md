@@ -1,4 +1,4 @@
-![Measur3D logo](https://github.com/GANys/Measur3D/tree/dev/client/src/logo_app_black.png | width=250)
+![Measur3D logo](client/src/logo_app_black.png | width=250)
 
 # Measur3D
 
@@ -12,7 +12,7 @@ This tool is built as a high-level MERN application. It therefore allows develop
 
 A MongoDB server is mandatory. The choice between MongoDB Atlas, Community or Enterprise Server is left open.
 
-Everything else is packaged in this repository and install thanks to npm.
+Everything else is packaged in this repository and installed thanks to npm.
 
 ## Installing
 
@@ -53,7 +53,7 @@ Documentation of the server API can be found in the [backend folder](https://git
 
 ## Acknowledgments
 
-The management of the 3D meshes is based on the [Ninja](https://ninja.cityjson.org/) viewer and its features. This tool is developed under the supervision of Prof. Hugo Ledoux by the GeoInformation research Group from TUDelft.
+The management of the 3D meshes is based on the [Ninja](https://ninja.cityjson.org/) viewer and its features. This tool is developed under the supervision of [Hugo Ledoux](https://twitter.com/hugoledoux) by the GeoInformation research Group from TUDelft.
 
 ## Authors
 
@@ -61,7 +61,7 @@ The management of the 3D meshes is based on the [Ninja](https://ninja.cityjson.o
 
 This project is part of the PhD Thesis of GANys under the supervision of [Prof. Roland Billen](https://twitter.com/RolandBillen) - [Geomatics Unit](http://geomatics.ulg.ac.be/home.php), University of Liège, Belgium. It is also part of the SIG3.0 project funded by the [National Fund for Scientific Research](https://www.frs-fnrs.be/en), Belgium.
 
-![Measur3D logo](https://github.com/GANys/Measur3D/tree/dev/client/src/logo_geomatics.png | width=250)
+![Measur3D logo](client/src/logo_geomatics.png | width=250)
 
 ## License
 

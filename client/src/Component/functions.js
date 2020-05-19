@@ -39,7 +39,7 @@ var ALLCOLOURS = {
 //convert CityObjects to mesh and add them to the viewer
 export async function loadCityObjects(threescene) {
   await axios
-    .get("http://localhost:3001/api/getAllCityModelObject")
+    .get("http://localhost:3001/measur3d/getAllCityModels")
     .then(async responseCities => {
       // eslint-disable-next-line
       if (responseCities.data === undefined || responseCities.data.length == 0)
@@ -120,7 +120,7 @@ export async function loadCityObjects(threescene) {
             default:
           }
 
-          object = await axios.get("http://localhost:3001/api/getObject", {
+          object = await axios.get("http://localhost:3001/measur3d/getObject", {
             params: {
               id: json.CityObjects[cityObj].id,
               CityObjectClass: cityObjectType
@@ -446,7 +446,7 @@ export async function intersectMeshes(event, threescene) {
   }
 
   axios
-    .get("http://localhost:3001/api/getObjectAttribute", {
+    .get("http://localhost:3001/measur3d/getObjectAttributes", {
       params: {
         name: intersects[0].object.name,
         CityObjectClass: cityObjectType

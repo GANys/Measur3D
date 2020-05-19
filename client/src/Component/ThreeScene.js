@@ -167,12 +167,10 @@ class ThreeScene extends Component {
   };
 
   handleFile = async file => {
-    await axios.post("http://localhost:3001/api/putCityModel", {
+    await axios.post("http://localhost:3001/measur3d/uploadCityModel", {
       json: file.content,
       jsonName: file.jsonName
     });
-
-    console.log("After putCityModel " + Date.now());
 
     //window.location.reload() is the easiest way but not the better as it impose to reload the whole app.
 
@@ -181,7 +179,7 @@ class ThreeScene extends Component {
 
     //already render loaded objects
     this.renderer.render(this.scene, this.camera);
-    console.log("JSON file loaded");
+    EventEmitter.dispatch("info", "CityJSONfile loaded.")
 
     this.setState({
       boolJSONload: true

@@ -11,6 +11,7 @@ const server = "127.0.0.1:27017"; // REPLACE WITH YOUR DB SERVER
 const database = "citymodel"; // REPLACE WITH YOUR DB NAME
 
 const API_PORT = 3001;
+
 const app = express();
 app.use(cors());
 const router = express.Router();
@@ -35,60 +36,87 @@ mongoose
     );
   });
 
-let db = mongoose.connection;
+let db = mongoose.connection; // Instantiate the connection
 
 // checks if connection with the database is successful
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
 
-router.post("/putCityModel", (req, res) => {
+router.post("/uploadCityModel", (req, res) => {
   Cities.insertCity(req.body).then(function() {
-    return res.sendStatus(200);
+    return res.status(201).send({success: "City model imported with success !"});
   });
 });
 
-router.get("/getAllCityModelObject", (req, res) => {
+router.get("/getAllCityModels", (req, res) => {
   mongoose.model("CityModel").find({}, (err, data) => {
-    if (err) return res.json(err);
+    if (err) {
+      return res.status(500).send({ error: "There is no CityModels." });
+    }
+    res.status(200);
     return res.json(data);
   });
 });
 
 router.get("/getObject", (req, res) => {
   if (typeof req.query.name != "undefined") {
-    mongoose.model(req.query.CityObjectClass).find({ name: req.query.name }, (err, data) => {
-      if (err) return res.json(err);
-      return res.json(data);
-    });
-  }
-
-  if (typeof req.query.id != "undefined") {
-    mongoose.model(req.query.CityObjectClass).findById(req.query.id, (err, data) => {
-      if (err) return res.json(err);
-      return res.json(data);
-    });
+    mongoose
+      .model(req.query.CityObjectClass)
+      .find({ name: req.query.name }, (err, data) => {
+        if (err) return res.status(500).send(err);
+        return res.json(data);
+      });
+  } else if (typeof req.query.id != "undefined") {
+    mongoose
+      .model(req.query.CityObjectClass)
+      .findById(req.query.id, (err, data) => {
+        if (err) return res.status(500).send(err);
+        return res.json(data);
+      });
+  } else {
+    return res
+      .status(400)
+      .send({
+        error:
+          "Params are not valid - getObject could not find Object in Collection."
+      });
   }
 });
 
-router.get("/getObjectAttribute", (req, res) => {
-  mongoose
-    .model(req.query.CityObjectClass)
-    .findOne({ name: req.query.name }, "attributes", (err, data) => {
-      if (err) return res.json(err);
-
-      return res.json(data);
-    });
+router.get("/getObjectAttributes", (req, res) => {
+  if (typeof req.query.name != "undefined") {
+    mongoose
+      .model(req.query.CityObjectClass)
+      .findOne({ name: req.query.name }, "attributes", (err, data) => {
+        if (err) return res.status(500).send(err);
+        return res.json(data);
+      });
+  } else if (typeof req.query.id != "undefined") {
+    mongoose
+      .model(req.query.CityObjectClass)
+      .findById(req.query.id, "attributes", (err, data) => {
+        if (err) return res.status(500).send(err);
+        return res.json(data);
+      });
+  } else {
+    return res
+      .status(400)
+      .send({
+        error:
+          "Params are not valid - getObjectAttributes could not find Object in Collection."
+      });
+  }
 });
 
-router.post("/updateObjectAttribute", async (req, res) => {
+router.put("/updateObjectAttribute", async (req, res) => {
   mongoose
     .model(req.body.CityObjectClass)
     .findOne({ name: req.body.jsonName }, (err, data) => {
-      if (err) return res.json(err);
+      if (err) return res.status(500).send(err);
 
       var attributes = data.attributes;
 
       if (attributes == null) {
-        attributes = {}
+        attributes = {};
       }
 
       if (req.body.value == "") {
@@ -106,15 +134,15 @@ router.post("/updateObjectAttribute", async (req, res) => {
       mongoose
         .model(req.body.CityObjectClass)
         .update({ name: req.body.jsonName }, { attributes }, (err, data) => {
-          if (err) return res.json(err);
+          if (err) return res.status(500).send(err);
 
-          return res.sendStatus(200);
+          return res.status(200).send({ success: "Object updated."});
         });
     });
 });
 
 // append /api for our http requests
-app.use("/api", router);
+app.use("/measur3d", router);
 
 // launch our backend into a port
 app.listen(API_PORT, () => console.log(`LISTENING ON PORT ${API_PORT}`));
