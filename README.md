@@ -1,4 +1,4 @@
-<img text-align="center" src="client/src/logo_app_black.png" alt="Measur3D logo">
+<center><img src="client/src/logo_app_black.png" alt="Measur3D logo"></center>
 
 # Measur3D
 
@@ -61,7 +61,7 @@ The management of the 3D meshes is based on the [Ninja](https://ninja.cityjson.o
 
 This project is part of the PhD Thesis of GANys under the supervision of [Prof. Roland Billen](https://twitter.com/RolandBillen) - [Geomatics Unit](http://geomatics.ulg.ac.be/home.php), University of Liège, Belgium. It is also part of the SIG3.0 project funded by the [National Fund for Scientific Research](https://www.frs-fnrs.be/en), Belgium.
 
-![Measur3D logo](client/src/logo_geomatics.png)
+<center>![UGeom logo](client/src/logo_geomatics.png)</center>
 
 ## License
 
