@@ -100,7 +100,13 @@ class BasicMaterialTable extends React.Component {
   };
 
   updateTitle = data => {
-    if (data == null) return;
+    if (data == null) {
+      this.setState({
+        tableTitle: "Object attributes",
+        CityObjectClass: null
+      });
+      return;
+    }
 
     this.setState({
       tableTitle: data.title,
@@ -147,9 +153,7 @@ class BasicMaterialTable extends React.Component {
         }}
         title={
           <div style={{ display: "flex", alignItems: "center" }}>
-          <div className="COClassIcon" >
-            {map[this.state.CityObjectClass]}
-            </div>
+            <div className="COClassIcon">{map[this.state.CityObjectClass]}</div>
             {this.state.tableTitle}
           </div>
         }
