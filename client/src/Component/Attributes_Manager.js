@@ -14,6 +14,24 @@ import Edit from "@material-ui/icons/Edit";
 import Remove from "@material-ui/icons/Remove";
 import ViewColumn from "@material-ui/icons/ViewColumn";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+import {
+  faBuilding,
+  faArchway,
+  faStoreAlt,
+  faCubes,
+  faCube,
+  faImage,
+  faLeaf,
+  faTree,
+  faMountain,
+  faCar,
+  faTrain,
+  faDotCircle,
+  faWater
+} from "@fortawesome/free-solid-svg-icons";
+
 const tableIcons = {
   Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
   Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
@@ -31,7 +49,7 @@ class BasicMaterialTable extends React.Component {
   constructor() {
     super();
 
-    this.addAttribute = this.addAttribute.bind(this)
+    this.addAttribute = this.addAttribute.bind(this);
     this.updateAttribute = this.updateAttribute.bind(this);
     this.deleteAttribute = this.deleteAttribute.bind(this);
 
@@ -112,7 +130,7 @@ class BasicMaterialTable extends React.Component {
   deleteAttribute = async oldData => {
     await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       key: oldData.key,
-      value: '',
+      value: "",
       jsonName: this.state.tableTitle,
       CityObjectClass: this.state.CityObjectClass
     });
@@ -127,7 +145,14 @@ class BasicMaterialTable extends React.Component {
           draggable: false,
           sorting: false
         }}
-        title={this.state.tableTitle}
+        title={
+          <div style={{ display: "flex", alignItems: "center" }}>
+          <div className="COClassIcon" >
+            {map[this.state.CityObjectClass]}
+            </div>
+            {this.state.tableTitle}
+          </div>
+        }
         icons={tableIcons}
         columns={this.state.columns}
         data={this.state.data}
@@ -135,8 +160,11 @@ class BasicMaterialTable extends React.Component {
           onRowAdd: newData =>
             new Promise(resolve => {
               if (!isAllowed(newData.key) || !isAllowed(newData.value)) {
-                EventEmitter.dispatch('error', 'Inputs are invalid. Please refer to doc.');
-                throw new Error('Error on inputs.');
+                EventEmitter.dispatch(
+                  "error",
+                  "Inputs are invalid. Please refer to doc."
+                );
+                throw new Error("Error on inputs.");
               }
               this.addAttribute(newData);
               setTimeout(() => {
@@ -151,8 +179,11 @@ class BasicMaterialTable extends React.Component {
           onRowUpdate: (newData, oldData) =>
             new Promise(resolve => {
               if (!isAllowed(newData.key) || !isAllowed(newData.value)) {
-                EventEmitter.dispatch('error', 'Inputs are invalid. Please refer to doc.');
-                throw new Error('Error on inputs.');
+                EventEmitter.dispatch(
+                  "error",
+                  "Inputs are invalid. Please refer to doc."
+                );
+                throw new Error("Error on inputs.");
               }
               this.updateAttribute(newData, oldData);
               setTimeout(() => {
@@ -183,6 +214,30 @@ class BasicMaterialTable extends React.Component {
     );
   }
 }
+
+var map = new Object(); // Mapping between CityObject Classes and their relative icons
+
+map["Building"] = <FontAwesomeIcon icon={faBuilding} />;
+map["BuildingPart"] = <FontAwesomeIcon icon={faBuilding} />;
+map["BuildingInstallation"] = <FontAwesomeIcon icon={faBuilding} />;
+map["Bridge"] = <FontAwesomeIcon icon={faArchway} />;
+map["BridgePart"] = <FontAwesomeIcon icon={faArchway} />;
+map["BridgeInstallation"] = <FontAwesomeIcon icon={faArchway} />;
+map["BridgeConstructionElement"] = <FontAwesomeIcon icon={faArchway} />;
+map["CityObjectGroup"] = <FontAwesomeIcon icon={faCubes} />;
+map["CityFurniture"] = <FontAwesomeIcon icon={faStoreAlt} />;
+map["GenericCityObject"] = <FontAwesomeIcon icon={faCube} />;
+map["LandUse"] = <FontAwesomeIcon icon={faImage} />;
+map["PlantCover"] = <FontAwesomeIcon icon={faLeaf} />;
+map["Railway"] = <FontAwesomeIcon icon={faTrain} />;
+map["Road"] = <FontAwesomeIcon icon={faCar} />;
+map["TransportSquare"] = <FontAwesomeIcon icon={faCar} />;
+map["SolitaryVegetationObject"] = <FontAwesomeIcon icon={faTree} />;
+map["TINRelief"] = <FontAwesomeIcon icon={faMountain} />;
+map["Tunnel"] = <FontAwesomeIcon icon={faDotCircle} />;
+map["TunnelPart"] = <FontAwesomeIcon icon={faDotCircle} />;
+map["TunnelInstallation"] = <FontAwesomeIcon icon={faDotCircle} />;
+map["WaterBody"] = <FontAwesomeIcon icon={faWater} />;
 
 function isAllowed(string) {
   var RegEx = /^[a-zA-Z0-9_]+$/i;

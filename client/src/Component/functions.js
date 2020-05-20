@@ -425,6 +425,8 @@ export async function intersectMeshes(event, threescene) {
     type: intersects[0].object.CityObjectClass
   });
 
+  console.log(intersects[0].object.CityObjectClass)
+
   var cityObjectType = intersects[0].object.CityObjectClass;
 
   switch (cityObjectType) {

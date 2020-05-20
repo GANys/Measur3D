@@ -209,10 +209,15 @@ div.sidebar-item-text {
 }
 
 /* Material-UI icons style */
+.COClassIcon,
 .MuiSvgIcon-root.sidebar-item-icon,
 span.MuiIconButton-label > svg,
 #root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1 > div > div > div > svg {
   color: var(--icon-color);
+}
+
+.COClassIcon {
+  padding-right: 6px
 }
 
 .MuiCircularProgress-colorPrimary {
@@ -285,7 +290,7 @@ tbody.MuiTableBody-root > tr:hover {
 
 /* Attribute Manager title */
 .MTableToolbar-title-84 > h6 {
-  font-size: 1rem;
+  font-size: 1rem
 }
 
 /* Scroll handle style */
