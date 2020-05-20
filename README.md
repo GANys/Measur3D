@@ -1,4 +1,4 @@
-![Measur3D logo](client/src/logo_app_black.png)  <!-- .element height="50%" width="50%" -->
+![Measur3D logo](client/src/logo_app_black.png)  <!-- .element style="height="50%" width="50%"" -->
 
 # Measur3D
 
