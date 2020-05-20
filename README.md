@@ -1,4 +1,4 @@
-<img align="center" src="client/src/logo_app_black.png" alt="Measur3D logo">
+<img text-align="center" src="client/src/logo_app_black.png" alt="Measur3D logo">
 
 # Measur3D
 
