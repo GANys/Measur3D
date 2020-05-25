@@ -43,15 +43,58 @@ db.on("error", console.error.bind(console, "MongoDB connection error:"));
 
 router.post("/uploadCityModel", (req, res) => {
   Cities.insertCity(req.body).then(function() {
-    return res.status(201).send({success: "City model imported with success !"});
+    return res
+      .status(201)
+      .send({ success: "City model imported with success !" });
   });
 });
 
 router.get("/getAllCityModels", (req, res) => {
-  mongoose.model("CityModel").find({}, (err, data) => {
+  mongoose.model("CityModel").find({}, async (err, data) => {
     if (err) {
       return res.status(500).send({ error: "There is no CityModels." });
     }
+
+    for (var citymodel of data) {
+      for (var cityobject in citymodel.CityObjects) {
+
+        var cityObjectType = citymodel.CityObjects[cityobject].type;
+        var cityObjectName = cityobject
+
+        switch (cityObjectType) {
+          case "BuildingPart":
+            cityObjectType = "Building";
+            break;
+          case "Road":
+          case "Railway":
+          case "TransportSquare":
+            cityObjectType = "Transportation";
+            break;
+          case "TunnelPart":
+            cityObjectType = "Tunnel";
+            break;
+          case "BridgePart":
+            cityObjectType = "Bridge";
+            break;
+          case "BridgeConstructionElement":
+            cityObjectType = "BridgeInstallation";
+            break;
+          default:
+        }
+
+        citymodel.CityObjects[cityObjectName] = await mongoose
+          .model(cityObjectType)
+          .findById(
+            citymodel.CityObjects[cityobject].id,
+            async (err, data_object) => {
+              if (err) return res.status(500).send(err);
+
+              return data_object;
+            }
+          );
+      }
+    }
+
     res.status(200);
     return res.json(data);
   });
@@ -73,12 +116,10 @@ router.get("/getObject", (req, res) => {
         return res.json(data);
       });
   } else {
-    return res
-      .status(400)
-      .send({
-        error:
-          "Params are not valid - getObject could not find Object in Collection."
-      });
+    return res.status(400).send({
+      error:
+        "Params are not valid - getObject could not find Object in Collection."
+    });
   }
 });
 
@@ -98,12 +139,10 @@ router.get("/getObjectAttributes", (req, res) => {
         return res.json(data);
       });
   } else {
-    return res
-      .status(400)
-      .send({
-        error:
-          "Params are not valid - getObjectAttributes could not find Object in Collection."
-      });
+    return res.status(400).send({
+      error:
+        "Params are not valid - getObjectAttributes could not find Object in Collection."
+    });
   }
 });
 
@@ -136,7 +175,7 @@ router.put("/updateObjectAttribute", async (req, res) => {
         .update({ name: req.body.jsonName }, { attributes }, (err, data) => {
           if (err) return res.status(500).send(err);
 
-          return res.status(200).send({ success: "Object updated."});
+          return res.status(200).send({ success: "Object updated." });
         });
     });
 });

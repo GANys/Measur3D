@@ -16,7 +16,7 @@ let WaterBody = require("./waterbody.js");
 let CityModelSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, default: "CityJSON", required: true },
-  version: { type: String, default: "1.0", required: true },
+  version: { type: String, default: "1.0.1", required: true },
   CityObjects: { type: {}, required: true },
   vertices: {
     type: Array,
@@ -53,27 +53,40 @@ module.exports = {
         switch (element.type) {
           case "Building":
           case "BuildingPart":
-            element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
-            var element_id = await Building.insertBuilding(element);
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Building.insertBuilding(
+              element,
+              object.jsonName
+            );
             break;
           case "BuildingInstallation":
-            element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
-            var element_id = await Building.insertBuildingInstallation(element);
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Building.insertBuildingInstallation(
+              element,
+              object.jsonName
+            );
             break;
           case "Bridge":
           case "BridgePart":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await Bridge.insertBridge(element);
+            var element_id = await Bridge.insertBridge(
+              element,
+              object.jsonName
+            );
             break;
           case "BridgeInstallation":
           case "BridgeConstructionElement":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await Bridge.insertBridgeInstallation(element);
+            var element_id = await Bridge.insertBridgeInstallation(
+              element,
+              object.jsonName
+            );
             break;
           case "CityObjectGroup":
             element["name"] = object.jsonName + "_" + key;
             var element_id = await CityObjectGroup.insertCityObjectGroup(
-              element
+              element,
+              object.jsonName
             );
             break;
           case "CityFurniture":
@@ -119,11 +132,17 @@ module.exports = {
           case "Tunnel":
           case "TunnelPart":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await Tunnel.insertTunnel(element);
+            var element_id = await Tunnel.insertTunnel(
+              element,
+              object.jsonName
+            );
             break;
           case "TunnelInstallation":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await Tunnel.insertTunnelInstallation(element);
+            var element_id = await Tunnel.insertTunnelInstallation(
+              element,
+              object.jsonName
+            );
             break;
           case "WaterBody":
             element["name"] = object.jsonName + "_" + key;

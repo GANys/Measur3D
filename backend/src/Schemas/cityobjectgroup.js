@@ -18,7 +18,15 @@ let CityObjectGroupSchema = new mongoose.Schema({
 CityObjectGroup = mongoose.model("CityObjectGroup", CityObjectGroupSchema);
 
 module.exports = {
-  insertCityObjectGroup: async object => {
+  insertCityObjectGroup: async (object, jsonName) => {
+    var temp_members = []
+
+    for (var member in object.members) {
+      temp_members.push(jsonName + "_" + object.members[member])
+    }
+
+    object.members = temp_members
+
     var cityobjectgroup = new CityObjectGroup(object);
 
     try {

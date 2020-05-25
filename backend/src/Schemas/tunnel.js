@@ -48,7 +48,23 @@ Tunnel = mongoose.model("Tunnel", TunnelSchema);
 TunnelInstallation = mongoose.model("TunnelInstallation", TunnelInstallationSchema);
 
 module.exports = {
-  insertTunnel: async object => {
+  insertTunnel: async (object, jsonName) => {
+    var temp_children = []
+
+    for (var child in object.children) {
+      temp_children.push(jsonName + "_" + object.children[child])
+    }
+
+    object.children = temp_children
+
+    var temp_parents = []
+
+    for (var parent in object.parents) {
+      temp_parents.push(jsonName + "_" + object.parents[parent])
+    }
+
+    object.parents = temp_parents
+
     var tunnel = new Tunnel(object);
 
     try {
@@ -58,7 +74,15 @@ module.exports = {
       console.error(err.message);
     }
   },
-  insertTunnelInstallation: async object => {
+  insertTunnelInstallation: async (object, jsonName) => {
+    var temp_parents = []
+
+    for (var parent in object.parents) {
+      temp_parents.push(jsonName + "_" + object.parents[parent])
+    }
+
+    object.parents = temp_parents
+
     var tunnel = new TunnelInstallation(object);
 
     try {

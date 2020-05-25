@@ -95,11 +95,10 @@ export async function loadCityObjects(threescene) {
 
         //iterate through all cityObjects
         for (var cityObj in json.CityObjects) {
-          var object;
 
           var cityObjectType = json.CityObjects[cityObj].type;
 
-          switch (json.CityObjects[cityObj].type) {
+          switch (cityObjectType) {
             case "BuildingPart":
               cityObjectType = "Building";
               break;
@@ -120,19 +119,10 @@ export async function loadCityObjects(threescene) {
             default:
           }
 
-          object = await axios.get("http://localhost:3001/measur3d/getObject", {
-            params: {
-              id: json.CityObjects[cityObj].id,
-              CityObjectClass: cityObjectType
-            }
-          });
-
-          object = object.data;
-
           try {
             //parse cityObj that it can be displayed in three js
             var returnChildren = await parseObject(
-              object,
+              json.CityObjects[cityObj],
               json,
               cityObj,
               threescene.geoms
@@ -140,7 +130,7 @@ export async function loadCityObjects(threescene) {
 
             //if object has children add them to the childrendict
             for (i in returnChildren) {
-              children[returnChildren[i]] = cityObj;
+              children[json.name + '_' + returnChildren[i]] = cityObj;
             }
           } catch (e) {
             console.log("ERROR at creating: " + cityObj);
@@ -148,14 +138,14 @@ export async function loadCityObjects(threescene) {
           }
 
           //set color of object
-          var coType = object.type;
+          var coType = json.CityObjects[cityObj].type;
           var material = new THREE.MeshLambertMaterial();
           material.color.setHex(ALLCOLOURS[coType]);
 
           //create mesh
           var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
           coMesh.name = cityObj;
-          coMesh.CityObjectClass = object.type;
+          coMesh.CityObjectClass = json.CityObjects[cityObj].type;
           coMesh.jsonName = json.name;
           coMesh.castShadow = true;
           coMesh.receiveShadow = true;
@@ -252,9 +242,11 @@ function getStats(vertices) {
 async function parseObject(object, json, cityObj, geoms) {
   var boundaries;
 
+  /* Remains of NINJA
   if (json.CityObjects[cityObj].children != undefined) {
     return json.CityObjects[cityObj].children;
   }
+  */
 
   //create geometry and empty list for the vertices
   var geom = new THREE.Geometry();
@@ -424,8 +416,6 @@ export async function intersectMeshes(event, threescene) {
     title: intersects[0].object.name,
     type: intersects[0].object.CityObjectClass
   });
-
-  console.log(intersects[0].object.CityObjectClass)
 
   var cityObjectType = intersects[0].object.CityObjectClass;
 

@@ -56,7 +56,23 @@ BridgeInstallation = mongoose.model(
 );
 
 module.exports = {
-  insertBridge: async object => {
+  insertBridge: async (object, jsonName) => {
+    var temp_children = []
+
+    for (var child in object.children) {
+      temp_children.push(jsonName + "_" + object.children[child])
+    }
+
+    object.children = temp_children
+
+    var temp_parents = []
+
+    for (var parent in object.parents) {
+      temp_parents.push(jsonName + "_" + object.parents[parent])
+    }
+
+    object.parents = temp_parents
+
     var bridge = new Bridge(object);
 
     try {
@@ -66,7 +82,15 @@ module.exports = {
       console.error(err.message);
     }
   },
-  insertBridgeInstallation: async object => {
+  insertBridgeInstallation: async (object, jsonName) => {
+    var temp_parents = []
+
+    for (var parent in object.parents) {
+      temp_parents.push(jsonName + "_" + object.parents[parent])
+    }
+
+    object.parents = temp_parents
+
     var bridge = new BridgeInstallation(object);
 
     try {

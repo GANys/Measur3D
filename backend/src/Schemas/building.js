@@ -72,7 +72,23 @@ BuildingInstallation = mongoose.model(
 );
 
 module.exports = {
-  insertBuilding: async object => {
+  insertBuilding: async (object, jsonName) => {
+    var temp_children = []
+
+    for (var child in object.children) {
+      temp_children.push(jsonName + "_" + object.children[child])
+    }
+
+    object.children = temp_children
+
+    var temp_parents = []
+
+    for (var parent in object.parents) {
+      temp_parents.push(jsonName + "_" + object.parents[parent])
+    }
+
+    object.parents = temp_parents
+
     var building = new Building(object);
 
     try {
@@ -82,7 +98,23 @@ module.exports = {
       console.error(err.message);
     }
   },
-  insertBuildingInstallation: async object => {
+  insertBuildingInstallation: async (object, jsonName) => {
+    var temp_children = []
+
+    for (var child in object.children) {
+      temp_children.push(jsonName + "_" + object.children[child])
+    }
+
+    object.children = temp_children
+
+    var temp_parents = []
+
+    for (var parent in object.parents) {
+      temp_parents.push(jsonName + "_" + object.parents[parent])
+    }
+
+    object.parents = temp_parents
+
     var building = new BuildingInstallation(object);
 
     try {
