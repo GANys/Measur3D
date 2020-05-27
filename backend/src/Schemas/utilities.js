@@ -16,7 +16,7 @@ let GeometrySchema = new mongoose.Schema({
     ], // Often erased. Still saved as documentation
     default: "Solid"
   },
-  lod: { type: Number, required: true },
+  lod: { type: Number, required: true, validate: /([0-3]{1}\.?)+[0-3]?/ },
   boundaries: { type: [[Array]], required: true },
   semantics: { surfaces: [Array], values: [Array] },
   material: {},

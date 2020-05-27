@@ -219,7 +219,7 @@ class BasicMaterialTable extends React.Component {
   }
 }
 
-var map = new Object(); // Mapping between CityObject Classes and their relative icons
+var map = {}; // Mapping between CityObject Classes and their relative icons
 
 map["Building"] = <FontAwesomeIcon icon={faBuilding} />;
 map["BuildingPart"] = <FontAwesomeIcon icon={faBuilding} />;

@@ -16,27 +16,116 @@ let WaterBody = require("./waterbody.js");
 let CityModelSchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, default: "CityJSON", required: true },
-  version: { type: String, default: "1.0.1", required: true },
-  CityObjects: { type: {}, required: true },
-  vertices: {
-    type: Array,
+  version: {
+    type: String,
+    default: "1.0.1",
     required: true,
-    index: true
+    validate: /^([0-9]\.)+([0-9])$/
   },
-  extension: { type: {}, required: false },
+  CityObjects: { type: {}, required: true }, // No need of rules and schemas as it is already handled in the insertCity function
+  vertices: {
+    type: [[Number]],
+    required: true,
+    index: true,
+    validate: function() {
+      for (var vertex in this.vertices) {
+        if (this.vertices[vertex].length != 3) return false;
+      }
+      return true;
+    }
+  },
+  extension: {
+    url: {
+      type: String,
+      required: function() {
+        return this.hasOwnProperty("extension") && validURL(this.url);
+      }
+    },
+    version: {
+      type: String,
+      validate: /^([0-9]\.)+([0-9])$/,
+      required: function() {
+        return this.hasOwnProperty("extension");
+      }
+    }
+  },
   metadata: {
     geographicalExtent: [Number],
     referenceSystem: {
       type: String,
       default: "urn:ogc:def:crs:EPSG::4326",
       required: true
+    },
+    contactDetails: {
+      contactName: {
+        type: String
+      },
+      phone: {
+        type: String
+      },
+      address: {
+        type: String
+      },
+      emailAddress: {
+        type: String,
+        validate: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      },
+      contactType: {
+        type: String,
+        enum: ["individual", "organization"],
+        role: {
+          type: String,
+          enum: [
+            "resourceProvider",
+            "custodian",
+            "owner",
+            "user",
+            "distributor",
+            "originator",
+            "pointOfContact",
+            "principalInvestigator",
+            "processor",
+            "publisher",
+            "author",
+            "sponsor",
+            "co-author",
+            "collaborator",
+            "editor",
+            "mediator",
+            "rightsHolder",
+            "contributor",
+            "funder",
+            "stakeholder"
+          ]
+        },
+        organization: String,
+        website: {
+          validate: /^http(s)?:.*/
+        }
+      }
     }
   },
   transform: {
-    scale: [],
-    translate: []
+    scale: {
+      type: [Number],
+      validate: function() {
+        return this.transform["scale"].length == 3;
+      }
+    },
+    translate: {
+      type: [Number],
+      validate: function() {
+        return this.transform["translate"].length == 3;
+      }
+    }
   },
-  appearance: { type: {}, required: false },
+  appearance: {
+    "default-theme-texture": String,
+    "default-theme-material": String,
+    materials: [],
+    texture: [],
+    "vertices-texture": [[Number]] //length == 2
+  },
   "geometry-templates": { type: {}, required: false }
 });
 
@@ -170,9 +259,20 @@ module.exports = {
     await city.save(function(err, element) {
       if (err) return console.error(err.message);
     });
-
-    return console.log("insertCity: CityModel inserted.");
   },
   Model: CityModel,
   Schema: CityModelSchema
 };
+
+function validURL(str) {
+  var pattern = new RegExp(
+    "^(https?:\\/\\/)?" + // protocol
+    "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
+    "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
+    "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
+    "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
+      "(\\#[-a-z\\d_]*)?$",
+    "i"
+  ); // fragment locator
+  return !!pattern.test(str);
+}
