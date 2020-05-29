@@ -1,31 +1,34 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
-let CityObjectGroupSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, default: "CityObjectGroup" },
-  geometry: {
-    type: [mongoose.model("Geometry").schema],
-    required: function() {
-      return this.geometry.length <= 1;
-    }
-  },
-  members: [],
-  attributes: {}
-});
-
-CityObjectGroup = mongoose.model("CityObjectGroup", CityObjectGroupSchema);
+let CityObjectGroup = mongoose.model("AbstractCityObject").discriminator(
+  "CityObjectGroup",
+  new mongoose.Schema({
+    type: { type: String, default: "CityObjectGroup" },
+    geometry: {
+      type: [mongoose.model("Geometry").schema],
+      required: function() {
+        return this.geometry.length <= 1;
+      }
+    },
+    members: {
+      type: [String],
+      required: true
+    },
+  })
+);
 
 module.exports = {
   insertCityObjectGroup: async (object, jsonName) => {
-    var temp_members = []
+    var temp_members = [];
 
     for (var member in object.members) {
-      temp_members.push(jsonName + "_" + object.members[member])
+      temp_members.push(jsonName + "_" + object.members[member]);
     }
 
-    object.members = temp_members
+    object.members = temp_members;
 
     var cityobjectgroup = new CityObjectGroup(object);
 
@@ -36,6 +39,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: CityObjectGroup,
-  Schema: CityObjectGroupSchema
+  Model: CityObjectGroup
 };

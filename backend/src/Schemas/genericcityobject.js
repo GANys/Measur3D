@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let GenericCityObjectGeometry = mongoose.model("Geometry").discriminator(
   "GenericCityObjectGeometry",
@@ -8,22 +9,28 @@ let GenericCityObjectGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       required: true,
-      enum: ["MultiPoint", "MultiLineString", "MultiSurface", "CompositeSurface", "Solid", "CompositeSolid"]
+      enum: [
+        "MultiPoint",
+        "MultiLineString",
+        "MultiSurface",
+        "CompositeSurface",
+        "Solid",
+        "CompositeSolid"
+      ]
     }
   })
 );
 
-let GenericCityObjectSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, required: true, default: "GenericCityObject" },
-  geometry: {
-    type: [mongoose.model("GenericCityObjectGeometry").schema],
-    required: true
-  },
-  attributes: {}
-});
-
-GenericCityObject = mongoose.model("GenericCityObject", GenericCityObjectSchema);
+let GenericCityObject = new mongoose.model("AbstractCityObject").discriminator(
+  "GenericCityObject",
+  new mongoose.Schema({
+    type: { type: String, required: true, default: "GenericCityObject" },
+    geometry: {
+      type: [mongoose.model("GenericCityObjectGeometry").schema],
+      required: true
+    }
+  })
+);
 
 module.exports = {
   insertGenericCityObject: async object => {
@@ -36,6 +43,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: GenericCityObject,
-  Schema: GenericCityObjectSchema
+  Model: GenericCityObject
 };

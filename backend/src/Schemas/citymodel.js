@@ -1,5 +1,6 @@
 let mongoose = require("mongoose");
 
+let Appearance= require("./appearance.js");
 let Bridge = require("./bridge.js");
 let Building = require("./building.js");
 let CityFurniture = require("./cityfurniture.js");
@@ -106,6 +107,7 @@ let CityModelSchema = new mongoose.Schema({
     }
   },
   transform: {
+    // No additional properties
     scale: {
       type: [Number],
       validate: function() {
@@ -120,13 +122,27 @@ let CityModelSchema = new mongoose.Schema({
     }
   },
   appearance: {
+    // No additional properties
     "default-theme-texture": String,
     "default-theme-material": String,
-    materials: [],
-    texture: [],
+    materials: [mongoose.model("Material").schema],
+    texture: [mongoose.model("Texture").schema],
     "vertices-texture": [[Number]] //length == 2
   },
-  "geometry-templates": { type: {}, required: false }
+  "geometry-templates": { // No additional properties
+    templates: {
+      type: [mongoose.model("GeometryInstance").schema]
+    },
+    "vertices-template": {
+      type: [[Number]],
+      validate: function() {
+        for (var vertex in this["geometry-templates"]["vertices-template"]) {
+          if (this["geometry-templates"]["vertices-template"][vertex].length != 3) return false;
+        }
+        return true;
+      }
+    }
+  }
 });
 
 CityModel = mongoose.model("CityModel", CityModelSchema);

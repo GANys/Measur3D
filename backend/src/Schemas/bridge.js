@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let BridgeGeometry = mongoose.model("Geometry").discriminator(
   "BridgeGeometry",
@@ -13,65 +14,65 @@ let BridgeGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let BridgeSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, enum: ["Bridge", "BridgePart"], default: "Bridge" },
-  geometry: {
-    type: [mongoose.model("BridgeGeometry").schema],
-    required: true
-  },
-  children: [],
-  parents: {
-    type: [String],
-    required: function() {
-      return this.type == "TunnelPart";
+let Bridge = mongoose.model("AbstractCityObject").discriminator(
+  "Bridge",
+  new mongoose.Schema({
+    type: { type: String, enum: ["Bridge", "BridgePart"], default: "Bridge" },
+    geometry: {
+      type: [mongoose.model("BridgeGeometry").schema],
+      required: true
+    },
+    parents: {
+      type: [String],
+      required: function() {
+        return this.type == "BridgePart";
+      }
+    },
+    address: {},
+    attributes: {
+      yearOfConstruction: Number,
+      yearOfDemolition: Number,
+      isMovable: Boolean
     }
-  },
-  address: {},
-  attributes: {}
-});
+  })
+);
 
-let BridgeInstallationSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: {
-    type: String,
-    enum: ["BridgeInstallation", "BridgeConstructionElement"],
-    default: "BridgeInstallation"
-  },
-  geometry: {
-    type: [mongoose.model("Geometry").schema],
-    required: true
-  },
-  parents: {
-    type: [String],
-    required: true
-  },
-  attributes: {}
-});
-
-Bridge = mongoose.model("Bridge", BridgeSchema);
-BridgeInstallation = mongoose.model(
+let BridgeInstallation = mongoose.model("AbstractCityObject").discriminator(
   "BridgeInstallation",
-  BridgeInstallationSchema
+  new mongoose.Schema({
+    type: {
+      type: String,
+      enum: ["BridgeInstallation", "BridgeConstructionElement"],
+      default: "BridgeInstallation"
+    },
+    geometry: {
+      type: [mongoose.model("Geometry").schema],
+      required: true
+    },
+    parents: {
+      type: [String],
+      required: true
+    }
+  })
 );
 
 module.exports = {
   insertBridge: async (object, jsonName) => {
-    var temp_children = []
+    var temp_children = [];
 
     for (var child in object.children) {
-      temp_children.push(jsonName + "_" + object.children[child])
+      temp_children.push(jsonName + "_" + object.children[child]);
     }
 
-    object.children = temp_children
+    object.children = temp_children;
 
-    var temp_parents = []
+    var temp_parents = [];
 
     for (var parent in object.parents) {
-      temp_parents.push(jsonName + "_" + object.parents[parent])
+      temp_parents.push(jsonName + "_" + object.parents[parent]);
     }
 
-    object.parents = temp_parents
+    object.parents = temp_parents;
 
     var bridge = new Bridge(object);
 
@@ -83,13 +84,13 @@ module.exports = {
     }
   },
   insertBridgeInstallation: async (object, jsonName) => {
-    var temp_parents = []
+    var temp_parents = [];
 
     for (var parent in object.parents) {
-      temp_parents.push(jsonName + "_" + object.parents[parent])
+      temp_parents.push(jsonName + "_" + object.parents[parent]);
     }
 
-    object.parents = temp_parents
+    object.parents = temp_parents;
 
     var bridge = new BridgeInstallation(object);
 
@@ -100,6 +101,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: Bridge,
-  Schema: BridgeSchema
+  Model: Bridge
 };

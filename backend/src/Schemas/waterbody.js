@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let WaterBodyGeometry = mongoose.model("Geometry").discriminator(
   "WaterBodyGeometry",
@@ -8,7 +9,13 @@ let WaterBodyGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       required: true,
-      enum: ["MultiLineString", "MultiSurface", "CompositeSurface", "Solid", "CompositeSolid"]
+      enum: [
+        "MultiLineString",
+        "MultiSurface",
+        "CompositeSurface",
+        "Solid",
+        "CompositeSolid"
+      ]
     },
     semantics: {
       surfaces: {
@@ -22,17 +29,16 @@ let WaterBodyGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let WaterBodySchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, required: true, default: "WaterBody" },
-  geometry: {
-    type: [mongoose.model("WaterBodyGeometry").schema],
-    required: true
-  },
-  attributes: {}
-});
-
-WaterBody = mongoose.model("WaterBody", WaterBodySchema);
+let WaterBody = mongoose.model("AbstractCityObject").discriminator(
+  "WaterBody",
+  new mongoose.Schema({
+    type: { type: String, required: true, default: "WaterBody" },
+    geometry: {
+      type: [mongoose.model("WaterBodyGeometry").schema],
+      required: true
+    }
+  })
+);
 
 module.exports = {
   insertWaterBody: async object => {
@@ -45,6 +51,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: WaterBody,
-  Schema: WaterBodySchema
+  Model: WaterBody
 };

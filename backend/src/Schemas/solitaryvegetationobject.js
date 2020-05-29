@@ -1,25 +1,30 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let SolitaryVegetationObjectGeometry = mongoose.model("Geometry").discriminator(
   "SolitaryVegetationObjectGeometry",
   new mongoose.Schema({
-    lod: {required: false}
+    lod: { required: false }
   })
 );
 
-let SolitaryVegetationObjectSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, required: true, default: "SolitaryVegetationObject" },
-  geometry: {
-    type: [mongoose.model("SolitaryVegetationObjectGeometry").schema],
-    required: false
-  },
-  attributes: {}
-});
-
-SolitaryVegetationObject = mongoose.model("SolitaryVegetationObject", SolitaryVegetationObjectSchema);
+let SolitaryVegetationObject = mongoose.model("Geometry").discriminator(
+  "SolitaryVegetationObject",
+  new mongoose.Schema({
+    type: { type: String, required: true, default: "SolitaryVegetationObject" },
+    geometry: {
+      type: [mongoose.model("SolitaryVegetationObjectGeometry").schema],
+      required: false
+    },
+    attributes: {
+      species: String,
+      trunkDiameter: Number,
+      crownDiameter: Number
+    }
+  })
+);
 
 module.exports = {
   insertSolitaryVegetationObject: async object => {
@@ -32,6 +37,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: SolitaryVegetationObject,
-  Schema: SolitaryVegetationObjectSchema
+  Model: SolitaryVegetationObject
 };

@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let LandUseGeometry = mongoose.model("Geometry").discriminator(
   "LandUseGeometry",
@@ -13,17 +14,16 @@ let LandUseGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let LandUseSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, required: true, default: "LandUse" },
-  geometry: {
-    type: [mongoose.model("LandUseGeometry").schema],
-    required: true
-  },
-  attributes: {}
-});
-
-LandUse = mongoose.model("LandUse", LandUseSchema);
+let LandUse = new mongoose.model("AbstractCityObject").discriminator(
+  "LandUse",
+  new mongoose.Schema({
+    type: { type: String, required: true, default: "LandUse" },
+    geometry: {
+      type: [mongoose.model("LandUseGeometry").schema],
+      required: true
+    }
+  })
+);
 
 module.exports = {
   insertLandUse: async object => {
@@ -36,6 +36,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: LandUse,
-  Schema: LandUseSchema
+  Model: LandUse
 };

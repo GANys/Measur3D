@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let TunnelGeometry = mongoose.model("Geometry").discriminator(
   "TunnelGeometry",
@@ -13,57 +14,59 @@ let TunnelGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let TunnelSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, enum: ["Tunnel", "TunnelPart"], default: "Tunnel" },
-  geometry: {
-    type: [mongoose.model("TunnelGeometry").schema],
-    required: true
-  },
-  children: [],
-  parents: {
-    type: [String],
-    required: function() {
-      return this.type == "TunnelPart";
+let Tunnel = mongoose.model("AbstractCityObject").discriminator(
+  "Tunnel",
+  new mongoose.Schema({
+    type: { type: String, enum: ["Tunnel", "TunnelPart"], default: "Tunnel" },
+    geometry: {
+      type: [mongoose.model("TunnelGeometry").schema],
+      required: true
+    },
+    parents: {
+      type: [String],
+      required: function() {
+        return this.type == "TunnelPart";
+      }
+    },
+    attributes: {
+      yearOfConstruction: Number,
+      yearOfDemolition: Number
     }
-  },
-  attributes: {}
-});
+  })
+);
 
-let TunnelInstallationSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, default: "TunnelInstallation" },
-  geometry: {
-    type: [mongoose.model("Geometry").schema],
-    required: true
-  },
-  parents: {
-    type: [String],
-    required: true
-  },
-  attributes: {}
-});
-
-Tunnel = mongoose.model("Tunnel", TunnelSchema);
-TunnelInstallation = mongoose.model("TunnelInstallation", TunnelInstallationSchema);
+let TunnelInstallation = mongoose.model("AbstractCityObject").discriminator(
+  "TunnelInstallation",
+  new mongoose.Schema({
+    type: { type: String, default: "TunnelInstallation" },
+    geometry: {
+      type: [mongoose.model("Geometry").schema],
+      required: true
+    },
+    parents: {
+      type: [String],
+      required: true
+    }
+  })
+);
 
 module.exports = {
   insertTunnel: async (object, jsonName) => {
-    var temp_children = []
+    var temp_children = [];
 
     for (var child in object.children) {
-      temp_children.push(jsonName + "_" + object.children[child])
+      temp_children.push(jsonName + "_" + object.children[child]);
     }
 
-    object.children = temp_children
+    object.children = temp_children;
 
-    var temp_parents = []
+    var temp_parents = [];
 
     for (var parent in object.parents) {
-      temp_parents.push(jsonName + "_" + object.parents[parent])
+      temp_parents.push(jsonName + "_" + object.parents[parent]);
     }
 
-    object.parents = temp_parents
+    object.parents = temp_parents;
 
     var tunnel = new Tunnel(object);
 
@@ -75,13 +78,13 @@ module.exports = {
     }
   },
   insertTunnelInstallation: async (object, jsonName) => {
-    var temp_parents = []
+    var temp_parents = [];
 
     for (var parent in object.parents) {
-      temp_parents.push(jsonName + "_" + object.parents[parent])
+      temp_parents.push(jsonName + "_" + object.parents[parent]);
     }
 
-    object.parents = temp_parents
+    object.parents = temp_parents;
 
     var tunnel = new TunnelInstallation(object);
 
@@ -92,6 +95,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: Tunnel,
-  Schema: TunnelSchema
+  Model: Tunnel
 };

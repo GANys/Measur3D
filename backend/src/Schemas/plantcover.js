@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let PlantCoverGeometry = mongoose.model("Geometry").discriminator(
   "PlantCoverGeometry",
@@ -13,17 +14,19 @@ let PlantCoverGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let PlantCoverSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, required: true, default: "PlantCover" },
-  geometry: {
-    type: [mongoose.model("PlantCoverGeometry").schema],
-    required: true
-  },
-  attributes: {}
-});
-
-PlantCover = mongoose.model("PlantCover", PlantCoverSchema);
+let PlantCover = new mongoose.model("AbstractCityObject").discriminator(
+  "PlantCover",
+  new mongoose.Schema({
+    type: { type: String, required: true, default: "PlantCover" },
+    geometry: {
+      type: [mongoose.model("PlantCoverGeometry").schema],
+      required: true
+    },
+    attributes: {
+      averageHeight: Number
+    }
+  })
+);
 
 module.exports = {
   insertPlantCover: async object => {
@@ -36,6 +39,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: PlantCover,
-  Schema: PlantCoverSchema
+  Model: PlantCover
 };

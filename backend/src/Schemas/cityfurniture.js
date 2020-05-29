@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let CityFurnitureGeometry = mongoose.model("Geometry").discriminator(
   "CityFurnitureGeometry",
@@ -8,22 +9,28 @@ let CityFurnitureGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       required: true,
-      enum: ["MultiPoint", "MultiLineString", "MultiSurface", "CompositeSurface", "Solid", "CompositeSolid"]
+      enum: [
+        "MultiPoint",
+        "MultiLineString",
+        "MultiSurface",
+        "CompositeSurface",
+        "Solid",
+        "CompositeSolid"
+      ]
     }
   })
 );
 
-let CityFurnitureSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, required: true, default: "CityFurniture" },
-  geometry: {
-    type: [mongoose.model("CityFurnitureGeometry").schema],
-    required: true
-  },
-  attributes: {}
-});
-
-CityFurniture = mongoose.model("CityFurniture", CityFurnitureSchema);
+let CityFurniture = new mongoose.model("AbstractCityObject").discriminator(
+  "CityFurniture",
+  new mongoose.Schema({
+    type: { type: String, required: true, default: "CityFurniture" },
+    geometry: {
+      type: [mongoose.model("CityFurnitureGeometry").schema],
+      required: true
+    }
+  })
+);
 
 module.exports = {
   insertCityFurniture: async object => {
@@ -36,6 +43,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: CityFurniture,
-  Schema: CityFurnitureSchema
+  Model: CityFurniture
 };

@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let TINGeometry = mongoose.model("Geometry").discriminator(
   "TINGeometry",
@@ -13,18 +14,17 @@ let TINGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let TINReliefSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, required: true, default: "TINRelief" },
-  geographicalExtent: [Number],
-  geometry: {
-    type: [mongoose.model("TINGeometry").schema],
-    required: true
-  },
-  attributes: {}
-});
-
-TINRelief = mongoose.model("TINRelief", TINReliefSchema);
+let TINRelief = new mongoose.model("AbstractCityObject").discriminator(
+  "TINRelief",
+  new mongoose.Schema({
+    type: { type: String, required: true, default: "TINRelief" },
+    geographicalExtent: [Number],
+    geometry: {
+      type: [mongoose.model("TINGeometry").schema],
+      required: true
+    }
+  })
+);
 
 module.exports = {
   insertTINRelief: async object => {
@@ -37,6 +37,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: TINRelief,
-  Schema: TINReliefSchema
+  Model: TINRelief
 };

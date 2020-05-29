@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 
-let Geometry = require("./utilities.js");
+let Geometry = require("./geometry.js");
+let AbstractCityObject = require("./abstractcityobject");
 
 let BuildingGeometry = mongoose.model("Geometry").discriminator(
   "BuildingGeometry",
@@ -31,63 +32,78 @@ let BuildingGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let BuildingSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: {
-    type: String,
-    enum: ["Building", "BuildingPart"],
-    default: "Building"
-  },
-  geographicalExtent: [Number],
-  geometry: {
-    type: [mongoose.model("BuildingGeometry").schema],
-    required: true
-  },
-  children: [],
-  parents: {
-    type: [String],
-    required: function() {
-      return this.type == "BuildingPart";
+let Building = mongoose.model("AbstractCityObject").discriminator(
+  "Building",
+  new mongoose.Schema({
+    name: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ["Building", "BuildingPart"],
+      default: "Building"
+    },
+    attributes: {
+      measuredHeight: Number,
+      roofType: String,
+      storeysAboveGround: Number,
+      storeysBelowGround: Number,
+      storeyHeightsAboveGround: [Number],
+      storeyHeightsBelowGround: [Number],
+      yearOfConstruction: Number,
+      yearOfDemolition: Number
+    },
+    address: {
+      CountryName: String,
+      LocalityName: String,
+      ThoroughfareNumber: Number,
+      ThoroughfareName: String,
+      PostalCode: String,
+      location: [mongoose.model("Geometry").schema]
+    },
+    parents: {
+      type: [String],
+      required: function() {
+        return this.type == "BuildingPart";
+      }
+    },
+    geometry: {
+      type: [mongoose.model("BuildingGeometry").schema],
+      required: true
     }
-  },
-  attributes: {}
-});
+  })
+);
 
-let BuildingInstallationSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, default: "BuildingInstallation" },
-  geographicalExtent: [Number],
-  geometry: {
-    type: [mongoose.model("Geometry").schema],
-    required: true
-  },
-  parents: { type: [String], required: true },
-  attributes: {}
-});
-
-Building = mongoose.model("Building", BuildingSchema);
-BuildingInstallation = mongoose.model(
+let BuildingInstallation = mongoose.model("AbstractCityObject").discriminator(
   "BuildingInstallation",
-  BuildingInstallationSchema
+  new mongoose.Schema({
+    name: { type: String, required: true },
+    type: { type: String, default: "BuildingInstallation" },
+    geographicalExtent: [Number],
+    geometry: {
+      type: [mongoose.model("Geometry").schema],
+      required: true
+    },
+    parents: { type: [String], required: true },
+    attributes: {}
+  })
 );
 
 module.exports = {
   insertBuilding: async (object, jsonName) => {
-    var temp_children = []
+    var temp_children = [];
 
     for (var child in object.children) {
-      temp_children.push(jsonName + "_" + object.children[child])
+      temp_children.push(jsonName + "_" + object.children[child]);
     }
 
-    object.children = temp_children
+    object.children = temp_children;
 
-    var temp_parents = []
+    var temp_parents = [];
 
     for (var parent in object.parents) {
-      temp_parents.push(jsonName + "_" + object.parents[parent])
+      temp_parents.push(jsonName + "_" + object.parents[parent]);
     }
 
-    object.parents = temp_parents
+    object.parents = temp_parents;
 
     var building = new Building(object);
 
@@ -99,21 +115,21 @@ module.exports = {
     }
   },
   insertBuildingInstallation: async (object, jsonName) => {
-    var temp_children = []
+    var temp_children = [];
 
     for (var child in object.children) {
-      temp_children.push(jsonName + "_" + object.children[child])
+      temp_children.push(jsonName + "_" + object.children[child]);
     }
 
-    object.children = temp_children
+    object.children = temp_children;
 
-    var temp_parents = []
+    var temp_parents = [];
 
     for (var parent in object.parents) {
-      temp_parents.push(jsonName + "_" + object.parents[parent])
+      temp_parents.push(jsonName + "_" + object.parents[parent]);
     }
 
-    object.parents = temp_parents
+    object.parents = temp_parents;
 
     var building = new BuildingInstallation(object);
 
@@ -124,6 +140,5 @@ module.exports = {
       console.error(err.message);
     }
   },
-  Model: Building,
-  Schema: BuildingSchema
+  Model: Building
 };

@@ -23,6 +23,30 @@ let GeometrySchema = new mongoose.Schema({
   texture: {}
 });
 
+let GeometryInstanceSchema = new mongoose.Schema({
+  // Different but the same
+  type: {
+    type: String,
+    required: true,
+    default: "GeometryInstance"
+  },
+  template: {
+    type: Number
+  },
+  boundaries: {
+    type: [[Array]],
+    required: true
+  },
+  transformationMatrix: {
+    type: [Number],
+    required: true,
+    validate: function() {
+      return (this["transformationMatrix"].length%16) == 0;
+    }
+  }
+});
+
+GeometryInstance = mongoose.model("GeometryInstance", GeometryInstanceSchema);
 Geometry = mongoose.model("Geometry", GeometrySchema);
 
 module.exports = {
