@@ -24,7 +24,7 @@ let WaterBodyGeometry = mongoose.model("Geometry").discriminator(
           enum: ["WaterSurface", "WaterGroundSurface", "WaterClosureSurface"]
         }
       },
-      values: [Array]
+      values: { type: [Array], default: undefined }
     }
   })
 );

@@ -24,6 +24,7 @@ let Tunnel = mongoose.model("AbstractCityObject").discriminator(
     },
     parents: {
       type: [String],
+      default: undefined,
       required: function() {
         return this.type == "TunnelPart";
       }

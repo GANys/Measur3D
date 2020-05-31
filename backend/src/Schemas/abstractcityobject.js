@@ -15,12 +15,13 @@ let AbstractCityObjectSchema = new mongoose.Schema({
     function: String,
     usage: String
   },
-  parents: [String],
-  children: [String],
+  parents: { type: [String], default: undefined },
+  children: { type: [String], default: undefined },
   geographicalExtent: {
     type: [Number],
+    default: undefined,
     validate: function() {
-      return this["geographicalExtent"].length%6 == 0;
+      return this["geographicalExtent"].length % 6 == 0;
     }
   }
 });

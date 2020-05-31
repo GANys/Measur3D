@@ -46,8 +46,8 @@ let Building = mongoose.model("AbstractCityObject").discriminator(
       roofType: String,
       storeysAboveGround: Number,
       storeysBelowGround: Number,
-      storeyHeightsAboveGround: [Number],
-      storeyHeightsBelowGround: [Number],
+      storeyHeightsAboveGround: { type: [Number], default: undefined },
+      storeyHeightsBelowGround: { type: [Number], default: undefined },
       yearOfConstruction: Number,
       yearOfDemolition: Number
     },
@@ -57,16 +57,21 @@ let Building = mongoose.model("AbstractCityObject").discriminator(
       ThoroughfareNumber: Number,
       ThoroughfareName: String,
       PostalCode: String,
-      location: [mongoose.model("Geometry").schema]
+      location: {
+        type: [mongoose.model("Geometry").schema],
+        default: undefined
+      }
     },
     parents: {
       type: [String],
+      default: undefined,
       required: function() {
         return this.type == "BuildingPart";
       }
     },
     geometry: {
       type: [mongoose.model("BuildingGeometry").schema],
+      default: undefined,
       required: true
     }
   })
@@ -77,12 +82,13 @@ let BuildingInstallation = mongoose.model("AbstractCityObject").discriminator(
   new mongoose.Schema({
     name: { type: String, required: true },
     type: { type: String, default: "BuildingInstallation" },
-    geographicalExtent: [Number],
+    geographicalExtent: { type: [Number], default: undefined },
     geometry: {
       type: [mongoose.model("Geometry").schema],
+      default: undefined,
       required: true
     },
-    parents: { type: [String], required: true },
+    parents: { type: [String], default: undefined, required: true },
     attributes: {}
   })
 );

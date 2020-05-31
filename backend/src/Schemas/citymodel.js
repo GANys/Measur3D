@@ -1,6 +1,6 @@
 let mongoose = require("mongoose");
 
-let Appearance= require("./appearance.js");
+let Appearance = require("./appearance.js");
 let Bridge = require("./bridge.js");
 let Building = require("./building.js");
 let CityFurniture = require("./cityfurniture.js");
@@ -51,7 +51,7 @@ let CityModelSchema = new mongoose.Schema({
     }
   },
   metadata: {
-    geographicalExtent: [Number],
+    geographicalExtent: { type: [Number], default: undefined },
     referenceSystem: {
       type: String,
       default: "urn:ogc:def:crs:EPSG::4326",
@@ -110,12 +110,14 @@ let CityModelSchema = new mongoose.Schema({
     // No additional properties
     scale: {
       type: [Number],
+      default: undefined,
       validate: function() {
         return this.transform["scale"].length == 3;
       }
     },
     translate: {
       type: [Number],
+      default: undefined,
       validate: function() {
         return this.transform["translate"].length == 3;
       }
@@ -125,19 +127,28 @@ let CityModelSchema = new mongoose.Schema({
     // No additional properties
     "default-theme-texture": String,
     "default-theme-material": String,
-    materials: [mongoose.model("Material").schema],
-    texture: [mongoose.model("Texture").schema],
-    "vertices-texture": [[Number]] //length == 2
+    materials: {
+      type: [mongoose.model("Material").schema],
+      default: undefined
+    },
+    texture: { type: [mongoose.model("Texture").schema], default: undefined },
+    "vertices-texture": { type: [[Number]], default: undefined } //length == 2
   },
-  "geometry-templates": { // No additional properties
+  "geometry-templates": {
+    // No additional properties
     templates: {
-      type: [mongoose.model("GeometryInstance").schema]
+      type: [mongoose.model("GeometryInstance").schema],
+      default: undefined
     },
     "vertices-template": {
       type: [[Number]],
+      default: undefined,
       validate: function() {
         for (var vertex in this["geometry-templates"]["vertices-template"]) {
-          if (this["geometry-templates"]["vertices-template"][vertex].length != 3) return false;
+          if (
+            this["geometry-templates"]["vertices-template"][vertex].length != 3
+          )
+            return false;
         }
         return true;
       }

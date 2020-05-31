@@ -18,9 +18,9 @@ let TransportationGeometry = mongoose.model("Geometry").discriminator(
           enum: ["TrafficArea", "AuxiliaryTrafficArea"]
         },
         function: {},
-        surfaceMaterial: [String]
+        surfaceMaterial: { type: [String], default: undefined }
       },
-      values: [Array]
+      values: { type: [Array], default: undefined }
     }
   })
 );

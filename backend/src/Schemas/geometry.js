@@ -18,7 +18,10 @@ let GeometrySchema = new mongoose.Schema({
   },
   lod: { type: Number, required: true, validate: /([0-3]{1}\.?)+[0-3]?/ },
   boundaries: { type: [[Array]], required: true },
-  semantics: { surfaces: [Array], values: [Array] },
+  semantics: {
+    surfaces: { type: [Array], default: undefined },
+    values: { type: [Array], default: undefined }
+  },
   material: {},
   texture: {}
 });
@@ -41,7 +44,7 @@ let GeometryInstanceSchema = new mongoose.Schema({
     type: [Number],
     required: true,
     validate: function() {
-      return (this["transformationMatrix"].length%16) == 0;
+      return this["transformationMatrix"].length % 16 == 0;
     }
   }
 });

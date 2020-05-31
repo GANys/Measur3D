@@ -18,7 +18,7 @@ let TINRelief = new mongoose.model("AbstractCityObject").discriminator(
   "TINRelief",
   new mongoose.Schema({
     type: { type: String, required: true, default: "TINRelief" },
-    geographicalExtent: [Number],
+    geographicalExtent: {type: [Number], default: undefined},
     geometry: {
       type: [mongoose.model("TINGeometry").schema],
       required: true

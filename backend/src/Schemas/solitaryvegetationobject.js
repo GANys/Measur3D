@@ -10,7 +10,7 @@ let SolitaryVegetationObjectGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let SolitaryVegetationObject = mongoose.model("Geometry").discriminator(
+let SolitaryVegetationObject = mongoose.model("AbstractCityObject").discriminator(
   "SolitaryVegetationObject",
   new mongoose.Schema({
     type: { type: String, required: true, default: "SolitaryVegetationObject" },

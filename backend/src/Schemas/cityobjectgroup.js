@@ -9,6 +9,7 @@ let CityObjectGroup = mongoose.model("AbstractCityObject").discriminator(
     type: { type: String, default: "CityObjectGroup" },
     geometry: {
       type: [mongoose.model("Geometry").schema],
+      default: undefined,
       required: function() {
         return this.geometry.length <= 1;
       }
