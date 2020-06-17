@@ -1,7 +1,7 @@
 let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
-let AbstractCityObject = require("./abstractcityobject");
+let CityObject = require("./abstractcityobject.js");
 
 let SolitaryVegetationObjectGeometry = mongoose.model("Geometry").discriminator(
   "SolitaryVegetationObjectGeometry",
@@ -10,14 +10,11 @@ let SolitaryVegetationObjectGeometry = mongoose.model("Geometry").discriminator(
   })
 );
 
-let SolitaryVegetationObject = mongoose.model("AbstractCityObject").discriminator(
+let SolitaryVegetationObject = mongoose.model("CityObject").discriminator(
   "SolitaryVegetationObject",
   new mongoose.Schema({
     type: { type: String, required: true, default: "SolitaryVegetationObject" },
-    geometry: {
-      type: [mongoose.model("SolitaryVegetationObjectGeometry").schema],
-      required: false
-    },
+    geometry: [mongoose.Schema.Types.Mixed],
     attributes: {
       species: String,
       trunkDiameter: Number,
@@ -27,7 +24,23 @@ let SolitaryVegetationObject = mongoose.model("AbstractCityObject").discriminato
 );
 
 module.exports = {
-  insertSolitaryVegetationObject: async object => {
+  insertSolitaryVegetationObject: async (object, jsonName) => {
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["Solid", "MultiSolid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
+
     var solitaryvegetationobject = new SolitaryVegetationObject(object);
 
     try {

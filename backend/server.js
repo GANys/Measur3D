@@ -57,9 +57,8 @@ router.get("/getAllCityModels", (req, res) => {
 
     for (var citymodel of data) {
       for (var cityobject in citymodel.CityObjects) {
-
         var cityObjectType = citymodel.CityObjects[cityobject].type;
-        var cityObjectName = cityobject
+        var cityObjectName = cityobject;
 
         switch (cityObjectType) {
           case "BuildingPart":
@@ -85,13 +84,26 @@ router.get("/getAllCityModels", (req, res) => {
         citymodel.CityObjects[cityObjectName] = await mongoose
           .model(cityObjectType)
           .findById(
-            citymodel.CityObjects[cityobject].id,
+            citymodel.CityObjects[cityObjectName].id,
             async (err, data_object) => {
               if (err) return res.status(500).send(err);
 
               return data_object;
             }
           );
+
+        citymodel.CityObjects[cityObjectName].geometry = await mongoose
+          .model("Geometry")
+          .findById(
+            citymodel.CityObjects[cityObjectName].geometry,
+            async (err, geom) => {
+              if (err) return res.status(500).send(err);
+
+              return geom;
+            }
+          );
+
+        console.log(citymodel.CityObjects[cityObjectName]);
       }
     }
 

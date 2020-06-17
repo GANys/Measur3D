@@ -1,32 +1,34 @@
 let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
-let AbstractCityObject = require("./abstractcityobject");
+let CityObject = require("./abstractcityobject.js");
 
-let LandUseGeometry = mongoose.model("Geometry").discriminator(
-  "LandUseGeometry",
-  new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: ["MultiSurface", "CompositeSurface"]
-    }
-  })
-);
-
-let LandUse = new mongoose.model("AbstractCityObject").discriminator(
+let LandUse = new mongoose.model("CityObject").discriminator(
   "LandUse",
   new mongoose.Schema({
     type: { type: String, required: true, default: "LandUse" },
-    geometry: {
-      type: [mongoose.model("LandUseGeometry").schema],
-      required: true
-    }
+    geometry: [mongoose.Schema.Types.Mixed]
   })
 );
 
 module.exports = {
-  insertLandUse: async object => {
+  insertLandUse: async (object, jsonName) => {
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["MultiSurface", "CompositeSurface"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
+
     var landuse = new LandUse(object);
 
     try {

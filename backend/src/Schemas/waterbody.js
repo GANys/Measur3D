@@ -1,47 +1,34 @@
 let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
-let AbstractCityObject = require("./abstractcityobject");
+let CityObject = require("./abstractcityobject.js");
 
-let WaterBodyGeometry = mongoose.model("Geometry").discriminator(
-  "WaterBodyGeometry",
-  new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: [
-        "MultiLineString",
-        "MultiSurface",
-        "CompositeSurface",
-        "Solid",
-        "CompositeSolid"
-      ]
-    },
-    semantics: {
-      surfaces: {
-        type: {
-          type: String,
-          enum: ["WaterSurface", "WaterGroundSurface", "WaterClosureSurface"]
-        }
-      },
-      values: { type: [Array], default: undefined }
-    }
-  })
-);
-
-let WaterBody = mongoose.model("AbstractCityObject").discriminator(
+let WaterBody = mongoose.model("CityObject").discriminator(
   "WaterBody",
   new mongoose.Schema({
     type: { type: String, required: true, default: "WaterBody" },
-    geometry: {
-      type: [mongoose.model("WaterBodyGeometry").schema],
-      required: true
-    }
+    geometry: [mongoose.Schema.Types.Mixed]
   })
 );
 
 module.exports = {
-  insertWaterBody: async object => {
+  insertWaterBody: async (object, jsonName) => {
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["Solid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
+
     var waterbody = new WaterBody(object);
 
     try {

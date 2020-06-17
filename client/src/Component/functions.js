@@ -47,6 +47,8 @@ export async function loadCityObjects(threescene) {
 
       var json;
 
+      console.log(responseCities)
+
       for (var i = 0; i < responseCities.data.length; i++) {
         json = responseCities.data[i];
 

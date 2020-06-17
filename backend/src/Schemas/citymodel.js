@@ -207,43 +207,66 @@ module.exports = {
             break;
           case "CityFurniture":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await CityFurniture.insertCityFurniture(element);
+            var element_id = await CityFurniture.insertCityFurniture(
+              element,
+              object.jsonName
+            );
             break;
           case "GenericCityObject":
             element["name"] = object.jsonName + "_" + key;
             var element_id = await GenericCityObject.insertGenericCityObject(
-              element
+              element,
+              object.jsonName
             );
             break;
           case "LandUse":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await LandUse.insertLandUse(element);
+            var element_id = await LandUse.insertLandUse(
+              element,
+              object.jsonName
+            );
             break;
           case "PlantCover":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await PlantCover.insertPlantCover(element);
+            var element_id = await PlantCover.insertPlantCover(
+              element,
+              object.jsonName
+            );
             break;
           case "Railway":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await Transportation.insertTransportation(element);
+            var element_id = await Transportation.insertTransportation(
+              element,
+              object.jsonName
+            );
             break;
           case "Road":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await Transportation.insertTransportation(element);
+            var element_id = await Transportation.insertTransportation(
+              element,
+              object.jsonName
+            );
             break;
           case "SolitaryVegetationObject":
             element["name"] = object.jsonName + "_" + key;
             var element_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(
-              element
+              element,
+              object.jsonName
             );
             break;
           case "TINRelief":
             element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
-            var element_id = await TINRelief.insertTINRelief(element);
+            var element_id = await TINRelief.insertTINRelief(
+              element,
+              object.jsonName
+            );
             break;
           case "TransportSquare":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await Transportation.insertTransportation(element);
+            var element_id = await Transportation.insertTransportation(
+              element,
+              object.jsonName
+            );
             break;
           case "Tunnel":
           case "TunnelPart":
@@ -262,7 +285,10 @@ module.exports = {
             break;
           case "WaterBody":
             element["name"] = object.jsonName + "_" + key;
-            var element_id = await WaterBody.insertWaterBody(element);
+            var element_id = await WaterBody.insertWaterBody(
+              element,
+              object.jsonName
+            );
             break;
           default:
             throw new Error("insertCity: " + key + " is not a CityObject.");

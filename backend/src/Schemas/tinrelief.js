@@ -1,33 +1,35 @@
 let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
-let AbstractCityObject = require("./abstractcityobject");
+let CityObject = require("./abstractcityobject.js");
 
-let TINGeometry = mongoose.model("Geometry").discriminator(
-  "TINGeometry",
-  new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: ["CompositeSurface"]
-    }
-  })
-);
-
-let TINRelief = new mongoose.model("AbstractCityObject").discriminator(
+let TINRelief = new mongoose.model("CityObject").discriminator(
   "TINRelief",
   new mongoose.Schema({
     type: { type: String, required: true, default: "TINRelief" },
     geographicalExtent: {type: [Number], default: undefined},
-    geometry: {
-      type: [mongoose.model("TINGeometry").schema],
-      required: true
-    }
+    geometry: [mongoose.Schema.Types.Mixed]
   })
 );
 
 module.exports = {
-  insertTINRelief: async object => {
+  insertTINRelief: async (object, jsonName) => {
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["CompositeSurface"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
+
     var tinrelief = new TINRelief(object);
 
     try {

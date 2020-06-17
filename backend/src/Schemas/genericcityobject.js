@@ -1,39 +1,34 @@
 let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
-let AbstractCityObject = require("./abstractcityobject");
+let CityObject = require("./abstractcityobject.js");
 
-let GenericCityObjectGeometry = mongoose.model("Geometry").discriminator(
-  "GenericCityObjectGeometry",
-  new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: [
-        "MultiPoint",
-        "MultiLineString",
-        "MultiSurface",
-        "CompositeSurface",
-        "Solid",
-        "CompositeSolid"
-      ]
-    }
-  })
-);
-
-let GenericCityObject = new mongoose.model("AbstractCityObject").discriminator(
+let GenericCityObject = new mongoose.model("CityObject").discriminator(
   "GenericCityObject",
   new mongoose.Schema({
     type: { type: String, required: true, default: "GenericCityObject" },
-    geometry: {
-      type: [mongoose.model("GenericCityObjectGeometry").schema],
-      required: true
-    }
+    geometry: [mongoose.Schema.ObjectId]
   })
 );
 
 module.exports = {
-  insertGenericCityObject: async object => {
+  insertGenericCityObject: async (object, jsonName) => {
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["Solid", "MultiSolid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
+
     var genericcityobject = new GenericCityObject(object);
 
     try {

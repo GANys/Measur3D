@@ -1,27 +1,13 @@
 let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
-let AbstractCityObject = require("./abstractcityobject");
+let CityObject = require("./abstractcityobject.js");
 
-let TunnelGeometry = mongoose.model("Geometry").discriminator(
-  "TunnelGeometry",
-  new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: ["Solid", "CompositeSolid", "MultiSurface"]
-    }
-  })
-);
-
-let Tunnel = mongoose.model("AbstractCityObject").discriminator(
+let Tunnel = mongoose.model("CityObject").discriminator(
   "Tunnel",
   new mongoose.Schema({
     type: { type: String, enum: ["Tunnel", "TunnelPart"], default: "Tunnel" },
-    geometry: {
-      type: [mongoose.model("TunnelGeometry").schema],
-      required: true
-    },
+    geometry: [mongoose.Schema.Types.Mixed],
     parents: {
       type: [String],
       default: undefined,
@@ -36,14 +22,11 @@ let Tunnel = mongoose.model("AbstractCityObject").discriminator(
   })
 );
 
-let TunnelInstallation = mongoose.model("AbstractCityObject").discriminator(
+let TunnelInstallation = mongoose.model("CityObject").discriminator(
   "TunnelInstallation",
   new mongoose.Schema({
     type: { type: String, default: "TunnelInstallation" },
-    geometry: {
-      type: [mongoose.model("Geometry").schema],
-      required: true
-    },
+    geometry: [mongoose.Schema.Types.Mixed],
     parents: {
       type: [String],
       required: true
@@ -69,6 +52,22 @@ module.exports = {
 
     object.parents = temp_parents;
 
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["Solid", "CompositeSolid", "MultiSurface"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
+
     var tunnel = new Tunnel(object);
 
     try {
@@ -86,6 +85,22 @@ module.exports = {
     }
 
     object.parents = temp_parents;
+
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["Solid", "MultiSolid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
 
     var tunnel = new TunnelInstallation(object);
 

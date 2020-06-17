@@ -1,38 +1,9 @@
 let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
-let AbstractCityObject = require("./abstractcityobject");
+let CityObject = require("./abstractcityobject.js");
 
-let BuildingGeometry = mongoose.model("Geometry").discriminator(
-  "BuildingGeometry",
-  new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: ["Solid", "CompositeSolid", "MultiSurface"]
-    },
-    semantics: {
-      surfaces: {
-        type: {
-          type: String,
-          enum: [
-            "RoofSurface",
-            "GroundSurface",
-            "WallSurface",
-            "ClosureSurface",
-            "OuterCeilingSurface",
-            "OuterFloorSurface",
-            "Window",
-            "Door"
-          ]
-        }
-      },
-      values: [Array]
-    }
-  })
-);
-
-let Building = mongoose.model("AbstractCityObject").discriminator(
+let Building = mongoose.model("CityObject").discriminator(
   "Building",
   new mongoose.Schema({
     name: { type: String, required: true },
@@ -69,25 +40,17 @@ let Building = mongoose.model("AbstractCityObject").discriminator(
         return this.type == "BuildingPart";
       }
     },
-    geometry: {
-      type: [mongoose.model("BuildingGeometry").schema],
-      default: undefined,
-      required: true
-    }
+    geometry: [mongoose.Schema.Types.Mixed]
   })
 );
 
-let BuildingInstallation = mongoose.model("AbstractCityObject").discriminator(
+let BuildingInstallation = mongoose.model("CityObject").discriminator(
   "BuildingInstallation",
   new mongoose.Schema({
     name: { type: String, required: true },
     type: { type: String, default: "BuildingInstallation" },
     geographicalExtent: { type: [Number], default: undefined },
-    geometry: {
-      type: [mongoose.model("Geometry").schema],
-      default: undefined,
-      required: true
-    },
+    geometry: [mongoose.Schema.Types.Mixed],
     parents: { type: [String], default: undefined, required: true },
     attributes: {}
   })
@@ -111,6 +74,22 @@ module.exports = {
 
     object.parents = temp_parents;
 
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["Solid", "CompositeSolid", "MultiSurface"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
+
     var building = new Building(object);
 
     try {
@@ -120,6 +99,7 @@ module.exports = {
       console.error(err.message);
     }
   },
+
   insertBuildingInstallation: async (object, jsonName) => {
     var temp_children = [];
 
@@ -136,6 +116,22 @@ module.exports = {
     }
 
     object.parents = temp_parents;
+
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["Solid", "MultiSolid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
 
     var building = new BuildingInstallation(object);
 

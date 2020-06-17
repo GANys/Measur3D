@@ -1,31 +1,9 @@
 let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
-let AbstractCityObject = require("./abstractcityobject");
+let CityObject = require("./abstractcityobject.js");
 
-let TransportationGeometry = mongoose.model("Geometry").discriminator(
-  "TransportationGeometry",
-  new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: ["MultiSurface", "CompositeSurface", "MultiLineString"]
-    },
-    semantics: {
-      surfaces: {
-        type: {
-          type: String,
-          enum: ["TrafficArea", "AuxiliaryTrafficArea"]
-        },
-        function: {},
-        surfaceMaterial: { type: [String], default: undefined }
-      },
-      values: { type: [Array], default: undefined }
-    }
-  })
-);
-
-let Transportation = mongoose.model("AbstractCityObject").discriminator(
+let Transportation = mongoose.model("CityObject").discriminator(
   "Transportation",
   new mongoose.Schema({
     type: {
@@ -33,15 +11,28 @@ let Transportation = mongoose.model("AbstractCityObject").discriminator(
       required: true,
       enum: ["Road", "Railway", "TransportSquare"]
     },
-    geometry: {
-      type: [mongoose.model("TransportationGeometry").schema],
-      required: true
-    }
+    geometry: [mongoose.Schema.Types.Mixed]
   })
 );
 
 module.exports = {
-  insertTransportation: async object => {
+  insertTransportation: async (object, jsonName) => {
+    object["CityModel"] = jsonName
+
+    var temp_geometries = [];
+
+    for (var geometry in object.geometry) {
+      var authorised_type = ["MultiSurface", "CompositeSurface", "MultiLineString"];
+      if (!authorised_type.includes(object.geometry[geometry].type)) {
+        throw new Error(object.type + " is not a valid geometry type.");
+        return;
+      }
+
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+    }
+
+    object.geometry = temp_geometries;
+
     var transportation = new Transportation(object);
 
     try {

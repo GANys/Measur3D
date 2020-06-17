@@ -1,6 +1,6 @@
 let mongoose = require("mongoose");
 
-let AbstractCityObjectSchema = new mongoose.Schema({
+let CityObjectSchema = new mongoose.Schema({ // Generic AbstractCityObject
   name: { type: String, required: true },
   attributes: {
     creationDate: {
@@ -23,15 +23,16 @@ let AbstractCityObjectSchema = new mongoose.Schema({
     validate: function() {
       return this["geographicalExtent"].length % 6 == 0;
     }
-  }
+  },
+  geometry: [mongoose.Schema.Types.Mixed]
 });
 
-AbstractCityObject = mongoose.model(
-  "AbstractCityObject",
-  AbstractCityObjectSchema
+CityObject = mongoose.model(
+  "CityObject",
+  CityObjectSchema
 );
 
 module.exports = {
-  Model: AbstractCityObject,
-  Schema: AbstractCityObjectSchema
+  Model: CityObject,
+  Schema: CityObjectSchema
 };
