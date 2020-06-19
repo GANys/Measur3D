@@ -81,7 +81,7 @@ router.get("/getAllCityModels", (req, res) => {
           default:
         }
 
-        citymodel.CityObjects[cityObjectName] = await mongoose
+        citymodel.CityObjects[cityObjectName] = await mongoose // Get CityObjects
           .model(cityObjectType)
           .findById(
             citymodel.CityObjects[cityObjectName].id,
@@ -92,18 +92,18 @@ router.get("/getAllCityModels", (req, res) => {
             }
           );
 
-        citymodel.CityObjects[cityObjectName].geometry = await mongoose
-          .model("Geometry")
-          .findById(
-            citymodel.CityObjects[cityObjectName].geometry,
-            async (err, geom) => {
-              if (err) return res.status(500).send(err);
+        for (var geom in citymodel.CityObjects[cityObjectName].geometry) {
+          citymodel.CityObjects[cityObjectName].geometry[geom] = await mongoose // Get geometries for the CityObject
+            .model("Geometry")
+            .findById(
+              citymodel.CityObjects[cityObjectName].geometry[geom],
+              async (err, res_geom) => {
+                if (err) return res.status(500).send(err);
 
-              return geom;
-            }
-          );
-
-        console.log(citymodel.CityObjects[cityObjectName]);
+                return res_geom;
+              }
+            );
+        }
       }
     }
 
@@ -182,9 +182,11 @@ router.put("/updateObjectAttribute", async (req, res) => {
         attributes[req.body.key] = req.body.value;
       }
 
+      console.log(attributes);
+
       mongoose
         .model(req.body.CityObjectClass)
-        .update({ name: req.body.jsonName }, { attributes }, (err, data) => {
+        .updateOne({ name: req.body.jsonName }, { attributes }, (err, data) => {
           if (err) return res.status(500).send(err);
 
           return res.status(200).send({ success: "Object updated." });

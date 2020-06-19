@@ -135,7 +135,8 @@ export async function loadCityObjects(threescene) {
               children[json.name + '_' + returnChildren[i]] = cityObj;
             }
           } catch (e) {
-            console.log("ERROR at creating: " + cityObj);
+            var error_message = "ERROR at creating: " + cityObj;
+            EventEmitter.dispatch("error", error_message);
             continue;
           }
 

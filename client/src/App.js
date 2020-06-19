@@ -29,17 +29,17 @@ const items = [
   "divider",
   { name: "home", label: "Home", content: "modal_home", Icon: HomeRoundedIcon },
   {
-    name: "props",
-    label: "Properties",
-    content: "modal_properties",
-    Icon: SettingsRoundedIcon
-  },
-  "divider",
-  {
     name: "github",
     label: "GitHub",
     content: "modal_github",
     Icon: GitHubIcon
+  },
+  "divider",
+  {
+    name: "export",
+    label: "Export model",
+    content: "modal_export",
+    Icon: SettingsRoundedIcon
   }
 ];
 
@@ -47,10 +47,12 @@ class App extends Component {
   constructor() {
     super();
 
-    this.showError = this.showError.bind();
     this.showSuccess = this.showSuccess.bind();
     this.showInfo = this.showInfo.bind();
     this.showModal = this.showModal.bind();
+
+    this.showError = this.debounce(this.showError.bind(this), 3000);
+
     this.useStyles = this.useStyles.bind();
 
     this.uploadFile = this.uploadFile.bind();
@@ -67,6 +69,16 @@ class App extends Component {
     successMessage: "",
     infoMessage: "",
     showingAlert: false
+  };
+
+  debounce = (func, delay) => {
+    let debounceTimer;
+    return function() {
+      const context = this;
+      const args = arguments;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    };
   };
 
   showError = err => {
@@ -111,8 +123,6 @@ class App extends Component {
   showModal = (label, content) => {
     // eslint-disable-next-line
     if (this.state.show == false) {
-      console.log("Clicked on " + label + " " + content);
-
       this.setState({
         modal: [label, content]
       });
@@ -178,23 +188,23 @@ class App extends Component {
             {this.state.modal}
           </Modal>
         </React.Fragment>
-          <Collapse in={this.state.showingAlert}>
-            {this.state.errorMessage && this.state.showingAlert ? (
-              <Alert className="Alert" severity="error">
-                {this.state.errorMessage}
-              </Alert>
-            ) : null}
-            {this.state.successMessage && this.state.showingAlert ? (
-              <Alert className="Alert" severity="success">
-                {this.state.successMessage}
-              </Alert>
-            ) : null}
-            {this.state.infoMessage && this.state.showingAlert ? (
-              <Alert className="Alert" severity="info">
-                {this.state.infoMessage}
-              </Alert>
-            ) : null}
-          </Collapse>
+        <Collapse in={this.state.showingAlert}>
+          {this.state.errorMessage && this.state.showingAlert ? (
+            <Alert className="Alert" severity="error">
+              {this.state.errorMessage}
+            </Alert>
+          ) : null}
+          {this.state.successMessage && this.state.showingAlert ? (
+            <Alert className="Alert" severity="success">
+              {this.state.successMessage}
+            </Alert>
+          ) : null}
+          {this.state.infoMessage && this.state.showingAlert ? (
+            <Alert className="Alert" severity="info">
+              {this.state.infoMessage}
+            </Alert>
+          ) : null}
+        </Collapse>
       </Container>
     );
   }

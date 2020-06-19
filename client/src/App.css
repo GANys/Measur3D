@@ -127,7 +127,8 @@ div.AttributeManager {
 }
 
 /* Modal button style */
-.modal .modal_actions button {
+.modal .modal_actions button,
+#modal > div.modal_content > div > button {
   background: var(--background-color);
   border: 1px solid var(--border-color);
   border-radius: 4px;
@@ -135,7 +136,8 @@ div.AttributeManager {
 }
 
 /* Modal button hover style */
-.modal .modal_actions button:hover {
+.modal .modal_actions button:hover,
+#modal > div.modal_content > div > button {
   background: var(--background-color-hover);
 }
 

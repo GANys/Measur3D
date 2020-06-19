@@ -179,7 +179,7 @@ class ThreeScene extends Component {
 
     //already render loaded objects
     this.renderer.render(this.scene, this.camera);
-    EventEmitter.dispatch("info", "CityJSONfile loaded.")
+    EventEmitter.dispatch("success", "CityJSONfile loaded.")
 
     this.setState({
       boolJSONload: true
