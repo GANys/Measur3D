@@ -4,8 +4,6 @@ import axios from "axios";
 import PropTypes from "prop-types";
 import onClickOutside from "react-onclickoutside";
 
-import { EventEmitter } from "./events";
-
 class Modal extends React.Component {
   constructor() {
     super();

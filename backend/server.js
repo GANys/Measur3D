@@ -164,9 +164,16 @@ router.put("/updateObjectAttribute", async (req, res) => {
     .findOne({ name: req.body.jsonName }, (err, data) => {
       if (err) return res.status(500).send(err);
 
-      var attributes = data.attributes;
+      //var attributes = data.attributes;
+      var attributes = Object.assign({}, data.attributes); // Copy the CityObject attributes from Schema -> Undefined value if key is empty.
 
-      if (attributes == null) {
+      for (var key in attributes) { // Clear the undefined key
+        if(attributes[key] == undefined){
+          delete attributes[key]
+        }
+      }
+
+      if (attributes == null) { // If attributes empty, create it
         attributes = {};
       }
 
@@ -182,11 +189,9 @@ router.put("/updateObjectAttribute", async (req, res) => {
         attributes[req.body.key] = req.body.value;
       }
 
-      console.log(attributes);
-
       mongoose
         .model(req.body.CityObjectClass)
-        .updateOne({ name: req.body.jsonName }, { attributes }, (err, data) => {
+        .updateOne({ name: req.body.jsonName }, { attributes }, (err, data) => { // Be carefull that object might change has it is not loaded by updateOne
           if (err) return res.status(500).send(err);
 
           return res.status(200).send({ success: "Object updated." });

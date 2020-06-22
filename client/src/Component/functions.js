@@ -47,7 +47,7 @@ export async function loadCityObjects(threescene) {
 
       var json;
 
-      console.log(responseCities)
+      console.log(responseCities);
 
       for (var i = 0; i < responseCities.data.length; i++) {
         json = responseCities.data[i];
@@ -97,7 +97,6 @@ export async function loadCityObjects(threescene) {
 
         //iterate through all cityObjects
         for (var cityObj in json.CityObjects) {
-
           var cityObjectType = json.CityObjects[cityObj].type;
 
           switch (cityObjectType) {
@@ -132,7 +131,7 @@ export async function loadCityObjects(threescene) {
 
             //if object has children add them to the childrendict
             for (i in returnChildren) {
-              children[json.name + '_' + returnChildren[i]] = cityObj;
+              children[json.name + "_" + returnChildren[i]] = cityObj;
             }
           } catch (e) {
             var error_message = "ERROR at creating: " + cityObj;
@@ -385,6 +384,12 @@ export async function intersectMeshes(event, threescene) {
       threescene.HIGHLIGHTED.material.emissive.setHex(
         threescene.HIGHLIGHTED.currentHex
       );
+
+    var add_attribute_button = document.querySelector(
+      "#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
+    );
+
+    add_attribute_button.style.visibility = "hidden";
 
     EventEmitter.dispatch("attObjectTitle", ("Object attributes", null));
     EventEmitter.dispatch("attObject", {});

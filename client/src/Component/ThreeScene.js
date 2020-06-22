@@ -179,7 +179,7 @@ class ThreeScene extends Component {
 
     //already render loaded objects
     this.renderer.render(this.scene, this.camera);
-    EventEmitter.dispatch("success", "CityJSONfile loaded.")
+    EventEmitter.dispatch("success", "CityJSONfile loaded.");
 
     this.setState({
       boolJSONload: true
@@ -187,11 +187,19 @@ class ThreeScene extends Component {
   };
 
   handleClick = evt => {
+    var add_attribute_button = document.querySelector(
+      "#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
+    );
     // eslint-disable-next-line
     if (evt != undefined) {
       // eslint-disable-next-line
       if (evt.button != 0) return; // Only works if left mouse button is used
     }
+
+    // eslint-disable-next-line
+    if (evt == undefined) return;
+
+    add_attribute_button.style.visibility = "visible";
     Functions.intersectMeshes(evt, this);
   };
 
