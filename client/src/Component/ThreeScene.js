@@ -172,18 +172,17 @@ class ThreeScene extends Component {
       jsonName: file.jsonName
     });
 
-    //window.location.reload() is the easiest way but not the better as it impose to reload the whole app.
-
-    //load the cityObjects into the viewer
-    await Functions.loadCityObjects(this);
-
-    //already render loaded objects
-    this.renderer.render(this.scene, this.camera);
     EventEmitter.dispatch("success", "CityJSONfile loaded.");
 
     this.setState({
       boolJSONload: true
     });
+
+    //load the cityObjects into the viewer
+    await Functions.loadCityObjects(this);
+
+    window.location.reload() //is the easiest way but not the better as it impose to reload the whole app. Otherwise the user has to reload the page manually.
+
   };
 
   handleClick = evt => {

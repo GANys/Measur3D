@@ -1,6 +1,6 @@
 **Measur3D - client**
 ----
-This API allows people to handle compact city models on a document-oriented database.
+This API makes it possible to manipulate compact city models in a document-oriented database.
 
 Measur3D relies on JavaScript libraries such as follows for the client side:
 
