@@ -92,18 +92,34 @@ router.get("/getAllCityModels", (req, res) => {
             }
           );
 
-        for (var geom in citymodel.CityObjects[cityObjectName].geometry) {
-          citymodel.CityObjects[cityObjectName].geometry[geom] = await mongoose // Get geometries for the CityObject
-            .model("Geometry")
-            .findById(
-              citymodel.CityObjects[cityObjectName].geometry[geom],
-              async (err, res_geom) => {
-                if (err) return res.status(500).send(err);
+        var geometries = [];
 
-                return res_geom;
-              }
-            );
+        for (var geom in citymodel.CityObjects[cityObjectName].geometry) {
+          geometries.push(
+            await mongoose // Get geometries for the CityObject
+              .model("Geometry")
+              .findOne(
+                { _id: citymodel.CityObjects[cityObjectName].geometry[geom] },
+                async (err, res_geom) => {
+                  if (err) return res.status(500).send(err);
+
+                  return res_geom;
+                }
+              )
+          );
         }
+
+        var max_lod = 0
+        var max_id = -1
+
+        for (var geom in geometries) { // Extract the highest LoD only
+          if(geometries[geom].lod > Number(max_lod)) {
+            max_lod = Number(geometries[geom].lod)
+            max_id = geom
+          }
+        }
+
+        citymodel.CityObjects[cityObjectName].geometry = [geometries[max_id]]
       }
     }
 
@@ -167,13 +183,15 @@ router.put("/updateObjectAttribute", async (req, res) => {
       //var attributes = data.attributes;
       var attributes = Object.assign({}, data.attributes); // Copy the CityObject attributes from Schema -> Undefined value if key is empty.
 
-      for (var key in attributes) { // Clear the undefined key
-        if(attributes[key] == undefined){
-          delete attributes[key]
+      for (var key in attributes) {
+        // Clear the undefined key
+        if (attributes[key] == undefined) {
+          delete attributes[key];
         }
       }
 
-      if (attributes == null) { // If attributes empty, create it
+      if (attributes == null) {
+        // If attributes empty, create it
         attributes = {};
       }
 
@@ -191,7 +209,8 @@ router.put("/updateObjectAttribute", async (req, res) => {
 
       mongoose
         .model(req.body.CityObjectClass)
-        .updateOne({ name: req.body.jsonName }, { attributes }, (err, data) => { // Be carefull that object might change has it is not loaded by updateOne
+        .updateOne({ name: req.body.jsonName }, { attributes }, (err, data) => {
+          // Be carefull that object might change has it is not loaded by updateOne
           if (err) return res.status(500).send(err);
 
           return res.status(200).send({ success: "Object updated." });

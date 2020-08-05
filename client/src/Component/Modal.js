@@ -83,7 +83,7 @@ Modal.propTypes = {
 };
 
 var html_home =
-  "Measur3D is a light and compact for urban model management. <br><br> It is developped by the Geomatics Unit at the University of Liège.";
+  "Measur3D is a fullstack JS application for urban model management. <br><br> It is developped by the Geomatics Unit at the University of Liège.";
 
 var html_github =
   '<center><p>Code is available on <a href="https://github.com/GANys?tab=repositories" target="_blank">GitHub</a></p> <br> Reporting issues is strongly encouraged.</center>';

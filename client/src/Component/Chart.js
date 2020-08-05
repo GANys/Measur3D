@@ -3,13 +3,7 @@ import React from "react";
 class Chart extends React.Component {
   // initialize our state
   state = {
-    data: [],
-    id: 0,
-    message: null,
-    intervalIsSet: false,
-    idToDelete: null,
-    idToUpdate: null,
-    objectToUpdate: null
+    data: []
   };
 
   // when component mounts, first thing it does is fetch all existing data in our db
@@ -36,7 +30,7 @@ class Chart extends React.Component {
   // it is easy to understand their functions when you
   // see them render into our screen
   render() {
-    return <div> This panel will host the tools for managing data from sensors. </div>;
+    return <div> This panel is left open for future tools. </div>;
   }
 }
 

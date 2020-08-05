@@ -7,7 +7,7 @@ let GenericCityObject = new mongoose.model("CityObject").discriminator(
   "GenericCityObject",
   new mongoose.Schema({
     type: { type: String, required: true, default: "GenericCityObject" },
-    geometry: [mongoose.Schema.ObjectId]
+    geometry: [mongoose.Schema.Types.Mixed]
   })
 );
 
@@ -18,7 +18,7 @@ module.exports = {
     var temp_geometries = [];
 
     for (var geometry in object.geometry) {
-      var authorised_type = ["Solid", "MultiSolid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint"];
+      var authorised_type = ["Solid", "MultiSolid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint", "GeometryInstance"];
       if (!authorised_type.includes(object.geometry[geometry].type)) {
         throw new Error(object.type + " is not a valid geometry type.");
         return;

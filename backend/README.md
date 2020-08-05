@@ -2,7 +2,7 @@
 ----
 This API allows people to handle compact city models on a document-oriented database.
 
-Measur3D relies on JavaScript libraries such as follows:
+Measur3D relies on JavaScript libraries such as follows for the server side:
 
 * [MongoDB](https://www.mongodb.com/) - A cross-platform document-oriented database
 * [ExpressJS](https://expressjs.com/) - A fast, unopinionated, minimalist web framework for Node.js

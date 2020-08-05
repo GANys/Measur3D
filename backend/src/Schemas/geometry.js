@@ -155,7 +155,7 @@ module.exports = {
         geometry = new MultiPointGeometry(object);
         break;
       default:
-        throw new Error(object.type + " is not a valid geometry type.");
+        throw new Error(object + " does not have a valid geometry type.");
     }
 
     try {

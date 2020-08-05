@@ -135,6 +135,8 @@ export async function loadCityObjects(threescene) {
             }
           } catch (e) {
             var error_message = "ERROR at creating: " + cityObj;
+            console.log(error_message)
+            console.log(e)
             EventEmitter.dispatch("error", error_message);
             continue;
           }
@@ -252,6 +254,8 @@ async function parseObject(object, json, cityObj, geoms) {
 
   //create geometry and empty list for the vertices
   var geom = new THREE.Geometry();
+
+  if (object.geometry[0] ==  null) return; // If no geometry (eg: CityObjectGroup (not always true))
 
   //each geometrytype must be handled different
   var geomType = object.geometry[0].type;
