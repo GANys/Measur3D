@@ -52,7 +52,7 @@ class BasicDropzone extends React.Component {
                 <GetAppRoundedIcon />
                 </div>
                 {!isDragActive && "Drop CityJSON file or click to browse."}
-                {isDragActive && !isDragReject && "Drop JSON file here."}
+                {isDragActive && "Drop JSON file here."}
               </div>
             );
           }}

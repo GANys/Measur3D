@@ -9,7 +9,7 @@ Measur3D relies on JavaScript libraries such as follows for the server side:
 * [Node.js](https://nodejs.org/en/) - An open-source, cross-platform, JavaScript runtime environment
 * [Mongoose](https://mongoosejs.com/) - An elegant mongodb object modeling for node.js
 
-By default, in this project, NodeJS server in deployed on `localhost:3001/measur3d`
+By default, in this project, the API in deployed on `localhost:3001/measur3d`
 
 Current methods are the following :
 
@@ -34,13 +34,13 @@ Current methods are the following :
 * **Success Response:**
   Returns an array of all city models.
   * **Code:** 200
-    **Content:** `[ { JSON Objects } ]`
+  *  **Content:** `[ { JSON Objects } ]`
 
 * **Error Response:**
   Database can be empty  - server error should express it.
 
   * **Code:** 500 INTERNAL SERVER ERROR
-    **Content:** `{ error : "There is no City Models." }`
+  *  **Content:** `{ error : "There is no City Models." }`
 
 ----
 **getObject**
@@ -66,17 +66,17 @@ Current methods are the following :
 * **Success Response:**
   Returns a JSON object.
   * **Code:** 200
-    **Content:** `{ JSON Object }`
+  *  **Content:** `{ JSON Object }`
 
 * **Error Response:**
 	Object may not exist or request can be malformed  - server error should express it.
   * **Code:** 500 INTERNAL SERVER ERROR
-    **Content:** `{ error : "Mongoose had an internal problem." }`
+  *  **Content:** `{ error : "Mongoose had an internal problem." }`
 
   OR
 
   * **Code:** 400 BAD REQUEST
-    **Content:** `{ error : "Params are not valid - getObject could not find Object in Collection." }`
+  *  **Content:** `{ error : "Params are not valid - getObject could not find Object in Collection." }`
 ----
 **getObjectAttributes**
   This method allows to query all attributes of an City Object within a specific Collection.
@@ -101,17 +101,17 @@ Current methods are the following :
 * **Success Response:**
     Returns a JSON object.
     * **Code:** 200
-      **Content:** `{ JSON Object }`
+    *  **Content:** `{ JSON Object }`
 
 * **Error Response:**
 	Object may not exist or request can be malformed  - server error should express it.
     * **Code:** 500 INTERNAL SERVER ERROR
-      **Content:** `{ error : "Mongoose had an internal problem." }`
+    *  **Content:** `{ error : "Mongoose had an internal problem." }`
 
     OR
 
     * **Code:** 400 BAD REQUEST
-      **Content:** `{ error : "Params are not valid - getObject could not find Object in Collection." }`
+    *  **Content:** `{ error : "Params are not valid - getObject could not find Object in Collection." }`
 ----
 **uploadCityModel**
   This method allows to upload a CityJSON model to the database.
@@ -129,12 +129,12 @@ Current methods are the following :
 * **Success Response:**
   Returns no data.
   * **Code:** 201
-    **Content:** `{success: "City model imported with success !"}`
+  *  **Content:** `{success: "City model imported with success !"}`
 
 * **Error Response:**
 City Model may not be valid - server error should express it.
   * **Code:** 500 INTERNAL SERVER ERROR
-    **Content:** `{ error : "Mongoose had an internal problem." }`
+  *  **Content:** `{ error : "Mongoose had an internal problem." }`
 ----
 **updateObjectAttribute**
 This method allows to update an attribute of a specific City Object.
@@ -154,10 +154,10 @@ This method allows to update an attribute of a specific City Object.
 * **Success Response:**
   Returns no data.
   * **Code:** 200
-    **Content:** `{ success: "Object updated."}`
+  *  **Content:** `{ success: "Object updated."}`
 
 * **Error Response:**
 Object may not exist or request can be malformed  - server error should express it.
   * **Code:** 500 INTERNAL SERVER ERROR
-    **Content:** `{ error : "Mongoose had an internal problem." }`
+  *  **Content:** `{ error : "Mongoose had an internal problem." }`
 ----

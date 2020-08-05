@@ -11,3 +11,5 @@ Measur3D relies on JavaScript libraries such as follows for the client side:
 The client should be launched after the server because of automatic connections. Currently, ports and hosting are the default ones.
 
 The client is built following an event-driven architecture. An event bus centralizes all the subscriptions and events.
+
+![Measur3D render](render.png)

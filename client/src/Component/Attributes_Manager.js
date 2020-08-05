@@ -244,7 +244,7 @@ map["TunnelInstallation"] = <FontAwesomeIcon icon={faDotCircle} />;
 map["WaterBody"] = <FontAwesomeIcon icon={faWater} />;
 
 function isAllowed(string) {
-  var RegEx = /^[a-zA-Z0-9_]+$/i;
+  var RegEx = /^[\w]*([\,|\.])?[0-9]*$/i;
   return RegEx.test(string);
 }
 
