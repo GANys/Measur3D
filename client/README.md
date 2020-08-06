@@ -12,4 +12,4 @@ The client should be launched after the server because of automatic connections.
 
 The client is built following an event-driven architecture. An event bus centralizes all the subscriptions and events.
 
-![Measur3D render](render.png)
+![Measur3D render](src/render.png)
