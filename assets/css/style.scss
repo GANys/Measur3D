@@ -4,7 +4,7 @@
 @import 'jekyll-theme-cayman';
 
 :root {
-  --background-color: rgba(54, 54, 54, 1);
+  --background-color: rgba(74, 74, 74, 1);
   --background-color-hover: rgba(62, 62, 62, 0.75);
   --border-color: rgba(18, 18, 18, 0.75);
   --font-color: rgba(255, 255, 255, 1);
@@ -24,4 +24,14 @@ body > section.page-header {
   padding: 0;
   background: var(--background-color);
   color: var(--font-color);
+}
+
+.projet-name,
+.projet-tagline {
+  visibility: hidden
+}
+
+h1,
+h2 {
+  color: var(--font-color-highlight);
 }
