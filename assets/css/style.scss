@@ -26,12 +26,12 @@ body > section.page-header {
   color: var(--font-color);
 }
 
-h1.projet-name,
-h2.projet-tagline {
+body > section.page-header > h1,
+body > section.page-header > h2 {
   visibility: hidden
 }
 
-h1,
-h2 {
+body > section.main-content > h1,
+body > section.main-content > h2 {
   color: var(--font-color-highlight);
 }
