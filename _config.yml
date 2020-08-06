@@ -1,5 +1,5 @@
 title: Measur3D
 description: A light and compact MERN application for the management of CityJSON city models
-show_downloads: true
+show_downloads: false
 google_analytics:
 theme: jekyll-theme-cayman
