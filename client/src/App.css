@@ -1,30 +1,326 @@
-html, body {
+/*
+  General variable and app style
+*/
+
+:root {
+  --background-color: rgba(54, 54, 54, 1);
+  --background-color-hover: rgba(62, 62, 62, 0.75);
+  --border-color: rgba(18, 18, 18, 0.75);
+  --font-color: rgba(255, 255, 255, 1);
+  --font-color-highlight: rgba(255, 255, 255, 0.75);
+  --icon-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Adjust the app to window */
+html,
+body {
   margin: 0;
   overflow: hidden;
   height: 100vh;
-  width: 100vw
+  width: 100vw;
+  background: var(--background-color);
+  color: var(--font-color);
 }
 
+/* No blue line around the component on focus */
+canvas:focus,
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1 > div > div {
+  outline: none !important;
+}
+
+/* Color of URLs */
+a {
+  color: var(--font-color-highlight);
+}
+
+/* -------------------------
+  Grid formatting of the app
+ ------------------------- */
+
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane1 {
+  height: 100px !important
+}
+
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1 {
+  padding-top: 8px;
+  padding-bottom: 8px
+}
+
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1,
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1 {
+  height: auto !important
+}
+
+/* Sidebar pane */
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 {
+  height: 100vh;
+  width: 20% !important
+}
+
+#root > div > div.MuiCollapse-container.MuiCollapse-entered {
+  z-index: 3 !important;
+  position: relative;
+}
+
+#ThreeScene, #ThreeScene > div {
+  height: 100%;
+}
+
+div.AttributeManager {
+  overflow-y: scroll;
+  height: 100%;
+  width: 100%
+}
+
+/* Attribute Manager */
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 {
+  position: absolute !important;
+  height: 40vh !important;
+  width: 100% !important;
+  bottom: 0px !important;
+  left: 0px !important;
+}
+
+/* ThreeScene component */
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane2 > div > div.Pane.horizontal.Pane1 {
+  height: 60vh !important;
+}
+
+/* Chart component */
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane2 > div > div.Pane.horizontal.Pane2 {
+  height: 40vh !important;
+}
+
+/* Chart component */
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane2 > div > div.Pane.horizontal.Pane2 > div {
+  width: 100%
+}
+
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.vertical.Pane1 {
+  width: 80vh !important
+}
+
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.vertical.Pane2 {
+  width: 20vh !important
+}
+
+/* -------------------------
+  Modal style
+ ------------------------- */
+
+/* Position and color of modal window */
 .modal {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  background: var(--background-color);
+  background-color: var(--background-color);
+  color: var(--font-color);
+  border: 1px solid var(--border-color);
 }
 
-.sidebar {
-  height: 100vh;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+/* Borders of the modal content */
+.modal_content {
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.split {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+/* Modal button style */
+.modal .modal_actions button,
+#modal > div.modal_content > div > button {
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--font-color);
 }
 
-.uploader {
+/* Modal button hover style */
+.modal .modal_actions button:hover,
+#modal > div.modal_content > div > button {
+  background: var(--background-color-hover);
+}
+
+.modal .modal_actions button:focus {
+  outline: none !important
+}
+
+/* -------------------------
+  Sidebar general style
+ ------------------------- */
+
+/* Sidebar border style */
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div,
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div > div.Pane.horizontal.Pane1,
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div > div.Pane.horizontal.Pane2 {
+  border-right: 1px solid var(--border-color) !important;
+}
+
+/* List item in Sidebar */
+.MuiList-root {
+  height: 50px !important;
+  width: 100%
+}
+
+div.sidebar-item-text {
+  padding: 8px
+}
+
+/* Dropzone style */
+.dropzone,
+.dropzone > div {
   width: 100%;
+  height: auto;
+  text-align: center;
+  margin: auto;
 }
 
-.alert {
+/* Dropzone style on hover */
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1:hover {
+  background: var(--background-color-hover);
+  cursor: pointer
+}
+
+/* Highlight buttons on hover */
+.MuiButtonBase-root:hover {
+  background: var(--background-color-hover) !important;
+}
+
+/* Color of Diviver in sidebar */
+.MuiDivider-root {
+  background-color: var(--border-color);
+}
+
+/* -------------------------
+  Logo & Icon style
+ ------------------------- */
+
+/* Measur3D logo */
+.logo_app {
+  height: auto;
+  width: 100%;
+  margin: auto;
+}
+
+/* Geomatics Unit logo */
+.logo_ugeom {
   position: absolute;
+  top: 10px;
+  right: 10px;
+  height: 48px;
+}
+
+/* Material-UI icons style */
+.COClassIcon,
+.MuiSvgIcon-root.sidebar-item-icon,
+span.MuiIconButton-label > svg,
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1 > div > div > div > svg {
+  color: var(--icon-color);
+}
+
+.COClassIcon {
+  padding-right: 6px
+}
+
+.MuiCircularProgress-colorPrimary {
+    color: var(--icon-color) !important;
+}
+
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78 {
+  visibility: hidden;
+}
+
+#ThreeScene > div.MuiCircularProgress-root.MuiCircularProgress-colorPrimary.MuiCircularProgress-indeterminate {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+
+/* -------------------------
+  Attribute Manager style
+ ------------------------- */
+
+/* General component style */
+#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 {
+  border-top: 1px solid var(--border-color) !important;
+}
+
+/* General component colors */
+.MuiPaper-root.MuiPaper-elevation2 {
+  background: var(--background-color) !important;
+  color: var(--font-color) !important;
+}
+
+/* No shadow for component */
+.MuiPaper-elevation2 {
+  box-shadow: none !important;
+}
+
+/* No rounded corner for component */
+.MuiPaper-rounded {
+  border-radius: 0px !important;
+}
+
+/* No red border on edit */
+.MuiTable-root {
+  border-collapse: 0 !important;
+}
+
+/* Input style */
+.MuiInputBase-input {
+  color: var(--font-color) !important;
+  border-bottom: 1px solid var(--icon-color) !important;
+}
+
+/* Font color of table */
+.MuiTableBody-root {
+  color: var(--icon-color) !important;
+  overflow-y: scroll
+}
+
+/* Cell style */
+.MuiTableCell-root {
+  background: var(--background-color) !important;
+  color: var(--font-color) !important;
+  border: none !important;
+}
+
+.MuiTableRow-root {
+  border: none !important
+}
+
+/* Attribute Manager List items */
+tbody.MuiTableBody-root > tr:hover {
+  background-color: var(--background-color-hover);
+}
+
+/* Attribute Manager title */
+.MTableToolbar-title-84 > h6 {
+  font-size: 1rem
+}
+
+/* Scroll handle style */
+*::-webkit-scrollbar-thumb {
+  background: var(--icon-color) !important;
+  border: 0px !important;
+  border-radius: 0px !important;
+}
+
+*::-webkit-scrollbar {
+  width: 8px !important
+}
+
+/* Delete statement in table */
+td:nth-child(2) > h6 {
+  font-size: 0.8rem;
+}
+
+/* Chart panel top border */
+#root
+  > div
+  > div.SplitPane.vertical
+  > div.Pane.vertical.Pane2
+  > div
+  > div.Pane.horizontal.Pane2 {
+  border-top: 1px solid var(--border-color);
 }

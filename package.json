@@ -1,6 +1,6 @@
 {
-  "name": "nodemongocityjson",
-  "version": "0.1.0",
+  "name": "Measur3D",
+  "version": "0.2.0",
   "description": "Fullstack MERN for CityJSON management",
   "main": "index.js",
   "scripts": {

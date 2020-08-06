@@ -5,44 +5,34 @@ import Divider from "@material-ui/core/Divider";
 
 class Sidebar extends React.Component {
   render() {
-    const { items, depthStep, depth } = this.props;
+    const { items } = this.props;
 
     return (
-        <List disablePadding>
-          {items.map((sidebarItem, index) => (
-            <React.Fragment key={`${sidebarItem.name}${index}`}>
-              {sidebarItem === "divider" ? (
-                <Divider style={{ margin: "6px 0" }} />
-              ) : (
-                <ListItem
-                  key={index}
-                  className="sidebar-item"
-                  button
-                  onClick={() =>
-                    this.props.showModal(
-                      sidebarItem.label,
-                      sidebarItem.content
-                    )
-                  }
-                  {...this.rest}
-                >
-                  <div
-                    style={{ paddingLeft: depth * depthStep }}
-                    className="sidebar-item-content"
-                  >
-                    {sidebarItem.Icon && (
-                      <sidebarItem.Icon
-                        className="sidebar-item-icon"
-                        fontSize="small"
-                      />
-                    )}
-                    <div className="sidebar-item-text">{sidebarItem.label}</div>
-                  </div>
-                </ListItem>
-              )}
-            </React.Fragment>
-          ))}
-        </List>
+      <List disablePadding>
+        {items.map((sidebarItem, index) => (
+          <React.Fragment key={`${sidebarItem.name}${index}`}>
+            {sidebarItem === "divider" ? (
+              <Divider className="divider" />
+            ) : (
+              <ListItem
+                key={index}
+                className="sidebar-item"
+                button
+                onClick={() =>
+                  this.props.showModal(sidebarItem.label, sidebarItem.content)
+                }
+                {...this.rest}
+              >
+                <sidebarItem.Icon
+                  className="sidebar-item-icon"
+                  fontSize="small"
+                />
+                <div className="sidebar-item-text">{sidebarItem.label}</div>
+              </ListItem>
+            )}
+          </React.Fragment>
+        ))}
+      </List>
     );
   }
 }

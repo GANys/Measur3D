@@ -1,8 +1,6 @@
 .modal {
-  background: white;
-  border: 1px solid #ccc;
   transition: 1.1s ease-out;
-  box-shadow: -0.5rem 0.5rem 0.5rem rgba(0, 0, 0, 0.2);
+  box-shadow: -0.2rem 0.2rem 0.2rem rgba(0, 0, 0, 0.2);
   filter: blur(0);
   transform: scale(1);
   opacity: 1;
@@ -32,7 +30,6 @@
 }
 
 .modal h2 {
-  border-bottom: 1px solid #ccc;
   padding: 1rem;
   margin: 0;
 }
@@ -42,15 +39,10 @@
 }
 
 .modal .modal_actions {
-  border-top: 1px solid #ccc;
-  background: #eee;
   padding: 0.5rem 1rem;
 }
 
 .modal .modal_actions button {
-  border: 0;
-  background: #ddd;
-  border-radius: 5px;
   padding: 0.5rem 1rem;
   font-size: 0.8rem;
   line-height: 1;

@@ -1,139 +1,331 @@
 let mongoose = require("mongoose");
 
-let Buildings = require("./building.js");
+let Appearance = require("./appearance.js");
+let Bridge = require("./bridge.js");
+let Building = require("./building.js");
+let CityFurniture = require("./cityfurniture.js");
+let CityObjectGroup = require("./cityobjectgroup.js");
+let GenericCityObject = require("./genericcityobject.js");
+let LandUse = require("./landuse.js");
+let PlantCover = require("./plantcover.js");
+let SolitaryVegetationObject = require("./solitaryvegetationobject.js");
+let TINRelief = require("./tinrelief.js");
+let Transportation = require("./transportation.js");
+let Tunnel = require("./tunnel.js");
+let WaterBody = require("./waterbody.js");
 
 let CityModelSchema = new mongoose.Schema({
+  name: { type: String, required: true },
   type: { type: String, default: "CityJSON", required: true },
-  version: { type: String, default: "1.0", required: true },
-  CityObjects: { type: {}, required: true },
-  vertices: {
-    type: Array,
+  version: {
+    type: String,
+    default: "1.0.1",
     required: true,
-    index: true
+    validate: /^([0-9]\.)+([0-9])$/
   },
-  extension: { type: {}, required: false },
+  CityObjects: { type: {}, required: true }, // No need of rules and schemas as it is already handled in the insertCity function
+  vertices: {
+    type: [[Number]],
+    required: true,
+    index: true,
+    validate: function() {
+      for (var vertex in this.vertices) {
+        if (this.vertices[vertex].length != 3) return false;
+      }
+      return true;
+    }
+  },
+  extension: {
+    url: {
+      type: String,
+      required: function() {
+        return this.hasOwnProperty("extension") && validURL(this.url);
+      }
+    },
+    version: {
+      type: String,
+      validate: /^([0-9]\.)+([0-9])$/,
+      required: function() {
+        return this.hasOwnProperty("extension");
+      }
+    }
+  },
   metadata: {
-    geographicalExtent: [Number],
+    geographicalExtent: { type: [Number], default: undefined },
     referenceSystem: {
       type: String,
       default: "urn:ogc:def:crs:EPSG::4326",
       required: true
+    },
+    contactDetails: {
+      contactName: {
+        type: String
+      },
+      phone: {
+        type: String
+      },
+      address: {
+        type: String
+      },
+      emailAddress: {
+        type: String,
+        validate: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      },
+      contactType: {
+        type: String,
+        enum: ["individual", "organization"],
+        role: {
+          type: String,
+          enum: [
+            "resourceProvider",
+            "custodian",
+            "owner",
+            "user",
+            "distributor",
+            "originator",
+            "pointOfContact",
+            "principalInvestigator",
+            "processor",
+            "publisher",
+            "author",
+            "sponsor",
+            "co-author",
+            "collaborator",
+            "editor",
+            "mediator",
+            "rightsHolder",
+            "contributor",
+            "funder",
+            "stakeholder"
+          ]
+        },
+        organization: String,
+        website: {
+          validate: /^http(s)?:.*/
+        }
+      }
     }
   },
   transform: {
-    scale: [],
-    translate: []
+    // No additional properties
+    scale: {
+      type: [Number],
+      default: undefined,
+      validate: function() {
+        return this.transform["scale"].length == 3;
+      }
+    },
+    translate: {
+      type: [Number],
+      default: undefined,
+      validate: function() {
+        return this.transform["translate"].length == 3;
+      }
+    }
   },
-  appearance: { type: {}, required: false },
-  "geometry-templates": { type: {}, required: false }
+  appearance: {
+    // No additional properties
+    "default-theme-texture": String,
+    "default-theme-material": String,
+    materials: {
+      type: [mongoose.model("Material").schema],
+      default: undefined
+    },
+    texture: { type: [mongoose.model("Texture").schema], default: undefined },
+    "vertices-texture": { type: [[Number]], default: undefined } //length == 2
+  },
+  "geometry-templates": {
+    // No additional properties
+    templates: {
+      type: [mongoose.model("GeometryInstance").schema],
+      default: undefined
+    },
+    "vertices-template": {
+      type: [[Number]],
+      default: undefined,
+      validate: function() {
+        for (var vertex in this["geometry-templates"]["vertices-template"]) {
+          if (
+            this["geometry-templates"]["vertices-template"][vertex].length != 3
+          )
+            return false;
+        }
+        return true;
+      }
+    }
+  }
 });
 
 CityModel = mongoose.model("CityModel", CityModelSchema);
 
 module.exports = {
   insertCity: async object => {
-    var new_object = {};
+    var new_objects = {};
 
-    for ([key, element] of Object.entries(object.CityObjects)) {
+    object.json["name"] = object.jsonName;
+
+    for ([key, element] of Object.entries(object.json.CityObjects)) {
       try {
         switch (element.type) {
           case "Building":
-            var element_id = await Buildings.insertBuilding(element);
-
+          case "BuildingPart":
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Building.insertBuilding(
+              element,
+              object.jsonName
+            );
+            break;
+          case "BuildingInstallation":
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Building.insertBuildingInstallation(
+              element,
+              object.jsonName
+            );
             break;
           case "Bridge":
-            throw new Error(
-              element.type + " are not supported in the current version."
+          case "BridgePart":
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Bridge.insertBridge(
+              element,
+              object.jsonName
+            );
+            break;
+          case "BridgeInstallation":
+          case "BridgeConstructionElement":
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Bridge.insertBridgeInstallation(
+              element,
+              object.jsonName
             );
             break;
           case "CityObjectGroup":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await CityObjectGroup.insertCityObjectGroup(
+              element,
+              object.jsonName
             );
             break;
           case "CityFurniture":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await CityFurniture.insertCityFurniture(
+              element,
+              object.jsonName
             );
             break;
           case "GenericCityObject":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await GenericCityObject.insertGenericCityObject(
+              element,
+              object.jsonName
             );
             break;
           case "LandUse":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await LandUse.insertLandUse(
+              element,
+              object.jsonName
             );
             break;
           case "PlantCover":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await PlantCover.insertPlantCover(
+              element,
+              object.jsonName
             );
             break;
           case "Railway":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Transportation.insertTransportation(
+              element,
+              object.jsonName
             );
             break;
           case "Road":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Transportation.insertTransportation(
+              element,
+              object.jsonName
             );
             break;
           case "SolitaryVegetationObject":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(
+              element,
+              object.jsonName
             );
             break;
           case "TINRelief":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
+            var element_id = await TINRelief.insertTINRelief(
+              element,
+              object.jsonName
             );
             break;
           case "TransportSquare":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Transportation.insertTransportation(
+              element,
+              object.jsonName
             );
             break;
           case "Tunnel":
-            throw new Error(
-              element.type + " are not supported in the current version."
+          case "TunnelPart":
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Tunnel.insertTunnel(
+              element,
+              object.jsonName
+            );
+            break;
+          case "TunnelInstallation":
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await Tunnel.insertTunnelInstallation(
+              element,
+              object.jsonName
             );
             break;
           case "WaterBody":
-            throw new Error(
-              element.type + " are not supported in the current version."
+            element["name"] = object.jsonName + "_" + key;
+            var element_id = await WaterBody.insertWaterBody(
+              element,
+              object.jsonName
             );
             break;
           default:
-            throw new Error("insertCity: object is not a CityObject.");
+            throw new Error("insertCity: " + key + " is not a CityObject.");
         }
+
+        var cityobject = {};
+
+        cityobject["id"] = element_id;
+        cityobject["type"] = element.type;
       } catch (err) {
         console.warn(err.message);
       }
 
-      new_object[key] = element_id;
+      new_objects[object.jsonName + "_" + key] = cityobject; // Add a reference to the building for the client - name of document
     }
 
-    object.CityObjects = new_object;
+    object.json.CityObjects = new_objects;
 
-    var city = new CityModel(object);
+    var city = new CityModel(object.json);
 
-    try {
-      if (mongoose.connection.readyState == 0) {
-        throw "insertCity: disconnected from server.";
-      }
-    } catch (err) {
-      console.error(err);
-    }
-
-    city.save(function(err, element) {
+    await city.save(function(err, element) {
       if (err) return console.error(err.message);
-
-      return console.log("SUCCESS - insertCity: CityModel inserted.");
     });
   },
   Model: CityModel,
   Schema: CityModelSchema
 };
+
+function validURL(str) {
+  var pattern = new RegExp(
+    "^(https?:\\/\\/)?" + // protocol
+    "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
+    "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
+    "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
+    "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
+      "(\\#[-a-z\\d_]*)?$",
+    "i"
+  ); // fragment locator
+  return !!pattern.test(str);
+}
