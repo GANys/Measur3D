@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import axios from "axios";
 
 import SplitPane from "react-split-pane";
 
@@ -209,5 +210,14 @@ class App extends Component {
     );
   }
 }
+
+axios.interceptors.response.use((response) => {
+    return response;
+}, (error) => {
+    if (error.response.status === 429) {
+        EventEmitter.dispatch("error", error.response.data);
+    }
+    return Promise.reject(error.message);
+});
 
 export default App;

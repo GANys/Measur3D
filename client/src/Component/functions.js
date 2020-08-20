@@ -47,8 +47,6 @@ export async function loadCityObjects(threescene) {
 
       var json;
 
-      console.log(responseCities);
-
       for (var i = 0; i < responseCities.data.length; i++) {
         json = responseCities.data[i];
 
@@ -136,7 +134,6 @@ export async function loadCityObjects(threescene) {
           } catch (e) {
             var error_message = "ERROR at creating: " + cityObj;
             console.log(error_message)
-            console.log(e)
             EventEmitter.dispatch("error", error_message);
             continue;
           }
