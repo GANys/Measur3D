@@ -1,9 +1,12 @@
 const mongoose = require("mongoose");
 const express = require("express");
-var cors = require("cors");
+const compression = require("compression");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 const logger = require("morgan");
 const Data = require("./data");
+
+const rateLimiterUsingThirdParty = require("./rateLimiter");
 
 let Cities = require("./src/Schemas/citymodel.js");
 
@@ -14,6 +17,8 @@ const API_PORT = 3001;
 
 const app = express();
 app.use(cors());
+app.use(compression());
+app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 25 calls/24Hours.
 const router = express.Router();
 
 // Limit of file exchanges set to 50 Mb.
@@ -109,17 +114,18 @@ router.get("/getAllCityModels", (req, res) => {
           );
         }
 
-        var max_lod = 0
-        var max_id = -1
+        var max_lod = 0;
+        var max_id = -1;
 
-        for (var geom in geometries) { // Extract the highest LoD only
-          if(geometries[geom].lod > Number(max_lod)) {
-            max_lod = Number(geometries[geom].lod)
-            max_id = geom
+        for (var geom in geometries) {
+          // Extract the highest LoD only
+          if (geometries[geom].lod > Number(max_lod)) {
+            max_lod = Number(geometries[geom].lod);
+            max_id = geom;
           }
         }
 
-        citymodel.CityObjects[cityObjectName].geometry = [geometries[max_id]]
+        citymodel.CityObjects[cityObjectName].geometry = [geometries[max_id]];
       }
     }
 
