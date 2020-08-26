@@ -39,120 +39,121 @@ var ALLCOLOURS = {
 //convert CityObjects to mesh and add them to the viewer
 export async function loadCityObjects(threescene) {
   await axios
-    .get("http://localhost:3001/measur3d/getAllCityModels")
-    .then(async responseCities => {
+    .get("http://localhost:3001/measur3d/getNamedCityModel", {
+      params: {
+        name: "railway"
+      }
+    })
+    .then(async responseCity => {
       // eslint-disable-next-line
-      if (responseCities.data === undefined || responseCities.data.length == 0)
+      if (responseCity.data === undefined)
         return; // If server response empty -> Server does not store any citymodel
 
-      var json;
+      var json = responseCity.data;
+      console.log(json)
 
-      for (var i = 0; i < responseCities.data.length; i++) {
-        json = responseCities.data[i];
+      //create one geometry that contains all vertices (in normalized form)
+      //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size
+      var normGeom = new THREE.Geometry();
 
-        //create one geometry that contains all vertices (in normalized form)
-        //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size
-        var normGeom = new THREE.Geometry();
+      for (var i = 0; i < json.vertices.length; i++) {
+        var point = new THREE.Vector3(
+          json.vertices[i][0],
+          json.vertices[i][1],
+          json.vertices[i][2]
+        );
+        normGeom.vertices.push(point);
+      }
 
-        for (i = 0; i < json.vertices.length; i++) {
-          var point = new THREE.Vector3(
-            json.vertices[i][0],
-            json.vertices[i][1],
-            json.vertices[i][2]
+      normGeom.normalize();
+
+      for (i = 0; i < json.vertices.length; i++) {
+        json.vertices[i][0] = normGeom.vertices[i].x;
+        json.vertices[i][1] = normGeom.vertices[i].y;
+        json.vertices[i][2] = normGeom.vertices[i].z;
+      }
+
+      var stats = getStats(json.vertices);
+      var avgX = stats[3];
+      var avgY = stats[4];
+      var avgZ = stats[5];
+
+      threescene.camera.position.set(0, 0, 2);
+      threescene.camera.lookAt(avgX, avgY, avgZ);
+
+      threescene.camera.updateProjectionMatrix();
+
+      threescene.controls.target.set(avgX, avgY, avgZ);
+
+      //enable movement parallel to ground
+      threescene.controls.screenSpacePanning = true;
+
+      //count number of objects
+      var totalCityObjects = Object.keys(json.CityObjects).length;
+      console.log("Total # City Objects: ", totalCityObjects);
+
+      //create dictionary
+      var children = {};
+
+      //iterate through all cityObjects
+      for (var cityObj in json.CityObjects) {
+        var cityObjectType = json.CityObjects[cityObj].type;
+
+        switch (cityObjectType) {
+          case "BuildingPart":
+            cityObjectType = "Building";
+            break;
+          case "Road":
+          case "Railway":
+          case "TransportSquare":
+            cityObjectType = "Transportation";
+            break;
+          case "TunnelPart":
+            cityObjectType = "Tunnel";
+            break;
+          case "BridgePart":
+            cityObjectType = "Bridge";
+            break;
+          case "BridgeConstructionElement":
+            cityObjectType = "BridgeInstallation";
+            break;
+          default:
+        }
+
+        try {
+          //parse cityObj that it can be displayed in three js
+          var returnChildren = await parseObject(
+            json.CityObjects[cityObj],
+            json,
+            cityObj,
+            threescene.geoms
           );
-          normGeom.vertices.push(point);
-        }
 
-        normGeom.normalize();
-
-        for (i = 0; i < json.vertices.length; i++) {
-          json.vertices[i][0] = normGeom.vertices[i].x;
-          json.vertices[i][1] = normGeom.vertices[i].y;
-          json.vertices[i][2] = normGeom.vertices[i].z;
-        }
-
-        var stats = getStats(json.vertices);
-        var avgX = stats[3];
-        var avgY = stats[4];
-        var avgZ = stats[5];
-
-        threescene.camera.position.set(0, 0, 2);
-        threescene.camera.lookAt(avgX, avgY, avgZ);
-
-        threescene.camera.updateProjectionMatrix();
-
-        threescene.controls.target.set(avgX, avgY, avgZ);
-
-        //enable movement parallel to ground
-        threescene.controls.screenSpacePanning = true;
-
-        //count number of objects
-        var totalco = Object.keys(json.CityObjects).length;
-        console.log("Total # City Objects: ", totalco);
-
-        //create dictionary
-        var children = {};
-
-        //iterate through all cityObjects
-        for (var cityObj in json.CityObjects) {
-          var cityObjectType = json.CityObjects[cityObj].type;
-
-          switch (cityObjectType) {
-            case "BuildingPart":
-              cityObjectType = "Building";
-              break;
-            case "Road":
-            case "Railway":
-            case "TransportSquare":
-              cityObjectType = "Transportation";
-              break;
-            case "TunnelPart":
-              cityObjectType = "Tunnel";
-              break;
-            case "BridgePart":
-              cityObjectType = "Bridge";
-              break;
-            case "BridgeConstructionElement":
-              cityObjectType = "BridgeInstallation";
-              break;
-            default:
+          //if object has children add them to the childrendict
+          for (i in returnChildren) {
+            children[json.name + "_" + returnChildren[i]] = cityObj;
           }
-
-          try {
-            //parse cityObj that it can be displayed in three js
-            var returnChildren = await parseObject(
-              json.CityObjects[cityObj],
-              json,
-              cityObj,
-              threescene.geoms
-            );
-
-            //if object has children add them to the childrendict
-            for (i in returnChildren) {
-              children[json.name + "_" + returnChildren[i]] = cityObj;
-            }
-          } catch (e) {
-            var error_message = "ERROR at creating: " + cityObj;
-            console.log(error_message)
-            EventEmitter.dispatch("error", error_message);
-            continue;
-          }
-
-          //set color of object
-          var coType = json.CityObjects[cityObj].type;
-          var material = new THREE.MeshLambertMaterial();
-          material.color.setHex(ALLCOLOURS[coType]);
-
-          //create mesh
-          var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
-          coMesh.name = cityObj;
-          coMesh.CityObjectClass = json.CityObjects[cityObj].type;
-          coMesh.jsonName = json.name;
-          coMesh.castShadow = true;
-          coMesh.receiveShadow = true;
-          threescene.scene.add(coMesh);
-          threescene.meshes.push(coMesh);
+        } catch (e) {
+          var error_message = "ERROR at creating: " + cityObj;
+          console.log(error_message);
+          EventEmitter.dispatch("error", error_message);
+          continue;
         }
+
+        //set color of object
+        var coType = json.CityObjects[cityObj].type;
+        var material = new THREE.MeshLambertMaterial();
+        material.color.setHex(ALLCOLOURS[coType]);
+
+        //create mesh
+        var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
+        coMesh.name = cityObj;
+        coMesh.CityObjectClass = json.CityObjects[cityObj].type;
+        coMesh.jsonName = json.name;
+        coMesh.castShadow = true;
+        coMesh.receiveShadow = true;
+        threescene.scene.add(coMesh);
+        threescene.meshes.push(coMesh);
       }
     })
     .then(() => {
@@ -160,6 +161,9 @@ export async function loadCityObjects(threescene) {
         boolJSONload: true //enable function as click on objects
       });
     });
+
+    await axios // Used in test - should be removed tomorrow
+      .get("http://localhost:3001/measur3d/getCityModelsList").then( async CityModelsList => console.log(CityModelsList.data));
 }
 
 //-- calculate normal of a set of points
@@ -252,7 +256,7 @@ async function parseObject(object, json, cityObj, geoms) {
   //create geometry and empty list for the vertices
   var geom = new THREE.Geometry();
 
-  if (object.geometry[0] ==  null) return; // If no geometry (eg: CityObjectGroup (not always true))
+  if (object.geometry[0] == null) return; // If no geometry (eg: CityObjectGroup (not always true))
 
   //each geometrytype must be handled different
   var geomType = object.geometry[0].type;

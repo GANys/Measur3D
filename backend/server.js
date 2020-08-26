@@ -21,9 +21,9 @@ app.use(compression());
 app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 25 calls/24Hours.
 const router = express.Router();
 
-// Limit of file exchanges set to 50 Mb.
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+// Limit of file exchanges set to 100 Mb.
+app.use(bodyParser.json({ limit: "100mb" }));
+app.use(bodyParser.urlencoded({ limit: "1000mb", extended: true }));
 app.use(logger("dev"));
 
 mongoose
@@ -54,15 +54,37 @@ router.post("/uploadCityModel", (req, res) => {
   });
 });
 
-router.get("/getAllCityModels", (req, res) => {
+router.get("/getCityModelsList", (req, res) => {
   mongoose.model("CityModel").find({}, async (err, data) => {
     if (err) {
-      return res.status(500).send({ error: "There is no CityModels." });
+      return res
+        .status(404)
+        .send({ error: "There is no CityModels in the DB." });
     }
 
-    for (var citymodel of data) {
-      for (var cityobject in citymodel.CityObjects) {
-        var cityObjectType = citymodel.CityObjects[cityobject].type;
+    var responseCities = [];
+
+    for (var i = 0; i < data.length; ++i ) {
+      responseCities.push(data[i].name);
+    }
+
+    res.status(200);
+    return res.json(responseCities);
+  });
+});
+
+router.get("/getNamedCityModel", (req, res) => {
+  mongoose
+    .model("CityModel")
+    .find({ name: req.query.name }, async (err, data) => {
+      if (err) {
+        return res
+          .status(500)
+          .send({ error: "There is no CityModel with this name in the DB." });
+      }
+
+      for (var cityobject in data[0].CityObjects) {
+        var cityObjectType = data[0].CityObjects[cityobject].type;
         var cityObjectName = cityobject;
 
         switch (cityObjectType) {
@@ -86,10 +108,10 @@ router.get("/getAllCityModels", (req, res) => {
           default:
         }
 
-        citymodel.CityObjects[cityObjectName] = await mongoose // Get CityObjects
+        data[0].CityObjects[cityObjectName] = await mongoose // Get CityObjects
           .model(cityObjectType)
           .findById(
-            citymodel.CityObjects[cityObjectName].id,
+            data[0].CityObjects[cityObjectName].id,
             async (err, data_object) => {
               if (err) return res.status(500).send(err);
 
@@ -99,12 +121,12 @@ router.get("/getAllCityModels", (req, res) => {
 
         var geometries = [];
 
-        for (var geom in citymodel.CityObjects[cityObjectName].geometry) {
+        for (var geom in data[0].CityObjects[cityObjectName].geometry) {
           geometries.push(
             await mongoose // Get geometries for the CityObject
               .model("Geometry")
               .findOne(
-                { _id: citymodel.CityObjects[cityObjectName].geometry[geom] },
+                { _id: data[0].CityObjects[cityObjectName].geometry[geom] },
                 async (err, res_geom) => {
                   if (err) return res.status(500).send(err);
 
@@ -125,13 +147,12 @@ router.get("/getAllCityModels", (req, res) => {
           }
         }
 
-        citymodel.CityObjects[cityObjectName].geometry = [geometries[max_id]];
+        data[0].CityObjects[cityObjectName].geometry = [geometries[max_id]];
       }
-    }
 
-    res.status(200);
-    return res.json(data);
-  });
+      res.status(200);
+      return res.json(data[0]);
+    });
 });
 
 router.get("/getObject", (req, res) => {
