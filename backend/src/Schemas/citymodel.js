@@ -51,6 +51,8 @@ let CityModelSchema = new mongoose.Schema({
     }
   },
   metadata: {
+    filesize: String,
+    nbr_el: Number,
     geographicalExtent: { type: [Number], default: undefined },
     referenceSystem: {
       type: String,

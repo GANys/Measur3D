@@ -24,12 +24,15 @@ class ThreeScene extends Component {
     EventEmitter.subscribe("uploadFile", event => this.handleFile(event));
     this.handleFile = this.handleFile.bind(this);
 
+    EventEmitter.subscribe("reloadScene", event => this.reloadScene(event));
+
     this.handleClick = this.handleClick.bind(this);
 
     this.state = {
       containerWidth: 0,
       containerHeight: 0,
       boolJSONload: false,
+      reload: true,
       selectedItem: undefined,
       isMounted: false
     };
@@ -93,11 +96,12 @@ class ThreeScene extends Component {
 
     Functions.loadCityObjects(this);
 
-    this.setState({
-      isMounted: true
-    });
-
     this.start();
+
+    this.setState({
+      isMounted: true,
+      boolJSONload: false
+    });
   }
 
   componentWillUnmount() {
@@ -131,6 +135,12 @@ class ThreeScene extends Component {
 
   renderScene = () => {
     this.renderer.render(this.scene, this.camera);
+  };
+
+  reloadScene = evt => {
+    this.setState({
+      reload: !this.state.reload
+    })
   };
 
   handleWindowResize() {
@@ -167,6 +177,11 @@ class ThreeScene extends Component {
   };
 
   handleFile = async file => {
+
+    this.setState({
+      boolJSONload: true,
+    });
+
     await axios.post("http://localhost:3001/measur3d/uploadCityModel", {
       json: file.content,
       jsonName: file.jsonName
@@ -175,13 +190,16 @@ class ThreeScene extends Component {
     EventEmitter.dispatch("success", "CityJSONfile loaded.");
 
     this.setState({
-      boolJSONload: true
+      boolJSONload: false,
     });
 
     //load the cityObjects into the viewer
     await Functions.loadCityObjects(this);
 
-    window.location.reload() //is the easiest way but not the better as it impose to reload the whole app. Otherwise the user has to reload the page manually.
+    // Reload the ThreeScene in order to render the uploaded model
+    EventEmitter.dispatch("reloadScene", {});
+
+    //window.location.reload() //is the easiest way but not the better as it impose to reload the whole app. Otherwise the user has to reload the page manually.
 
   };
 

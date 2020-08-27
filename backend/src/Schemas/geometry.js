@@ -8,6 +8,7 @@ let mongoose = require("mongoose");
 
 let GeometrySchema = new mongoose.Schema({
   type: {},
+  CityModel: String,
   lod: { type: Number, required: true, validate: /([0-3]{1}\.?)+[0-3]?/ },
   boundaries: {},
   semantics: {},
@@ -22,6 +23,7 @@ let GeometryInstanceSchema = new mongoose.Schema({
     required: true,
     default: "GeometryInstance"
   },
+  cm_name: String,
   template: {
     type: Number
   },
@@ -135,7 +137,9 @@ let MultiPointGeometry = mongoose.model("Geometry").discriminator(
 );
 
 module.exports = {
-  insertGeometry: async object => {
+  insertGeometry: async (object, jsonName) => {
+    object.CityModel = jsonName
+
     switch (object.type) {
       case "Solid":
         geometry = new SolidGeometry(object);

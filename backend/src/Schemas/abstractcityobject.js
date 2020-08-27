@@ -2,6 +2,7 @@ let mongoose = require("mongoose");
 
 let CityObjectSchema = new mongoose.Schema({ // Generic AbstractCityObject
   name: { type: String, required: true },
+  "CityModel": String,
   attributes: {
     creationDate: {
       type: String,

@@ -9,6 +9,7 @@ const Data = require("./data");
 const rateLimiterUsingThirdParty = require("./rateLimiter");
 
 let Cities = require("./src/Schemas/citymodel.js");
+let Functions = require("./functions");
 
 const server = "127.0.0.1:27017"; // REPLACE WITH YOUR DB SERVER
 const database = "citymodel"; // REPLACE WITH YOUR DB NAME
@@ -64,8 +65,13 @@ router.get("/getCityModelsList", (req, res) => {
 
     var responseCities = [];
 
-    for (var i = 0; i < data.length; ++i ) {
-      responseCities.push(data[i].name);
+    for (var i = 0; i < data.length; ++i) {
+      var filesize = Functions.lengthInUtf8Bytes(JSON.stringify(data[i])); // Only the city model document, not CityObjects neither geometries...... To be improved
+      responseCities.push({
+        name: data[i].name,
+        nbr_el: Object.keys(data[i].CityObjects).length,
+        filesize: Functions.formatBytes(filesize)
+      });
     }
 
     res.status(200);
@@ -153,6 +159,36 @@ router.get("/getNamedCityModel", (req, res) => {
       res.status(200);
       return res.json(data[0]);
     });
+});
+
+router.delete("/deleteNamedCityModel", (req, res) => {
+  mongoose.model("CityModel").deleteOne({ name: req.body.name }, err => {
+    if (err) return res.status(500).send(err);
+  });
+
+  mongoose.model("CityObject").deleteMany({ CityModel: req.body.name }, err => {
+    if (err) return res.status(500).send(err);
+  });
+
+  mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, err => {
+    if (err) return res.status(500).send(err);
+  });
+
+  mongoose
+    .model("GeometryInstance")
+    .deleteMany({ CityModel: req.body.name }, err => {
+      if (err) return res.status(500).send(err);
+    });
+
+  mongoose.model("Material").deleteMany({ CityModel: req.body.name }, err => {
+    if (err) return res.status(500).send(err);
+  });
+
+  mongoose.model("Texture").deleteMany({ CityModel: req.body.name }, err => {
+    if (err) return res.status(500).send(err);
+  });
+
+  return res.json({ success: "City model deleted with success !" });
 });
 
 router.get("/getObject", (req, res) => {

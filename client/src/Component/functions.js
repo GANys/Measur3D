@@ -50,7 +50,6 @@ export async function loadCityObjects(threescene) {
         return; // If server response empty -> Server does not store any citymodel
 
       var json = responseCity.data;
-      console.log(json)
 
       //create one geometry that contains all vertices (in normalized form)
       //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size

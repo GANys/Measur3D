@@ -2,6 +2,7 @@ let mongoose = require("mongoose");
 
 let MaterialSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  CityModel: String,
   ambientIntensity: Number,
   diffuseColor: {
     type: [Number],
@@ -30,6 +31,8 @@ let MaterialSchema = new mongoose.Schema({
 });
 
 let TextureSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  CityModel: String,
   type: { type: String, enum: ["PNG", "JPG"] },
   image: String,
   wrapMode: {
