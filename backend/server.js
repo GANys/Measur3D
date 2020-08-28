@@ -76,7 +76,7 @@ router.get("/getCityModelsList", (req, res) => {
 
     res.status(200);
     return res.json(responseCities);
-  });
+  }).lean();
 });
 
 router.get("/getNamedCityModel", (req, res) => {
@@ -123,7 +123,7 @@ router.get("/getNamedCityModel", (req, res) => {
 
               return data_object;
             }
-          );
+          ).lean();
 
         var geometries = [];
 
@@ -138,7 +138,7 @@ router.get("/getNamedCityModel", (req, res) => {
 
                   return res_geom;
                 }
-              )
+              ).lean()
           );
         }
 
@@ -158,7 +158,7 @@ router.get("/getNamedCityModel", (req, res) => {
 
       res.status(200);
       return res.json(data[0]);
-    });
+    }).lean();
 });
 
 router.delete("/deleteNamedCityModel", (req, res) => {
@@ -198,14 +198,14 @@ router.get("/getObject", (req, res) => {
       .find({ name: req.query.name }, (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
-      });
+      }).lean();
   } else if (typeof req.query.id != "undefined") {
     mongoose
       .model(req.query.CityObjectClass)
       .findById(req.query.id, (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
-      });
+      }).lean();
   } else {
     return res.status(400).send({
       error:
@@ -221,14 +221,14 @@ router.get("/getObjectAttributes", (req, res) => {
       .findOne({ name: req.query.name }, "attributes", (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
-      });
+      }).lean();
   } else if (typeof req.query.id != "undefined") {
     mongoose
       .model(req.query.CityObjectClass)
       .findById(req.query.id, "attributes", (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
-      });
+      }).lean();
   } else {
     return res.status(400).send({
       error:
@@ -278,7 +278,7 @@ router.put("/updateObjectAttribute", async (req, res) => {
 
           return res.status(200).send({ success: "Object updated." });
         });
-    });
+    }).lean();
 });
 
 // append /api for our http requests

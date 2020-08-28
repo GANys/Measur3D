@@ -37,17 +37,16 @@ var ALLCOLOURS = {
 };
 
 //convert CityObjects to mesh and add them to the viewer
-export async function loadCityObjects(threescene) {
+export async function loadCityObjects(threescene, cm_name) {
   await axios
     .get("http://localhost:3001/measur3d/getNamedCityModel", {
       params: {
-        name: "railway"
+        name: cm_name
       }
     })
     .then(async responseCity => {
       // eslint-disable-next-line
-      if (responseCity.data === undefined)
-        return; // If server response empty -> Server does not store any citymodel
+      if (responseCity.data === undefined) return; // If server response empty -> Server does not store any citymodel
 
       var json = responseCity.data;
 
@@ -157,12 +156,10 @@ export async function loadCityObjects(threescene) {
     })
     .then(() => {
       threescene.setState({
-        boolJSONload: true //enable function as click on objects
+        boolJSONload: false, //enable function as click on objects
+        cityModel: true
       });
     });
-
-    await axios // Used in test - should be removed tomorrow
-      .get("http://localhost:3001/measur3d/getCityModelsList").then( async CityModelsList => console.log(CityModelsList.data));
 }
 
 //-- calculate normal of a set of points
@@ -366,7 +363,7 @@ async function parseObject(object, json, cityObj, geoms) {
 export async function intersectMeshes(event, threescene) {
   //if no cityjson is loaded return
   // eslint-disable-next-line
-  if (threescene.state.boolJSONload == false) {
+  if (threescene.state.cityModel == false) {
     return;
   }
 

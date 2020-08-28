@@ -20,6 +20,7 @@ body {
   width: 100vw;
   background: var(--background-color);
   color: var(--font-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
 }
 
 /* No blue line around the component on focus */
@@ -143,6 +144,10 @@ div.AttributeManager {
 
 .modal .modal_actions button:focus {
   outline: none !important
+}
+
+#modal > div.modal_content > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters {
+  min-height: initial !important
 }
 
 /* -------------------------
@@ -296,8 +301,9 @@ tbody.MuiTableBody-root > tr:hover {
   background-color: var(--background-color-hover);
 }
 
-/* Attribute Manager title */
-.MTableToolbar-title-84 > h6 {
+/* Attribute Manager title + CityPicker title */
+.MTableToolbar-title-84 > h6,
+#modal > div.modal_content > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-title-79 > h6 {
   font-size: 1rem
 }
 

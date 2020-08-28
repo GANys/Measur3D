@@ -32,7 +32,7 @@ import styles from "./App.css";
 const items = [
   "divider",
   { name: "home", label: "Home", content: "modal_home", Icon: HomeRoundedIcon },
-  { name: "models", label: "Models", content: "modal_models", Icon: LocationCityRoundedIcon },
+  { name: "models", label: "City Models", content: "modal_models", Icon: LocationCityRoundedIcon },
   {
     name: "github",
     label: "GitHub",

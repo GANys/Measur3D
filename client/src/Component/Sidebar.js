@@ -18,7 +18,7 @@ class Sidebar extends React.Component {
                 key={index}
                 className="sidebar-item"
                 button
-                onClick={() =>
+                onClick = {() =>
                   this.props.showModal(sidebarItem.label, sidebarItem.content)
                 }
                 {...this.rest}

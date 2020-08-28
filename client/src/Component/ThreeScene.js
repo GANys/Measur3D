@@ -25,6 +25,12 @@ class ThreeScene extends Component {
     this.handleFile = this.handleFile.bind(this);
 
     EventEmitter.subscribe("reloadScene", event => this.reloadScene(event));
+    this.reloadScene = this.reloadScene.bind(this);
+
+    EventEmitter.subscribe("loadScene", event => this.loadScene(event));
+    this.loadScene = this.loadScene.bind(this);
+
+    this.clearScene = this.clearScene.bind(this);
 
     this.handleClick = this.handleClick.bind(this);
 
@@ -32,6 +38,7 @@ class ThreeScene extends Component {
       containerWidth: 0,
       containerHeight: 0,
       boolJSONload: false,
+      cityModel: false,
       reload: true,
       selectedItem: undefined,
       isMounted: false
@@ -94,8 +101,6 @@ class ThreeScene extends Component {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    Functions.loadCityObjects(this);
-
     this.start();
 
     this.setState({
@@ -137,10 +142,10 @@ class ThreeScene extends Component {
     this.renderer.render(this.scene, this.camera);
   };
 
-  reloadScene = evt => {
+  reloadScene = async evt => {
     this.setState({
       reload: !this.state.reload
-    })
+    });
   };
 
   handleWindowResize() {
@@ -177,9 +182,8 @@ class ThreeScene extends Component {
   };
 
   handleFile = async file => {
-
     this.setState({
-      boolJSONload: true,
+      boolJSONload: true
     });
 
     await axios.post("http://localhost:3001/measur3d/uploadCityModel", {
@@ -191,16 +195,33 @@ class ThreeScene extends Component {
 
     this.setState({
       boolJSONload: false,
+      cityModel: true
     });
 
     //load the cityObjects into the viewer
-    await Functions.loadCityObjects(this);
+    this.loadScene(file.jsonName);
 
     // Reload the ThreeScene in order to render the uploaded model
     EventEmitter.dispatch("reloadScene", {});
+  };
 
-    //window.location.reload() //is the easiest way but not the better as it impose to reload the whole app. Otherwise the user has to reload the page manually.
+  loadScene = async cm_name => {
+    this.clearScene();
 
+    this.setState({
+      boolJSONload: true
+    });
+
+    await Functions.loadCityObjects(this, cm_name);
+  };
+
+  clearScene = () => {
+    // Be careful to not delete the light ... Speaking from experience
+    var mesh = new THREE.Mesh();
+
+    this.scene.children = this.scene.children.filter(
+      value => value.type !== mesh.type
+    );
   };
 
   handleClick = evt => {
@@ -215,6 +236,8 @@ class ThreeScene extends Component {
 
     // eslint-disable-next-line
     if (evt == undefined) return;
+
+    if (!this.state.cityModel) return;
 
     add_attribute_button.style.visibility = "visible";
     Functions.intersectMeshes(evt, this);
@@ -237,7 +260,7 @@ class ThreeScene extends Component {
             }
           }}
         />
-        {!this.state.boolJSONload ? <CircularProgress size={"4rem"} /> : null}
+        {this.state.boolJSONload ? <CircularProgress size={"4rem"} /> : null}
       </React.Fragment>
     );
   }

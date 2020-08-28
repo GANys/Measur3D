@@ -14,6 +14,7 @@ class Modal extends React.Component {
 
     this.exportCityModels = this.exportCityModels.bind();
   }
+  
   onClose = e => {
     this.props.onClose && this.props.onClose(e);
   };
@@ -50,7 +51,7 @@ class Modal extends React.Component {
       case "Home":
       modal_content = React.createElement('div', { dangerouslySetInnerHTML: { __html: html_home } })
         break;
-      case "Models":
+      case "City Models":
       modal_content = <CityPicker />
       break;
       case "GitHub":
