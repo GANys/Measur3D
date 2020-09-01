@@ -1,6 +1,6 @@
 **Measur3D - backend API**
 ----
-This API allows people to handle compact city models on a document-oriented database.
+This API allows handling compact city models on a document-oriented database.
 
 Measur3D relies on JavaScript libraries such as follows for the server side:
 
@@ -13,17 +13,18 @@ By default, in this project, the API in deployed on `localhost:3001/measur3d`
 
 Current methods are the following :
 
-* `getAllCityModels` - GET all city models from database.
+* `getCityModelsList` - GET all city models name stored in the database in a list.
+* `getNamedCityModel` - GET a named city model from database.
 * `getObject` - GET a specific city object.
 * `getObjectAttributes` - GET a specific city object attributes.
 * `putCityModel` - POST a valid CityJSON model.
 * `updateObjectAttribute` - PUT attribute of a specific city object.
 ----
-**getAllCityModels**
-	This method allows to get all the citymodels stored in the database.
+**getCityModelsList**
+	This method allows getting all city models name stored in the database in a list.
 
 * **URL**
-  /measur3d/getAllCityModels
+  /measur3d/getCityModelsList
 
 * **Method:**
   `GET`
@@ -32,19 +33,45 @@ Current methods are the following :
    No parameter required.
 
 * **Success Response:**
-  Returns an array of all city models.
+  Returns a named city model from database.
   * **Code:** 200
-  *  **Content:** `[ { JSON Objects } ]`
+  *  **Content:** `[ String ]`
 
 * **Error Response:**
   Database can be empty  - server error should express it.
 
-  * **Code:** 500 INTERNAL SERVER ERROR
-  *  **Content:** `{ error : "There is no City Models." }`
+  * **Code:** 404 NOT FOUND
+  *  **Content:** `{ error : "There is no CityModels in the DB." }`
+
+----
+**getNamedCityModel**
+	This method allows getting a named city model from database.
+
+* **URL**
+  /measur3d/getNamedCityModel
+
+* **Method:**
+  `GET`
+
+*  **URL Params**
+   **Required:**
+
+   `name: String` - Unique name of the city model
+
+* **Success Response:**
+  Returns the named city model.
+  * **Code:** 200
+  *  **Content:** `[ { JSON Object } ]`
+
+* **Error Response:**
+  Database can be empty  - server error should express it.
+
+  * **Code:** 404 NOT FOUND
+  *  **Content:** `{ error : "There is no CityModel with this name in the DB." }`
 
 ----
 **getObject**
-  This method allows to get a specific City Object within a specific Collection.
+  This method allows getting a specific City Object within a specific Collection.
 
 * **URL**
 /measur3d/getObject
@@ -79,7 +106,7 @@ Current methods are the following :
   *  **Content:** `{ error : "Params are not valid - getObject could not find Object in Collection." }`
 ----
 **getObjectAttributes**
-  This method allows to query all attributes of an City Object within a specific Collection.
+  This method allows querying all attributes of an City Object within a specific Collection.
 
 * **URL**
   /measur3d/getObjectAttributes
@@ -114,7 +141,7 @@ Current methods are the following :
     *  **Content:** `{ error : "Params are not valid - getObject could not find Object in Collection." }`
 ----
 **uploadCityModel**
-  This method allows to upload a CityJSON model to the database.
+  This method allows uploading a CityJSON model to the database.
 
 * **URL**
   /measur3d/uploadCityModel
@@ -137,7 +164,7 @@ City Model may not be valid - server error should express it.
   *  **Content:** `{ error : "Mongoose had an internal problem." }`
 ----
 **updateObjectAttribute**
-This method allows to update an attribute of a specific City Object.
+This method allows updating an attribute of a specific City Object.
 * **URL**
   /measur3d/updateObjectAttribute
 

@@ -20,6 +20,7 @@ body {
   width: 100vw;
   background: var(--background-color);
   color: var(--font-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
 }
 
 /* No blue line around the component on focus */
@@ -145,6 +146,10 @@ div.AttributeManager {
   outline: none !important
 }
 
+#modal > div.modal_content > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters {
+  min-height: initial !important
+}
+
 /* -------------------------
   Sidebar general style
  ------------------------- */
@@ -212,13 +217,15 @@ div.sidebar-item-text {
 
 /* Material-UI icons style */
 .COClassIcon,
+.CityPickerIcon,
 .MuiSvgIcon-root.sidebar-item-icon,
 span.MuiIconButton-label > svg,
 #root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane1 > div > div > div > svg {
   color: var(--icon-color);
 }
 
-.COClassIcon {
+.COClassIcon,
+.CityPickerIcon {
   padding-right: 6px
 }
 
@@ -294,8 +301,9 @@ tbody.MuiTableBody-root > tr:hover {
   background-color: var(--background-color-hover);
 }
 
-/* Attribute Manager title */
-.MTableToolbar-title-84 > h6 {
+/* Attribute Manager title + CityPicker title */
+.MTableToolbar-title-84 > h6,
+#modal > div.modal_content > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-title-79 > h6 {
   font-size: 1rem
 }
 
@@ -323,4 +331,10 @@ td:nth-child(2) > h6 {
   > div
   > div.Pane.horizontal.Pane2 {
   border-top: 1px solid var(--border-color);
+}
+
+
+#modal > div.modal_content > div > div.Component-horizontalScrollContainer-106 > div > div > div > table > tbody {
+  overflow-y: scroll !important;
+  max-height: 200px !important;
 }

@@ -150,6 +150,7 @@ class BasicMaterialTable extends React.Component {
           paging: false,
           draggable: false,
           sorting: false
+          //maxBodyHeight: 200 As a reminder
         }}
         title={
           <div style={{ display: "flex", alignItems: "center" }}>
@@ -244,6 +245,7 @@ map["TunnelInstallation"] = <FontAwesomeIcon icon={faDotCircle} />;
 map["WaterBody"] = <FontAwesomeIcon icon={faWater} />;
 
 function isAllowed(string) {
+  // eslint-disable-next-line
   var RegEx = /^[\w]*([\,|\.])?[0-9]*$/i;
   return RegEx.test(string);
 }

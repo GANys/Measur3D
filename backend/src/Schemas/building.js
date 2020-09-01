@@ -6,7 +6,6 @@ let CityObject = require("./abstractcityobject.js");
 let Building = mongoose.model("CityObject").discriminator(
   "Building",
   new mongoose.Schema({
-    name: { type: String, required: true },
     type: {
       type: String,
       enum: ["Building", "BuildingPart"],
@@ -85,7 +84,7 @@ module.exports = {
         return;
       }
 
-      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry], jsonName));
     }
 
     object.geometry = temp_geometries;
@@ -128,7 +127,7 @@ module.exports = {
         return;
       }
 
-      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry], jsonName));
     }
 
     object.geometry = temp_geometries;

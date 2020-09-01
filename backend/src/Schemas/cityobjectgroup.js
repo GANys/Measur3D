@@ -42,7 +42,7 @@ module.exports = {
         return;
       }
 
-      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry]));
+      temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry], jsonName));
     }
 
     object.geometry = temp_geometries;

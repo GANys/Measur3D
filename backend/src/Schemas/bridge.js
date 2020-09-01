@@ -70,7 +70,7 @@ module.exports = {
       }
 
       temp_geometries.push(
-        await Geometry.insertGeometry(object.geometry[geometry])
+        await Geometry.insertGeometry(object.geometry[geometry], jsonName)
       );
     }
 
@@ -106,7 +106,7 @@ module.exports = {
       }
 
       temp_geometries.push(
-        await Geometry.insertGeometry(object.geometry[geometry])
+        await Geometry.insertGeometry(object.geometry[geometry], jsonName)
       );
     }
 

@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import axios from "axios";
 
 import SplitPane from "react-split-pane";
 
@@ -12,8 +13,11 @@ import Alert from "@material-ui/lab/Alert";
 import Collapse from "@material-ui/core/Collapse";
 import Container from "@material-ui/core/Container";
 
+import CityPicker from "./Component/CityPicker";
+
 import { makeStyles } from "@material-ui/core/styles";
 import HomeRoundedIcon from "@material-ui/icons/HomeRounded";
+import LocationCityRoundedIcon from "@material-ui/icons/LocationCityRounded";
 import SettingsRoundedIcon from "@material-ui/icons/SettingsRounded";
 import GitHubIcon from "@material-ui/icons/GitHub";
 
@@ -28,6 +32,7 @@ import styles from "./App.css";
 const items = [
   "divider",
   { name: "home", label: "Home", content: "modal_home", Icon: HomeRoundedIcon },
+  { name: "models", label: "City Models", content: "modal_models", Icon: LocationCityRoundedIcon },
   {
     name: "github",
     label: "GitHub",
@@ -209,5 +214,14 @@ class App extends Component {
     );
   }
 }
+
+axios.interceptors.response.use((response) => {
+    return response;
+}, (error) => {
+    if (error.response.status === 429) {
+        EventEmitter.dispatch("error", error.response.data);
+    }
+    return Promise.reject(error.message);
+});
 
 export default App;

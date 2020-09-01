@@ -4,12 +4,21 @@ import axios from "axios";
 import PropTypes from "prop-types";
 import onClickOutside from "react-onclickoutside";
 
+import { EventEmitter } from "./events";
+
+// Used in an HTML environment, not JS
+// eslint-disable-next-line
+import CityPicker from "./CityPicker";
+
 class Modal extends React.Component {
   constructor() {
     super();
 
     this.exportCityModels = this.exportCityModels.bind();
+
+    EventEmitter.subscribe("loadScene", event => this.onClose(event));
   }
+
   onClose = e => {
     this.props.onClose && this.props.onClose(e);
   };
@@ -40,21 +49,24 @@ class Modal extends React.Component {
       return null;
     }
 
-    var html;
+    var modal_content;
 
     switch (this.props.children[0]) {
       case "Home":
-        html = html_home;
+      modal_content = React.createElement('div', { dangerouslySetInnerHTML: { __html: html_home } })
         break;
+      case "City Models":
+      modal_content = <CityPicker />
+      break;
       case "GitHub":
-        html = html_github;
+        modal_content = React.createElement('div', { dangerouslySetInnerHTML: { __html: html_github } })
         break;
       case "Export model":
         this.exportCityModels();
-        html = html_export;
+        modal_content = React.createElement('div', { dangerouslySetInnerHTML: { __html: html_export } })
         break;
       default:
-        html = "";
+        modal_content = "";
         break;
     }
 
@@ -62,9 +74,7 @@ class Modal extends React.Component {
       <div className="modal" id="modal">
         <h2 className="modal_title">{this.props.children[0]}</h2>
         <div className="modal_content">
-          {React.createElement("div", {
-            dangerouslySetInnerHTML: { __html: html }
-          })}
+          { modal_content }
         </div>
         <div className="modal_actions">
           <button className="toggle-button" onClick={this.onClose}>
