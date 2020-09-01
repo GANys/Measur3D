@@ -332,3 +332,9 @@ td:nth-child(2) > h6 {
   > div.Pane.horizontal.Pane2 {
   border-top: 1px solid var(--border-color);
 }
+
+
+#modal > div.modal_content > div > div.Component-horizontalScrollContainer-106 > div > div > div > table > tbody {
+  overflow-y: scroll !important;
+  max-height: 200px !important;
+}

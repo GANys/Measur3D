@@ -150,6 +150,7 @@ class BasicMaterialTable extends React.Component {
           paging: false,
           draggable: false,
           sorting: false
+          //maxBodyHeight: 200 As a reminder
         }}
         title={
           <div style={{ display: "flex", alignItems: "center" }}>

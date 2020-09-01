@@ -4,6 +4,8 @@ import axios from "axios";
 import PropTypes from "prop-types";
 import onClickOutside from "react-onclickoutside";
 
+import { EventEmitter } from "./events";
+
 // Used in an HTML environment, not JS
 // eslint-disable-next-line
 import CityPicker from "./CityPicker";
@@ -13,8 +15,10 @@ class Modal extends React.Component {
     super();
 
     this.exportCityModels = this.exportCityModels.bind();
+
+    EventEmitter.subscribe("loadScene", event => this.onClose(event));
   }
-  
+
   onClose = e => {
     this.props.onClose && this.props.onClose(e);
   };

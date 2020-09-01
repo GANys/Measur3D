@@ -180,7 +180,7 @@ class App extends Component {
                 <ThreeScene />
               </div>
               <SplitPane split="vertical">
-                <CityPicker />
+                <Chart />
                 <Chart />
               </SplitPane>
             </SplitPane>

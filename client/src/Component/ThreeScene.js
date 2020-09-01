@@ -222,6 +222,8 @@ class ThreeScene extends Component {
     this.scene.children = this.scene.children.filter(
       value => value.type !== mesh.type
     );
+
+    this.renderer.render(this.scene, this.camera);
   };
 
   handleClick = evt => {
