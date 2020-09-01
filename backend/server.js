@@ -24,7 +24,7 @@ const router = express.Router();
 
 // Limit of file exchanges set to 100 Mb.
 app.use(bodyParser.json({ limit: "100mb" }));
-app.use(bodyParser.urlencoded({ limit: "1000mb", extended: true }));
+app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 app.use(logger("dev"));
 
 mongoose

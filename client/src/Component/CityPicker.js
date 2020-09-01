@@ -75,7 +75,9 @@ class BasicMaterialTable extends React.Component {
           search: false,
           paging: false,
           draggable: false,
-          sorting: false
+          sorting: false,
+          maxBodyHeight: 212 // 3 lines on my screen - sorry for selfishness
+
         }}
         title={this.state.tableTitle}
         icons={tableIcons}

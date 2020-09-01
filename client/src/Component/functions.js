@@ -367,6 +367,8 @@ export async function intersectMeshes(event, threescene) {
     return;
   }
 
+  console.log(threescene.scene.children)
+
   threescene.mouse.x =
     (event.offsetX / threescene.renderer.domElement.clientWidth) * 2 - 1;
   threescene.mouse.y =
