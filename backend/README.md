@@ -13,12 +13,36 @@ By default, in this project, the API in deployed on `localhost:3001/measur3d`
 
 Current methods are the following :
 
+* `uploadCityModel` - POST a valid CityJSON model.
 * `getCityModelsList` - GET all city models name stored in the database in a list.
 * `getNamedCityModel` - GET a named city model from database.
+* `deleteNamedCityModel` - DELETE a named city model from database.
 * `getObject` - GET a specific city object.
 * `getObjectAttributes` - GET a specific city object attributes.
-* `putCityModel` - POST a valid CityJSON model.
 * `updateObjectAttribute` - PUT attribute of a specific city object.
+----
+**uploadCityModel**
+  This method allows uploading a CityJSON model to the database.
+
+* **URL**
+  /measur3d/uploadCityModel
+
+* **Method:**
+ `POST`
+
+* **Data Params**
+  `json: { JSON Object }` - Compliant CityJSON file
+  `jsonName: String` - Name of the city model
+
+* **Success Response:**
+  Returns no data.
+  * **Code:** 201
+  *  **Content:** `{success: "City model imported with success !"}`
+
+* **Error Response:**
+City Model may not be valid - server error should express it.
+  * **Code:** 500 INTERNAL SERVER ERROR
+  *  **Content:** `{ error : "Mongoose had an internal problem." }`
 ----
 **getCityModelsList**
 	This method allows getting all city models name stored in the database in a list.
@@ -68,6 +92,32 @@ Current methods are the following :
 
   * **Code:** 404 NOT FOUND
   *  **Content:** `{ error : "There is no CityModel with this name in the DB." }`
+
+----
+**deleteNamedCityModel**
+	This method allows deleting a named city model from database.
+
+* **URL**
+  /measur3d/deleteNamedCityModel
+
+* **Method:**
+  `DELETE`
+
+*  **URL Params**
+   **Required:**
+
+   `name: String` - Unique name of the city model
+
+* **Success Response:**
+  Returns a success message.
+  * **Code:** 200
+  *  **Content:** `{ success: "City model deleted with success !" }`
+
+* **Error Response:**
+  Database can be empty  - server error should express it.
+
+  * **Code:** 500 INTERNAL SERVER ERROR
+  *  **Content:** `{ error : "There is no object with that name." }`
 
 ----
 **getObject**
@@ -139,29 +189,6 @@ Current methods are the following :
 
     * **Code:** 400 BAD REQUEST
     *  **Content:** `{ error : "Params are not valid - getObject could not find Object in Collection." }`
-----
-**uploadCityModel**
-  This method allows uploading a CityJSON model to the database.
-
-* **URL**
-  /measur3d/uploadCityModel
-
-* **Method:**
- `POST`
-
-* **Data Params**
-  `json: { JSON Object }` - Compliant CityJSON file
-  `jsonName: String` - Name of the city model
-
-* **Success Response:**
-  Returns no data.
-  * **Code:** 201
-  *  **Content:** `{success: "City model imported with success !"}`
-
-* **Error Response:**
-City Model may not be valid - server error should express it.
-  * **Code:** 500 INTERNAL SERVER ERROR
-  *  **Content:** `{ error : "Mongoose had an internal problem." }`
 ----
 **updateObjectAttribute**
 This method allows updating an attribute of a specific City Object.

@@ -163,29 +163,29 @@ router.get("/getNamedCityModel", (req, res) => {
 
 router.delete("/deleteNamedCityModel", (req, res) => {
   mongoose.model("CityModel").deleteOne({ name: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
+    if (err) return res.status(500).send({ error : "There is no object with that name." });
   });
 
   mongoose.model("CityObject").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
+    if (err) return res.status(500).send({ error : "There is no object with that name." });
   });
 
   mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
+    if (err) return res.status(500).send({ error : "There is no object with that name." });
   });
 
   mongoose
     .model("GeometryInstance")
     .deleteMany({ CityModel: req.body.name }, err => {
-      if (err) return res.status(500).send(err);
+      if (err) return res.status(500).send({ error : "There is no object with that name." });
     });
 
   mongoose.model("Material").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
+    if (err) return res.status(500).send({ error : "There is no object with that name." });
   });
 
   mongoose.model("Texture").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
+    if (err) return res.status(500).send({ error : "There is no object with that name." });
   });
 
   return res.json({ success: "City model deleted with success !" });

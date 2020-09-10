@@ -1,7 +1,5 @@
 /* ----------------------------------------
 This file proposes to validate and structure geometry families independently
-
-It is yet not used in Measur3D but can be used in the future.
 ---------------------------------------- */
 
 let mongoose = require("mongoose");
@@ -9,7 +7,7 @@ let mongoose = require("mongoose");
 let GeometrySchema = new mongoose.Schema({
   type: {},
   CityModel: {type: String, index: true},
-  CityObject: {type: String, index: true},
+  //CityObject: {type: String, index: true},
   lod: { type: Number, required: true, validate: /([0-3]{1}\.?)+[0-3]?/ },
   boundaries: {},
   semantics: {},
