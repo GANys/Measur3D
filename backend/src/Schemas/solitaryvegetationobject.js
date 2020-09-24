@@ -27,13 +27,15 @@ module.exports = {
   insertSolitaryVegetationObject: async (object, jsonName) => {
     object["CityModel"] = jsonName
 
+    /* ATTENTION - Need to be reworked */
+
     var temp_geometries = [];
 
     for (var geometry in object.geometry) {
-      var authorised_type = ["Solid", "MultiSolid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint"];
+      var authorised_type = ["Solid", "MultiSolid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint", "GeometryInstance"];
       if (!authorised_type.includes(object.geometry[geometry].type)) {
         throw new Error(object.type + " is not a valid geometry type.");
-        return;
+        return -1;
       }
 
       temp_geometries.push(Geometry.insertGeometry(object.geometry[geometry], jsonName));

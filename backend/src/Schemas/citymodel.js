@@ -250,11 +250,15 @@ module.exports = {
             );
             break;
           case "SolitaryVegetationObject":
+          continue;
+          /*
             element["name"] = object.jsonName + "_" + key;
             var element_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(
               element,
               object.jsonName
             );
+            */
+
             break;
           case "TINRelief":
             element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
@@ -311,9 +315,7 @@ module.exports = {
 
     var city = new CityModel(object.json);
 
-    await city.save(function(err, element) {
-      if (err) return console.error(err.message);
-    });
+    await city.save();
   },
   Model: CityModel,
   Schema: CityModelSchema

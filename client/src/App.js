@@ -13,8 +13,6 @@ import Alert from "@material-ui/lab/Alert";
 import Collapse from "@material-ui/core/Collapse";
 import Container from "@material-ui/core/Container";
 
-import CityPicker from "./Component/CityPicker";
-
 import { makeStyles } from "@material-ui/core/styles";
 import HomeRoundedIcon from "@material-ui/icons/HomeRounded";
 import LocationCityRoundedIcon from "@material-ui/icons/LocationCityRounded";

@@ -7,7 +7,7 @@ let mongoose = require("mongoose");
 let GeometrySchema = new mongoose.Schema({
   type: {},
   CityModel: {type: String, index: true},
-  //CityObject: {type: String, index: true},
+  CityObject: {type: String, index: true},
   lod: { type: Number, required: true, validate: /([0-3]{1}\.?)+[0-3]?/ },
   boundaries: {},
   semantics: {},
@@ -160,6 +160,8 @@ module.exports = {
       default:
         throw new Error(object + " does not have a valid geometry type.");
     }
+
+    geometry["CityObject"] = object.name;
 
     try {
       let element = await geometry.save();

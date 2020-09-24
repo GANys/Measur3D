@@ -90,9 +90,6 @@ export async function loadCityObjects(threescene, cm_name) {
       var totalCityObjects = Object.keys(json.CityObjects).length;
       console.log("Total # City Objects: ", totalCityObjects);
 
-      //create dictionary
-      var children = {};
-
       //iterate through all cityObjects
       for (var cityObj in json.CityObjects) {
         var cityObjectType = json.CityObjects[cityObj].type;
@@ -118,6 +115,8 @@ export async function loadCityObjects(threescene, cm_name) {
           default:
         }
 
+        var childrenMeshes = []
+
         try {
           //parse cityObj that it can be displayed in three js
           var returnChildren = await parseObject(
@@ -129,7 +128,7 @@ export async function loadCityObjects(threescene, cm_name) {
 
           //if object has children add them to the childrendict
           for (i in returnChildren) {
-            children[json.name + "_" + returnChildren[i]] = cityObj;
+            childrenMeshes.push(returnChildren[i])
           }
         } catch (e) {
           var error_message = "ERROR at creating: " + cityObj;
@@ -145,9 +144,13 @@ export async function loadCityObjects(threescene, cm_name) {
 
         //create mesh
         var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
+
+        // Added by Measur3D
         coMesh.name = cityObj;
         coMesh.CityObjectClass = json.CityObjects[cityObj].type;
         coMesh.jsonName = json.name;
+        coMesh.childrenMeshes = childrenMeshes;
+
         coMesh.castShadow = true;
         coMesh.receiveShadow = true;
         threescene.scene.add(coMesh);
@@ -156,7 +159,7 @@ export async function loadCityObjects(threescene, cm_name) {
     })
     .then(() => {
       threescene.setState({
-        boolJSONload: false, //enable function as click on objects
+        boolJSONload: false, //enable clicking functions
         cityModel: true
       });
     });
@@ -242,12 +245,6 @@ function getStats(vertices) {
 //convert json file to viwer-object
 async function parseObject(object, json, cityObj, geoms) {
   var boundaries;
-
-  /* Remains of NINJA
-  if (json.CityObjects[cityObj].children != undefined) {
-    return json.CityObjects[cityObj].children;
-  }
-  */
 
   //create geometry and empty list for the vertices
   var geom = new THREE.Geometry();
@@ -356,7 +353,7 @@ async function parseObject(object, json, cityObj, geoms) {
 
   geoms[object.name] = geom;
 
-  return "";
+  return json.CityObjects[cityObj].children;
 }
 
 //action if mouseclick (for getting attributes ofobjects)
@@ -366,8 +363,6 @@ export async function intersectMeshes(event, threescene) {
   if (threescene.state.cityModel == false) {
     return;
   }
-
-  console.log(threescene.scene.children)
 
   threescene.mouse.x =
     (event.offsetX / threescene.renderer.domElement.clientWidth) * 2 - 1;
@@ -389,7 +384,7 @@ export async function intersectMeshes(event, threescene) {
       );
 
     var add_attribute_button = document.querySelector(
-      "#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
+      "div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
     );
 
     add_attribute_button.style.visibility = "hidden";
@@ -452,7 +447,7 @@ export async function intersectMeshes(event, threescene) {
     .get("http://localhost:3001/measur3d/getObjectAttributes", {
       params: {
         name: intersects[0].object.name,
-        CityObjectClass: cityObjectType
+        CityObjectType: cityObjectType
       }
     })
     .then(response => {

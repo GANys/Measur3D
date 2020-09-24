@@ -30,6 +30,9 @@ class ThreeScene extends Component {
     EventEmitter.subscribe("loadScene", event => this.loadScene(event));
     this.loadScene = this.loadScene.bind(this);
 
+    EventEmitter.subscribe("deleteObject", event => this.deleteObject(event));
+    this.deleteObject = this.deleteObject.bind(this);
+
     this.clearScene = this.clearScene.bind(this);
 
     this.handleClick = this.handleClick.bind(this);
@@ -181,41 +184,44 @@ class ThreeScene extends Component {
     };
   };
 
-  handleFile = async file => {
+  handleFile = file => {
     this.setState({
       boolJSONload: true
     });
 
-    await axios.post("http://localhost:3001/measur3d/uploadCityModel", {
-      json: file.content,
-      jsonName: file.jsonName
-    });
+    axios
+      .post("http://localhost:3001/measur3d/uploadCityModel", {
+        json: file.content,
+        jsonName: file.jsonName
+      })
+      .then(res => {
+        EventEmitter.dispatch("success", res.data.success);
+        EventEmitter.dispatch("info", "Now loading it into the scene.");
 
-    EventEmitter.dispatch("success", "CityJSONfile loaded.");
+        this.setState({
+          boolJSONload: false,
+          cityModel: true
+        });
 
-    this.setState({
-      boolJSONload: false,
-      cityModel: true
-    });
-
-    //load the cityObjects into the viewer
-    this.loadScene(file.jsonName);
-
-    // Reload the ThreeScene in order to render the uploaded model
-    EventEmitter.dispatch("reloadScene", {});
+        //load the cityObjects into the viewer
+        this.loadScene(file.jsonName);
+      });
   };
 
-  loadScene = async cm_name => {
+  loadScene = cm_name => {
     this.clearScene();
 
     this.setState({
       boolJSONload: true
     });
 
-    await Functions.loadCityObjects(this, cm_name);
+    Functions.loadCityObjects(this, cm_name);
+
+    EventEmitter.dispatch("cityModelLoaded", cm_name);
   };
 
   clearScene = () => {
+    // Not be enough for collisions -> array.splice ?
     // Be careful to not delete the light ... Speaking from experience
     var mesh = new THREE.Mesh();
 
@@ -228,7 +234,7 @@ class ThreeScene extends Component {
 
   handleClick = evt => {
     var add_attribute_button = document.querySelector(
-      "#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
+      "div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
     );
     // eslint-disable-next-line
     if (evt != undefined) {
@@ -243,6 +249,53 @@ class ThreeScene extends Component {
 
     add_attribute_button.style.visibility = "visible";
     Functions.intersectMeshes(evt, this);
+  };
+
+  deleteObject = name => {
+    // Cleaning both Scene and ThreeScene objects
+
+    this.setState({
+      boolJSONload: true
+    });
+
+    delete this.geoms[name];
+
+    this.scene.children = this.scene.children.filter(
+      value => value.name !== name
+    );
+
+    var index_mesh;
+
+    for (var el in this.meshes) {
+      // eslint-disable-next-line
+      if (this.meshes[el].name == name) {
+        index_mesh = el;
+      }
+    }
+
+    for (var child in this.meshes[index_mesh].childrenMeshes) {
+      for (var el in this.meshes) {
+        // eslint-disable-next-line
+        if (this.meshes[el].name == name) {
+          index_mesh = el;
+        }
+      }
+
+      if (this.meshes[index_mesh].childrenMeshes[child] != undefined) {
+        this.deleteObject(this.meshes[index_mesh].childrenMeshes[child]);
+      }
+    }
+
+    this.meshes.splice(index_mesh, 1);
+
+    // Need to check this - HERE
+    console.log(Object.keys(this.geoms).length)
+    console.log(Object.keys(this.scene.children).length)
+    console.log(this.meshes.length)
+
+    this.setState({
+      boolJSONload: false
+    });
   };
 
   render() {

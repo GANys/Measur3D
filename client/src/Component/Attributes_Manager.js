@@ -55,9 +55,11 @@ class BasicMaterialTable extends React.Component {
 
     this.updateTable = this.updateTable.bind(this);
     this.updateTitle = this.updateTitle.bind(this);
+    this.updateCityModel = this.updateCityModel.bind(this);
 
     EventEmitter.subscribe("attObject", event => this.updateTable(event));
     EventEmitter.subscribe("attObjectTitle", event => this.updateTitle(event));
+    EventEmitter.subscribe("cityModelLoaded", event => this.updateCityModel(event));
   }
 
   state = {
@@ -67,7 +69,8 @@ class BasicMaterialTable extends React.Component {
     ],
     data: [],
     tableTitle: "Object attributes",
-    CityObjectClass: null
+    CityObjectClass: null,
+    CityModel: null
   };
 
   deleteRows = () => {
@@ -114,6 +117,10 @@ class BasicMaterialTable extends React.Component {
     });
   };
 
+  updateCityModel = data => {
+    this.setState({ CityModel: data });
+  };
+
   addAttribute = async newData => {
     await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       key: newData.key,
@@ -152,6 +159,42 @@ class BasicMaterialTable extends React.Component {
           sorting: false
           //maxBodyHeight: 200 As a reminder
         }}
+        actions={[
+          {
+            icon: tableIcons.Delete,
+            tooltip: "Delete object",
+            position: "toolbar",
+            onClick: async data => {
+              let confirmDelete = window.confirm("Delete this object?");
+
+              if (!confirmDelete) return;
+
+              EventEmitter.dispatch("deleteObject", this.state.tableTitle);
+
+              await axios.delete(
+                "http://localhost:3001/measur3d/deleteObject",
+                {
+                  data: {
+                    name: this.state.tableTitle,
+                    CityModel: this.state.CityModel
+                  }
+                }
+              );
+
+              var add_attribute_button = document.querySelector(
+                "div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
+              );
+
+              add_attribute_button.style.visibility = "hidden";
+
+              EventEmitter.dispatch(
+                "attObjectTitle",
+                ("Object attributes", null)
+              );
+              EventEmitter.dispatch("attObject", {});
+            }
+          }
+        ]}
         title={
           <div style={{ display: "flex", alignItems: "center" }}>
             <div className="COClassIcon">{map[this.state.CityObjectClass]}</div>

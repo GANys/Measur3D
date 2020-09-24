@@ -31,7 +31,8 @@ mongoose
   .connect(`mongodb://${server}/${database}`, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
-    useCreateIndex: true
+    useCreateIndex: true,
+    useFindAndModify: false
   })
   .then(() => {
     console.log(`Connected to server ${server}/${database} with success.`);
@@ -48,144 +49,167 @@ let db = mongoose.connection; // Instantiate the connection
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
 
 router.post("/uploadCityModel", (req, res) => {
-  Cities.insertCity(req.body).then(function() {
-    return res
-      .status(201)
-      .send({ success: "City model imported with success !" });
+  Cities.insertCity(req.body).then(function(data) {
+    return res.status(201).send(data);
   });
 });
 
 router.get("/getCityModelsList", (req, res) => {
-  mongoose.model("CityModel").find({}, async (err, data) => {
-    if (err) {
-      return res
-        .status(404)
-        .send({ error: "There is no CityModels in the DB." });
-    }
-
-    var responseCities = [];
-
-    for (var i = 0; i < data.length; ++i) {
-      var filesize = Functions.lengthInUtf8Bytes(JSON.stringify(data[i])); // Only the city model document, not CityObjects neither geometries...... To be improved
-      responseCities.push({
-        name: data[i].name,
-        nbr_el: Object.keys(data[i].CityObjects).length,
-        filesize: Functions.formatBytes(filesize)
-      });
-    }
-
-    res.status(200);
-    return res.json(responseCities);
-  }).lean();
-});
-
-router.get("/getNamedCityModel", (req, res) => {
   mongoose
     .model("CityModel")
-    .find({ name: req.query.name }, async (err, data) => {
+    .find({}, async (err, data) => {
+      if (err) {
+        return res
+          .status(404)
+          .send({ error: "There is no CityModels in the DB." });
+      }
+
+      var responseCities = [];
+
+      for (var i = 0; i < data.length; ++i) {
+        var filesize = Functions.lengthInUtf8Bytes(JSON.stringify(data[i])); // Only the city model document, not CityObjects neither geometries...... To be improved
+        responseCities.push({
+          name: data[i].name,
+          nbr_el: Object.keys(data[i].CityObjects).length,
+          filesize: Functions.formatBytes(filesize)
+        });
+      }
+
+      res.status(200);
+      return res.json(responseCities);
+    })
+    .lean();
+});
+
+router.get("/getNamedCityModel", async (req, res) => {
+  var cityModel = await mongoose
+    .model("CityModel")
+    .findOne({ name: req.query.name }, async (err, data) => {
       if (err) {
         return res
           .status(500)
           .send({ error: "There is no CityModel with this name in the DB." });
       }
+    })
+    .lean();
 
-      for (var cityobject in data[0].CityObjects) {
-        var cityObjectType = data[0].CityObjects[cityobject].type;
-        var cityObjectName = cityobject;
+  for (var cityobject in cityModel.CityObjects) {
+    var cityObjectType = cityModel.CityObjects[cityobject].type;
 
-        switch (cityObjectType) {
-          case "BuildingPart":
-            cityObjectType = "Building";
-            break;
-          case "Road":
-          case "Railway":
-          case "TransportSquare":
-            cityObjectType = "Transportation";
-            break;
-          case "TunnelPart":
-            cityObjectType = "Tunnel";
-            break;
-          case "BridgePart":
-            cityObjectType = "Bridge";
-            break;
-          case "BridgeConstructionElement":
-            cityObjectType = "BridgeInstallation";
-            break;
-          default:
-        }
+    switch (cityObjectType) {
+      case "BuildingPart":
+        cityObjectType = "Building";
+        break;
+      case "Road":
+      case "Railway":
+      case "TransportSquare":
+        cityObjectType = "Transportation";
+        break;
+      case "TunnelPart":
+        cityObjectType = "Tunnel";
+        break;
+      case "BridgePart":
+        cityObjectType = "Bridge";
+        break;
+      case "BridgeConstructionElement":
+        cityObjectType = "BridgeInstallation";
+        break;
+      default:
+    }
 
-        data[0].CityObjects[cityObjectName] = await mongoose // Get CityObjects
-          .model(cityObjectType)
-          .findById(
-            data[0].CityObjects[cityObjectName].id,
-            async (err, data_object) => {
+    //console.log(cityModel.CityObjects[cityobject].id + " " + cityobject)
+
+    cityModel.CityObjects[cityobject] = await mongoose // Get the document of the CityObjects
+      .model(cityObjectType)
+      .findOne({ name: cityobject }, (err, data_object) => {
+        if (err) return res.status(500).send(err);
+
+        return data_object;
+      })
+      .lean();
+
+    //console.log(cityModel.CityObjects[cityobject]._id + " " + cityobject)
+    //console.log("-----------------------------------------------------------------------------------------");
+
+    var geometries = [];
+
+    for (var geom in cityModel.CityObjects[cityobject].geometry) {
+      geometries.push(
+        await mongoose // Get geometries for the CityObject
+          .model("Geometry")
+          .findOne(
+            { _id: cityModel.CityObjects[cityobject].geometry[geom] },
+            async (err, res_geom) => {
               if (err) return res.status(500).send(err);
 
-              return data_object;
+              return res_geom;
             }
-          ).lean();
+          )
+          .lean()
+      );
+    }
 
-        var geometries = [];
+    var max_lod = 0;
+    var max_id = -1;
 
-        for (var geom in data[0].CityObjects[cityObjectName].geometry) {
-          geometries.push(
-            await mongoose // Get geometries for the CityObject
-              .model("Geometry")
-              .findOne(
-                { _id: data[0].CityObjects[cityObjectName].geometry[geom] },
-                async (err, res_geom) => {
-                  if (err) return res.status(500).send(err);
-
-                  return res_geom;
-                }
-              ).lean()
-          );
-        }
-
-        var max_lod = 0;
-        var max_id = -1;
-
-        for (var geom in geometries) {
-          // Extract the highest LoD only
-          if (geometries[geom].lod > Number(max_lod)) {
-            max_lod = Number(geometries[geom].lod);
-            max_id = geom;
-          }
-        }
-
-        data[0].CityObjects[cityObjectName].geometry = [geometries[max_id]];
+    for (var geom in geometries) {
+      // Extract the highest LoD only
+      if (geometries[geom].lod > Number(max_lod)) {
+        max_lod = Number(geometries[geom].lod);
+        max_id = geom;
       }
+    }
 
-      res.status(200);
-      return res.json(data[0]);
-    }).lean();
+    cityModel.CityObjects[cityobject].geometry = [geometries[max_id]];
+  }
+
+  res.status(200);
+  return res.json(cityModel);
 });
 
 router.delete("/deleteNamedCityModel", (req, res) => {
   mongoose.model("CityModel").deleteOne({ name: req.body.name }, err => {
-    if (err) return res.status(500).send({ error : "There is no object with that name." });
+    if (err)
+      return res
+        .status(500)
+        .send({ error: "There is no object with that name." });
   });
 
   mongoose.model("CityObject").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send({ error : "There is no object with that name." });
+    if (err)
+      return res
+        .status(500)
+        .send({ error: "There is no object with that name." });
   });
 
   mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send({ error : "There is no object with that name." });
+    if (err)
+      return res
+        .status(500)
+        .send({ error: "There is no object with that name." });
   });
 
   mongoose
     .model("GeometryInstance")
     .deleteMany({ CityModel: req.body.name }, err => {
-      if (err) return res.status(500).send({ error : "There is no object with that name." });
+      if (err)
+        return res
+          .status(500)
+          .send({ error: "There is no object with that name." });
     });
 
   mongoose.model("Material").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send({ error : "There is no object with that name." });
+    if (err)
+      return res
+        .status(500)
+        .send({ error: "There is no object with that name." });
   });
 
   mongoose.model("Texture").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send({ error : "There is no object with that name." });
+    if (err)
+      return res
+        .status(500)
+        .send({ error: "There is no object with that name." });
   });
 
   return res.json({ success: "City model deleted with success !" });
@@ -195,17 +219,19 @@ router.get("/getObject", (req, res) => {
   if (typeof req.query.name != "undefined") {
     mongoose
       .model(req.query.CityObjectClass)
-      .find({ name: req.query.name }, (err, data) => {
+      .findOne({ name: req.query.name }, (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
-      }).lean();
+      })
+      .lean();
   } else if (typeof req.query.id != "undefined") {
     mongoose
       .model(req.query.CityObjectClass)
       .findById(req.query.id, (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
-      }).lean();
+      })
+      .lean();
   } else {
     return res.status(400).send({
       error:
@@ -214,21 +240,56 @@ router.get("/getObject", (req, res) => {
   }
 });
 
+router.delete("/deleteObject", async (req, res) => {
+  // Need of a recursive delete because of children
+  await Functions.recursiveDelete({
+    name: req.body.name,
+    CityModel: req.body.CityModel
+  });
+
+  return res.status(200).send({ success: "Object and children deleted." });
+});
+
 router.get("/getObjectAttributes", (req, res) => {
+  var cityObjectType = req.query.CityObjectType
+
+  switch (cityObjectType) {
+    case "BuildingPart":
+      cityObjectType = "Building";
+      break;
+    case "Road":
+    case "Railway":
+    case "TransportSquare":
+      cityObjectType = "Transportation";
+      break;
+    case "TunnelPart":
+      cityObjectType = "Tunnel";
+      break;
+    case "BridgePart":
+      cityObjectType = "Bridge";
+      break;
+    case "BridgeConstructionElement":
+      cityObjectType = "BridgeInstallation";
+      break;
+    default:
+  }
+
   if (typeof req.query.name != "undefined") {
     mongoose
-      .model(req.query.CityObjectClass)
+      .model(cityObjectType)
       .findOne({ name: req.query.name }, "attributes", (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
-      }).lean();
+      })
+      .lean();
   } else if (typeof req.query.id != "undefined") {
     mongoose
-      .model(req.query.CityObjectClass)
+      .model(cityObjectType)
       .findById(req.query.id, "attributes", (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
-      }).lean();
+      })
+      .lean();
   } else {
     return res.status(400).send({
       error:
@@ -278,7 +339,8 @@ router.put("/updateObjectAttribute", async (req, res) => {
 
           return res.status(200).send({ success: "Object updated." });
         });
-    }).lean();
+    })
+    .lean();
 });
 
 // append /api for our http requests
