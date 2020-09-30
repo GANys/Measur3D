@@ -90,9 +90,6 @@ class ThreeScene extends Component {
     this.am_light = new THREE.AmbientLight(0xffffff, 0.7); // soft white light
     this.scene.add(this.am_light);
 
-    //this.hemiLight = new THREE.HemisphereLight( 0x0000ff, 0x00ff00, 0.6 );
-    //this.scene.add(this.hemilight);
-
     // Add directional light
     this.spot_light = new THREE.SpotLight(0xdddddd);
     this.spot_light.position.set(84616, -1, 447422);
@@ -221,15 +218,13 @@ class ThreeScene extends Component {
   };
 
   clearScene = () => {
-    // Not be enough for collisions -> array.splice ?
+    // Not be enough for collisions -> array.splice doesnt change anything
     // Be careful to not delete the light ... Speaking from experience
     var mesh = new THREE.Mesh();
 
     this.scene.children = this.scene.children.filter(
       value => value.type !== mesh.type
     );
-
-    this.renderer.render(this.scene, this.camera);
   };
 
   handleClick = evt => {
@@ -252,7 +247,7 @@ class ThreeScene extends Component {
   };
 
   deleteObject = name => {
-    // Cleaning both Scene and ThreeScene objects
+    // Cleaning both Scene and ThreeScene objects -> Collisions seem to work oddly after it.
 
     this.setState({
       boolJSONload: true
@@ -274,24 +269,21 @@ class ThreeScene extends Component {
     }
 
     for (var child in this.meshes[index_mesh].childrenMeshes) {
-      for (var el in this.meshes) {
+      for (el in this.meshes) {
         // eslint-disable-next-line
         if (this.meshes[el].name == name) {
           index_mesh = el;
         }
       }
 
-      if (this.meshes[index_mesh].childrenMeshes[child] != undefined) {
+      if (this.meshes[index_mesh].childrenMeshes[child] !== undefined) {
         this.deleteObject(this.meshes[index_mesh].childrenMeshes[child]);
       }
     }
 
     this.meshes.splice(index_mesh, 1);
 
-    // Need to check this - HERE
-    console.log(Object.keys(this.geoms).length)
-    console.log(Object.keys(this.scene.children).length)
-    console.log(this.meshes.length)
+    this.renderer.render(this.scene, this.camera); // Cleaning for collisions.
 
     this.setState({
       boolJSONload: false

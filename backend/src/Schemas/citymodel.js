@@ -167,6 +167,24 @@ module.exports = {
     object.json["name"] = object.jsonName;
 
     for ([key, element] of Object.entries(object.json.CityObjects)) {
+      // HERE Geometries can be ARRRAYYYYS
+      var min_vertices = Infinity,
+        max_vertices = -Infinity;
+      for (var geom_id in element.geometry) {
+        var sub_vertices = getExtreme(
+          element.geometry[geom_id].boundaries,
+          min_vertices,
+          max_vertices
+        );
+      }
+
+      for (geom_id in element.geometry) {
+        element.geometry[geom_id].boundaries = switchGeometry(
+          element.geometry[geom_id].boundaries,
+          sub_vertices
+        );
+      }
+
       try {
         switch (element.type) {
           case "Building":
@@ -250,8 +268,8 @@ module.exports = {
             );
             break;
           case "SolitaryVegetationObject":
-          continue;
-          /*
+            continue;
+            /*
             element["name"] = object.jsonName + "_" + key;
             var element_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(
               element,
@@ -332,4 +350,22 @@ function validURL(str) {
     "i"
   ); // fragment locator
   return !!pattern.test(str);
+}
+
+function getExtreme(array, min, max) {
+  for (var el in array) {
+    if (el.constructor === Array) [min, max] = getExtreme(el, min, max);
+
+    if (el > max) max = el;
+
+    if (el < min) min = el;
+  }
+
+  return [min, max];
+}
+
+function switchGeometry(geometry, vertices) {
+  var switched_geometry;
+
+  return switched_geometry;
 }

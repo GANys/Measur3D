@@ -162,6 +162,8 @@ export async function loadCityObjects(threescene, cm_name) {
         boolJSONload: false, //enable clicking functions
         cityModel: true
       });
+
+      threescene.renderer.render(threescene.scene, threescene.camera)
     });
 }
 
