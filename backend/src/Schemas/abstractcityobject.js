@@ -26,7 +26,8 @@ let CityObjectSchema = new mongoose.Schema({
       return this["geographicalExtent"].length % 6 == 0;
     }
   },
-  geometry: [mongoose.Schema.Types.Mixed]
+  geometry: [mongoose.Schema.Types.Mixed],
+  vertices: [[Number]]
 });
 
 CityObject = mongoose.model("CityObject", CityObjectSchema);

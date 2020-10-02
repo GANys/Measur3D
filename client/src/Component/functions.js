@@ -45,38 +45,14 @@ export async function loadCityObjects(threescene, cm_name) {
       }
     })
     .then(async responseCity => {
-      // eslint-disable-next-line
-      if (responseCity.data === undefined) return; // If server response empty -> Server does not store any citymodel
-
       var json = responseCity.data;
 
-      //create one geometry that contains all vertices (in normalized form)
-      //normalize must be done for all coordinates as otherwise the objects are at same pos and have the same size
-      var normGeom = new THREE.Geometry();
+      var ext = json.metadata.geographicalExtent;
+      var avgX = (ext[0] + ext[3]) / 2;
+      var avgY = (ext[1] + ext[4]) / 2;
+      var avgZ = (ext[2] + ext[5]) / 2;
 
-      for (var i = 0; i < json.vertices.length; i++) {
-        var point = new THREE.Vector3(
-          json.vertices[i][0],
-          json.vertices[i][1],
-          json.vertices[i][2]
-        );
-        normGeom.vertices.push(point);
-      }
-
-      normGeom.normalize();
-
-      for (i = 0; i < json.vertices.length; i++) {
-        json.vertices[i][0] = normGeom.vertices[i].x;
-        json.vertices[i][1] = normGeom.vertices[i].y;
-        json.vertices[i][2] = normGeom.vertices[i].z;
-      }
-
-      var stats = getStats(json.vertices);
-      var avgX = stats[3];
-      var avgY = stats[4];
-      var avgZ = stats[5];
-
-      threescene.camera.position.set(0, 0, 2);
+      threescene.camera.position.set(0, 0, avgZ * 1.2 );
       threescene.camera.lookAt(avgX, avgY, avgZ);
 
       threescene.camera.updateProjectionMatrix();
@@ -85,10 +61,6 @@ export async function loadCityObjects(threescene, cm_name) {
 
       //enable movement parallel to ground
       threescene.controls.screenSpacePanning = true;
-
-      //count number of objects
-      var totalCityObjects = Object.keys(json.CityObjects).length;
-      console.log("Total # City Objects: ", totalCityObjects);
 
       //iterate through all cityObjects
       for (var cityObj in json.CityObjects) {
@@ -115,20 +87,20 @@ export async function loadCityObjects(threescene, cm_name) {
           default:
         }
 
-        var childrenMeshes = []
+        var childrenMeshes = [];
 
         try {
           //parse cityObj that it can be displayed in three js
           var returnChildren = await parseObject(
             json.CityObjects[cityObj],
-            json,
+            json.transform,
             cityObj,
             threescene.geoms
           );
 
           //if object has children add them to the childrendict
-          for (i in returnChildren) {
-            childrenMeshes.push(returnChildren[i])
+          for (var i in returnChildren) {
+            childrenMeshes.push(returnChildren[i]);
           }
         } catch (e) {
           var error_message = "ERROR at creating: " + cityObj;
@@ -163,7 +135,7 @@ export async function loadCityObjects(threescene, cm_name) {
         cityModel: true
       });
 
-      threescene.renderer.render(threescene.scene, threescene.camera)
+      threescene.renderer.render(threescene.scene, threescene.camera);
     });
 }
 
@@ -186,7 +158,7 @@ function get_normal_newell(indices) {
       n[2] + (indices[i].x - indices[nex].x) * (indices[i].y + indices[nex].y);
   }
   var b = new THREE.Vector3(n[0], n[1], n[2]);
-  return b.normalize();
+  return b;
 }
 
 function to_2d(p, n) {
@@ -199,7 +171,6 @@ function to_2d(p, n) {
   var tmp2 = n.clone();
   tmp2.multiplyScalar(tmp);
   x3.sub(tmp2);
-  x3.normalize();
   var y3 = n.clone();
   y3.cross(x3);
   let x = p.dot(x3);
@@ -208,44 +179,9 @@ function to_2d(p, n) {
   return re;
 }
 
-function getStats(vertices) {
-  var minX = Number.MAX_VALUE;
-  var minY = Number.MAX_VALUE;
-  var minZ = Number.MAX_VALUE;
-
-  var sumX = 0;
-  var sumY = 0;
-  var sumZ = 0;
-  var counter = 0;
-
-  for (var i in vertices) {
-    sumX = sumX + vertices[i][0];
-    if (vertices[i][0] < minX) {
-      minX = vertices[i][0];
-    }
-
-    sumY = sumY + vertices[i][1];
-    if (vertices[i][1] < minY) {
-      minY = vertices[i][1];
-    }
-
-    if (vertices[i][2] < minZ) {
-      minZ = vertices[i][2];
-    }
-
-    sumZ = sumZ + vertices[i][2];
-    counter = counter + 1;
-  }
-
-  var avgX = sumX / counter;
-  var avgY = sumY / counter;
-  var avgZ = sumZ / counter;
-
-  return [minX, minY, minZ, avgX, avgY, avgZ];
-}
-
 //convert json file to viwer-object
-async function parseObject(object, json, cityObj, geoms) {
+async function parseObject(object, transform, cityObj, geoms) {
+  // CityObject, CityObject.name, threeScene.Geoms
   var boundaries;
 
   //create geometry and empty list for the vertices
@@ -268,58 +204,51 @@ async function parseObject(object, json, cityObj, geoms) {
     boundaries = object.geometry[0].boundaries;
   }
 
-  //needed for assocation of global and local vertices
-  var verticeId = 0;
+  var vertices = object.vertices;
 
-  var vertices = []; //local vertices
-  var indices = []; //global vertices
-  var boundary = [];
-
-  //contains the boundary but with the right verticeId
-  for (var i = 0; i < boundaries.length; i++) {
-    for (var j = 0; j < boundaries[i][0].length; j++) {
-      //the original index from the json file
-      var index = boundaries[i][0][j];
-
-      //if this index is already there
-      if (vertices.includes(index)) {
-        var vertPos = vertices.indexOf(index);
-        indices.push(vertPos);
-        boundary.push(vertPos);
-      } else {
-        //add vertice to geometry
-        var point = new THREE.Vector3(
-          json.vertices[index][0],
-          json.vertices[index][1],
-          json.vertices[index][2]
-        );
-        geom.vertices.push(point);
-
-        vertices.push(index);
-        indices.push(verticeId);
-        boundary.push(verticeId);
-
-        verticeId = verticeId + 1;
-      }
+  for (var ver in vertices) {
+    if (transform !== undefined) {
+      var point = new THREE.Vector3(
+        vertices[ver][0] * transform["scale"][0] + transform["translate"][0],
+        vertices[ver][1] * transform["scale"][1] + transform["translate"][1],
+        vertices[ver][2] * transform["scale"][2] + transform["translate"][2]
+      );
+    } else {
+      point = new THREE.Vector3(
+        vertices[ver][0],
+        vertices[ver][1],
+        vertices[ver][2]
+      );
     }
+    geom.vertices.push(point);
+  }
+
+  for (var i = 0; i < boundaries.length; i++) {
+    //boundaries[i] is a local face
 
     //create face
     //triangulated faces
-    // eslint-disable-next-line
-    if (boundary.length == 3) {
-      geom.faces.push(new THREE.Face3(boundary[0], boundary[1], boundary[2]));
+    if (boundaries[i][0].length === 3) {
+      geom.faces.push(
+        new THREE.Face3(
+          boundaries[i][0][0],
+          boundaries[i][0][1],
+          boundaries[i][0][2]
+        )
+      );
 
       //non triangulated faces
-    } else if (boundary.length > 3) {
+    } else if (boundaries[i][0].length > 3) {
       //create list of points
       var pList = [];
-      for (j = 0; j < boundary.length; j++) {
+      for (var j = 0; j < boundaries[i][0].length; j++) {
         pList.push({
-          x: json.vertices[vertices[boundary[j]]][0],
-          y: json.vertices[vertices[boundary[j]]][1],
-          z: json.vertices[vertices[boundary[j]]][2]
+          x: vertices[boundaries[i][0][j]][0],
+          y: vertices[boundaries[i][0][j]][1],
+          z: vertices[boundaries[i][0][j]][2]
         });
       }
+
       //get normal of these points
       var normal = await get_normal_newell(pList);
 
@@ -338,16 +267,13 @@ async function parseObject(object, json, cityObj, geoms) {
       for (j = 0; j < tr.length; j += 3) {
         geom.faces.push(
           new THREE.Face3(
-            boundary[tr[j]],
-            boundary[tr[j + 1]],
-            boundary[tr[j + 2]]
+            boundaries[i][0][tr[j]],
+            boundaries[i][0][tr[j + 1]],
+            boundaries[i][0][tr[j + 2]]
           )
         );
       }
     }
-
-    //reset boundaries
-    boundary = [];
   }
 
   //needed for shadow
@@ -355,7 +281,7 @@ async function parseObject(object, json, cityObj, geoms) {
 
   geoms[object.name] = geom;
 
-  return json.CityObjects[cityObj].children;
+  return object.children;
 }
 
 //action if mouseclick (for getting attributes ofobjects)

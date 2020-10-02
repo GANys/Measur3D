@@ -167,23 +167,33 @@ module.exports = {
     object.json["name"] = object.jsonName;
 
     for ([key, element] of Object.entries(object.json.CityObjects)) {
-      // HERE Geometries can be ARRRAYYYYS
       var min_vertices = Infinity,
         max_vertices = -Infinity;
+
+      // Help extracting vertices between the min and max index in all geometries
       for (var geom_id in element.geometry) {
-        var sub_vertices = getExtreme(
+        [min_vertices, max_vertices] = getExtreme(
           element.geometry[geom_id].boundaries,
           min_vertices,
           max_vertices
         );
       }
 
+      // Extract only the relevant vertices for the CityObject
+      var sub_vertices = object.json.vertices.slice().splice( // Makes a copy without altering the vertices
+        min_vertices,
+        max_vertices - min_vertices + 1
+      );
+
+      // Populate geometries with the real vertices instead of indexes
       for (geom_id in element.geometry) {
         element.geometry[geom_id].boundaries = switchGeometry(
           element.geometry[geom_id].boundaries,
-          sub_vertices
+          min_vertices
         );
       }
+
+      element.vertices = sub_vertices
 
       try {
         switch (element.type) {
@@ -330,6 +340,7 @@ module.exports = {
     }
 
     object.json.CityObjects = new_objects;
+    object.json.vertices = [] // Can be emptied as vertices are in CityObjects now
 
     var city = new CityModel(object.json);
 
@@ -354,18 +365,21 @@ function validURL(str) {
 
 function getExtreme(array, min, max) {
   for (var el in array) {
-    if (el.constructor === Array) [min, max] = getExtreme(el, min, max);
-
-    if (el > max) max = el;
-
-    if (el < min) min = el;
+    if (array[el].constructor === Array)
+      [min, max] = getExtreme(array[el], min, max);
+    if (array[el] > max) max = array[el];
+    if (array[el] < min) min = array[el];
   }
-
   return [min, max];
 }
 
-function switchGeometry(geometry, vertices) {
-  var switched_geometry;
-
-  return switched_geometry;
+function switchGeometry(array, min_index) {
+  for (var el in array) {
+    if (array[el].constructor === Array) {
+      array[el] = switchGeometry(array[el], min_index);
+    } else {
+      array[el] = array[el] - min_index;
+    }
+  }
+  return array;
 }
