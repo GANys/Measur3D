@@ -52,7 +52,10 @@ export async function loadCityObjects(threescene, cm_name) {
       var avgY = (ext[1] + ext[4]) / 2;
       var avgZ = (ext[2] + ext[5]) / 2;
 
-      threescene.camera.position.set(0, 0, avgZ * 1.2 );
+      var z_dist = (ext[3]-ext[0])/(2*Math.tan(30*Math.PI/180))
+      var y_dist = (ext[3]-ext[0])/(2*Math.tan(30*Math.PI/180))
+
+      threescene.camera.position.set(avgX, avgY - y_dist, avgZ + z_dist); // Can be improved
       threescene.camera.lookAt(avgX, avgY, avgZ);
 
       threescene.camera.updateProjectionMatrix();
@@ -111,11 +114,20 @@ export async function loadCityObjects(threescene, cm_name) {
 
         //set color of object
         var coType = json.CityObjects[cityObj].type;
-        var material = new THREE.MeshLambertMaterial();
+        var material = new THREE.MeshStandardMaterial();
         material.color.setHex(ALLCOLOURS[coType]);
 
         //create mesh
         var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
+        var geo = new THREE.EdgesGeometry(coMesh.geometry); // or WireframeGeometry
+        var mat = new THREE.LineBasicMaterial({
+          color: 0x111111,
+          transparent: true,
+          opacity: 0.5,
+          linewidth: 0.5
+        });
+        var wireframe = new THREE.LineSegments(geo, mat);
+        coMesh.add(wireframe);
 
         // Added by Measur3D
         coMesh.name = cityObj;
@@ -158,7 +170,7 @@ function get_normal_newell(indices) {
       n[2] + (indices[i].x - indices[nex].x) * (indices[i].y + indices[nex].y);
   }
   var b = new THREE.Vector3(n[0], n[1], n[2]);
-  return b;
+  return b.normalize();
 }
 
 function to_2d(p, n) {
@@ -171,6 +183,7 @@ function to_2d(p, n) {
   var tmp2 = n.clone();
   tmp2.multiplyScalar(tmp);
   x3.sub(tmp2);
+  x3.normalize();
   var y3 = n.clone();
   y3.cross(x3);
   let x = p.dot(x3);

@@ -49,6 +49,8 @@ let db = mongoose.connection; // Instantiate the connection
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
 
 router.post("/uploadCityModel", (req, res) => {
+  req.setTimeout(10 * 60 * 1000); // Special timeOut
+
   Cities.insertCity(req.body).then(function(data) {
     return res.status(201).send(data);
   });
