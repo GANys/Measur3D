@@ -25,7 +25,7 @@ var ALLCOLOURS = {
   GenericCityObject: 0xcc0000,
   LandUse: 0xffffb3,
   PlantCover: 0x39ac39,
-  Railway: 0x000000,
+  Railway: 0x222222,
   Road: 0x999999,
   SolitaryVegetationObject: 0x39ac39,
   TINRelief: 0x3fd43f,
@@ -52,8 +52,8 @@ export async function loadCityObjects(threescene, cm_name) {
       var avgY = (ext[1] + ext[4]) / 2;
       var avgZ = (ext[2] + ext[5]) / 2;
 
-      var z_dist = (ext[3]-ext[0])/(2*Math.tan(30*Math.PI/180))
-      var y_dist = (ext[3]-ext[0])/(2*Math.tan(30*Math.PI/180))
+      var z_dist = (ext[3] - ext[0]) / (2 * Math.tan((30 * Math.PI) / 180));
+      var y_dist = (ext[3] - ext[0]) / (2 * Math.tan((30 * Math.PI) / 180));
 
       threescene.camera.position.set(avgX, avgY - y_dist, avgZ + z_dist); // Can be improved
       threescene.camera.lookAt(avgX, avgY, avgZ);
@@ -92,25 +92,25 @@ export async function loadCityObjects(threescene, cm_name) {
 
         var childrenMeshes = [];
 
-        try {
-          //parse cityObj that it can be displayed in three js
-          var returnChildren = await parseObject(
-            json.CityObjects[cityObj],
-            json.transform,
-            cityObj,
-            threescene.geoms
-          );
+        //try {
+        //parse cityObj that it can be displayed in three js
+        var returnChildren = await parseObject(
+          json.CityObjects[cityObj],
+          json.transform,
+          cityObj,
+          threescene.geoms
+        );
 
-          //if object has children add them to the childrendict
-          for (var i in returnChildren) {
-            childrenMeshes.push(returnChildren[i]);
-          }
-        } catch (e) {
+        //if object has children add them to the childrendict
+        for (var i in returnChildren) {
+          childrenMeshes.push(returnChildren[i]);
+        }
+        /*} catch (e) {
           var error_message = "ERROR at creating: " + cityObj;
           console.log(error_message);
           EventEmitter.dispatch("error", error_message);
           continue;
-        }
+        }*/
 
         //set color of object
         var coType = json.CityObjects[cityObj].type;
@@ -121,13 +121,13 @@ export async function loadCityObjects(threescene, cm_name) {
         var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
         var geo = new THREE.EdgesGeometry(coMesh.geometry); // or WireframeGeometry
         var mat = new THREE.LineBasicMaterial({
-          color: 0x111111,
+          color: 0x000000,
           transparent: true,
-          opacity: 0.5,
+          opacity: 0.25,
           linewidth: 0.5
         });
         var wireframe = new THREE.LineSegments(geo, mat);
-        coMesh.add(wireframe);
+        //coMesh.add(wireframe);
 
         // Added by Measur3D
         coMesh.name = cityObj;
@@ -204,6 +204,7 @@ async function parseObject(object, transform, cityObj, geoms) {
 
   //each geometrytype must be handled different
   var geomType = object.geometry[0].type;
+
   // eslint-disable-next-line
   if (geomType == "Solid") {
     // eslint-disable-next-line
@@ -217,72 +218,59 @@ async function parseObject(object, transform, cityObj, geoms) {
     boundaries = object.geometry[0].boundaries;
   }
 
-  var vertices = object.vertices;
-
-  for (var ver in vertices) {
-    if (transform !== undefined) {
-      var point = new THREE.Vector3(
-        vertices[ver][0] * transform["scale"][0] + transform["translate"][0],
-        vertices[ver][1] * transform["scale"][1] + transform["translate"][1],
-        vertices[ver][2] * transform["scale"][2] + transform["translate"][2]
-      );
-    } else {
-      point = new THREE.Vector3(
-        vertices[ver][0],
-        vertices[ver][1],
-        vertices[ver][2]
-      );
-    }
-    geom.vertices.push(point);
-  }
+  var object_vertices = object.vertices;
+  var face_vertices = []
 
   for (var i = 0; i < boundaries.length; i++) {
-    //boundaries[i] is a local face
-
-    //create face
-    //triangulated faces
-    if (boundaries[i][0].length === 3) {
-      geom.faces.push(
-        new THREE.Face3(
-          boundaries[i][0][0],
-          boundaries[i][0][1],
-          boundaries[i][0][2]
-        )
+    var boundary = [];
+    var holes = [];
+    for (var j = 0; j < boundaries[i].length; j++) {
+      if (boundary.length > 0) {
+        holes.push(boundary.length);
+      }
+      var new_boundary = decomposeFaces(
+        geom,
+        boundaries[i][j],
+        face_vertices,
+        object_vertices,
+        transform
       );
-
-      //non triangulated faces
-    } else if (boundaries[i][0].length > 3) {
+      boundary.push(...new_boundary);
+    }
+    if (boundary.length == 3) {
+      geom.faces.push(new THREE.Face3(boundary[0], boundary[1], boundary[2]));
+    } else if (boundary.length > 3) {
       //create list of points
       var pList = [];
-      for (var j = 0; j < boundaries[i][0].length; j++) {
+      var k;
+      for (k = 0; k < boundary.length; k++) {
         pList.push({
-          x: vertices[boundaries[i][0][j]][0],
-          y: vertices[boundaries[i][0][j]][1],
-          z: vertices[boundaries[i][0][j]][2]
+          x: object_vertices[face_vertices[boundary[k]]][0],
+          y: object_vertices[face_vertices[boundary[k]]][1],
+          z: object_vertices[face_vertices[boundary[k]]][2]
         });
       }
-
       //get normal of these points
       var normal = await get_normal_newell(pList);
 
       //convert to 2d (for triangulation)
       var pv = [];
-      for (j = 0; j < pList.length; j++) {
-        var re = await to_2d(pList[j], normal);
+      for (k = 0; k < pList.length; k++) {
+        var re = await to_2d(pList[k], normal);
         pv.push(re.x);
         pv.push(re.y);
       }
 
       //triangulate
-      var tr = await earcut(pv, null, 2);
+      var tr = await earcut(pv, holes, 2);
 
       //create faces based on triangulation
-      for (j = 0; j < tr.length; j += 3) {
+      for (k = 0; k < tr.length; k += 3) {
         geom.faces.push(
           new THREE.Face3(
-            boundaries[i][0][tr[j]],
-            boundaries[i][0][tr[j + 1]],
-            boundaries[i][0][tr[j + 2]]
+            boundary[tr[k]],
+            boundary[tr[k + 1]],
+            boundary[tr[k + 2]]
           )
         );
       }
@@ -291,11 +279,49 @@ async function parseObject(object, transform, cityObj, geoms) {
 
   //needed for shadow
   geom.computeFaceNormals();
+  //geom.computeVertexNormals();
 
   geoms[object.name] = geom;
 
   return object.children;
 }
+
+function decomposeFaces(geom, boundary, indices, vertices, transform)
+    {
+      var new_boundary = []
+      var j
+      for (j = 0; j < boundary.length; j++) {
+        //the original index from the json file
+        var index = boundary[j];
+
+        //if this index is already there
+        if (indices.includes(index)) {
+          var vertPos = indices.indexOf(index)
+          new_boundary.push(vertPos)
+        }
+        else {
+          // Add vertex to geometry
+          if (transform != undefined) {
+            var point = new THREE.Vector3(
+            vertices[index][0] * transform.scale[0] + transform.translate[0],
+            vertices[index][1] * transform.scale[1] + transform.translate[1],
+            vertices[index][2] * transform.scale[2] + transform.translate[2]
+            );
+          } else {
+            var point = new THREE.Vector3(
+            vertices[index][0],
+            vertices[index][1],
+            vertices[index][2]
+            );
+          }
+          geom.vertices.push(point)
+
+          new_boundary.push(indices.length)
+          indices.push(index)
+        }
+      }
+      return new_boundary
+    }
 
 //action if mouseclick (for getting attributes ofobjects)
 export async function intersectMeshes(event, threescene) {

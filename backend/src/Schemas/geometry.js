@@ -10,17 +10,6 @@ let GeometrySchema = new mongoose.Schema({
   CityObject: { type: String, index: true },
   lod: { type: Number, required: true, validate: /([0-3]{1}\.?)+[0-3]?/ },
   boundaries: {},
-  vertices: {
-    type: [[Number]],
-    required: true,
-    index: true,
-    validate: function() {
-      for (var vertex in this.vertices) {
-        if (this.vertices[vertex].length != 3) return false;
-      }
-      return true;
-    }
-  },
   semantics: {},
   material: {},
   texture: {}
@@ -182,7 +171,6 @@ module.exports = {
 
     try {
       let element = await geometry.save();
-
       return element.id;
     } catch (err) {
       console.error(err.message);

@@ -67,7 +67,7 @@ class ThreeScene extends Component {
       60, // Field of view
       width / height, // Aspect ratio
       0.01, // Near clipping pane
-      10000 // Far clipping pane
+      1000 // Far clipping pane
     );
     this.camera.position.z = 2;
 
@@ -92,11 +92,11 @@ class ThreeScene extends Component {
 
     // Add directional light
     this.spot_light = new THREE.SpotLight(0xdddddd);
-    this.spot_light.position.set(84616, -1, 447422);
+    this.spot_light.position.set(84616, -1, 447422); // Can be problematic because scene is not normalised
     this.spot_light.target = this.scene;
     this.spot_light.castShadow = true;
     this.spot_light.intensity = 0.4;
-    this.spot_light.position.normalize();
+    //this.spot_light.position.normalize();
     this.scene.add(this.spot_light);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
