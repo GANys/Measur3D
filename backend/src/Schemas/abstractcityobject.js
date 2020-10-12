@@ -26,7 +26,28 @@ let CityObjectSchema = new mongoose.Schema({
       return this["geographicalExtent"].length % 6 == 0;
     }
   },
+  location: {
+    type: { type: String, enum: ["Polygon"] },
+    coordinates: { type: [[[Number]]] }
+  },
   geometry: [mongoose.Schema.Types.Mixed],
+  transform: {
+    // No additional properties
+    scale: {
+      type: [Number],
+      default: undefined,
+      validate: function() {
+        return this.transform["scale"].length == 3;
+      }
+    },
+    translate: {
+      type: [Number],
+      default: undefined,
+      validate: function() {
+        return this.transform["translate"].length == 3;
+      }
+    }
+  },
   vertices: [[Number]]
 });
 

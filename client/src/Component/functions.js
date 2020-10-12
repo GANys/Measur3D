@@ -119,15 +119,6 @@ export async function loadCityObjects(threescene, cm_name) {
 
         //create mesh
         var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
-        var geo = new THREE.EdgesGeometry(coMesh.geometry); // or WireframeGeometry
-        var mat = new THREE.LineBasicMaterial({
-          color: 0x000000,
-          transparent: true,
-          opacity: 0.25,
-          linewidth: 0.5
-        });
-        var wireframe = new THREE.LineSegments(geo, mat);
-        //coMesh.add(wireframe);
 
         // Added by Measur3D
         coMesh.name = cityObj;
@@ -222,8 +213,7 @@ async function parseObject(object, transform, cityObj, geoms) {
   var face_vertices = []
 
   for (var i = 0; i < boundaries.length; i++) {
-    var boundary = [];
-    var holes = [];
+    var boundary = [], holes = [];
     for (var j = 0; j < boundaries[i].length; j++) {
       if (boundary.length > 0) {
         holes.push(boundary.length);
@@ -237,12 +227,12 @@ async function parseObject(object, transform, cityObj, geoms) {
       );
       boundary.push(...new_boundary);
     }
-    if (boundary.length == 3) {
+    if (boundary.length === 3) {
       geom.faces.push(new THREE.Face3(boundary[0], boundary[1], boundary[2]));
     } else if (boundary.length > 3) {
       //create list of points
-      var pList = [];
-      var k;
+      var pList = [], k;
+
       for (k = 0; k < boundary.length; k++) {
         pList.push({
           x: object_vertices[face_vertices[boundary[k]]][0],
@@ -301,14 +291,14 @@ function decomposeFaces(geom, boundary, indices, vertices, transform)
         }
         else {
           // Add vertex to geometry
-          if (transform != undefined) {
+          if (transform !== undefined) {
             var point = new THREE.Vector3(
             vertices[index][0] * transform.scale[0] + transform.translate[0],
             vertices[index][1] * transform.scale[1] + transform.translate[1],
             vertices[index][2] * transform.scale[2] + transform.translate[2]
             );
           } else {
-            var point = new THREE.Vector3(
+            point = new THREE.Vector3(
             vertices[index][0],
             vertices[index][1],
             vertices[index][2]

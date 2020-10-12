@@ -67,7 +67,7 @@ class ThreeScene extends Component {
       60, // Field of view
       width / height, // Aspect ratio
       0.01, // Near clipping pane
-      1000 // Far clipping pane
+      10000 // Far clipping pane
     );
     this.camera.position.z = 2;
 

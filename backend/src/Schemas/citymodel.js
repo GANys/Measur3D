@@ -115,6 +115,10 @@ let CityModelSchema = new mongoose.Schema({
       }
     }
   },
+  location: {
+    type: { type: String, enum: "Polygon" },
+    coordinates: { type: [[[Number]]] }
+  },
   appearance: {
     // No additional properties
     "default-theme-texture": String,
@@ -157,12 +161,54 @@ module.exports = {
 
     object.json["name"] = object.jsonName;
 
-    for ([key, element] of Object.entries(object.json.CityObjects)) {
-      var cityobject = saveCityObject(object, element);
-      objectPromises.push(cityobject);
+    var min_x = Infinity,
+      max_x = -Infinity,
+      min_y = Infinity,
+      max_y = -Infinity,
+      min_z = Infinity,
+      max_z = -Infinity;
 
-      new_objects[object.jsonName + "_" + key] = cityobject;
+    for ([key, element] of Object.entries(object.json.CityObjects)) {
+      var result = await saveCityObject(object, element);
+
+      if (result.object === undefined) continue;
+
+      objectPromises.push(result.object);
+
+      new_objects[object.jsonName + "_" + key] = result.object;
+
+      if (result.bbox[3] > max_x) max_x = result.bbox[3];
+      if (result.bbox[0] < min_x) min_x = result.bbox[0];
+      if (result.bbox[4] > max_y) max_y = result.bbox[4];
+      if (result.bbox[1] < min_y) min_y = result.bbox[1];
+      if (result.bbox[5] > max_z) max_z = result.bbox[5];
+      if (result.bbox[2] < min_z) min_z = result.bbox[2];
     }
+
+    var location = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [min_x, min_y],
+          [max_x, min_y],
+          [max_x, max_y],
+          [min_x, max_y],
+          [min_x, min_y]
+        ]
+      ]
+    };
+
+    object.json.location = location;
+
+    // Real citymodel bbox
+    object.json.metadata.geographicalExtent = [
+      min_x,
+      min_y,
+      min_z,
+      max_x,
+      max_y,
+      max_z
+    ];
 
     await Promise.all(objectPromises);
 
@@ -170,6 +216,9 @@ module.exports = {
     object.json.vertices = []; // Can be emptied as vertices are in CityObjects now
 
     var city = new CityModel(object.json);
+
+    // Build 2D index
+    mongoose.model('CityObject').schema.index({location: '2d'});
 
     await city.save();
   },
@@ -211,36 +260,83 @@ function switchGeometry(array, min_index) {
   return array;
 }
 
-function saveCityObject(object, element) {
-  var min_vertices = Infinity,
-    max_vertices = -Infinity;
+async function saveCityObject(object, element) {
+  var min_index = Infinity,
+    max_index = -Infinity;
+
+  var min_x = Infinity,
+    max_x = -Infinity,
+    min_y = Infinity,
+    max_y = -Infinity,
+    min_z = Infinity,
+    max_z = -Infinity;
 
   // Help extracting vertices between the min and max index in all geometries
   // It is the complex part
   for (var geom_id in element.geometry) {
-    [min_vertices, max_vertices] = getExtreme(
+    [min_index, max_index] = getExtreme(
       element.geometry[geom_id].boundaries,
-      min_vertices,
-      max_vertices
+      min_index,
+      max_index
     );
   }
 
   // Extract only the relevant vertices for the CityObject
-  var sub_vertices = object.json.vertices.slice().splice(
+  element.vertices = object.json.vertices.slice().splice(
     // Makes a copy without altering the vertices
-    min_vertices,
-    max_vertices - min_vertices + 1
+    min_index,
+    max_index - min_index + 1
   );
+
+  for (ver in element.vertices) {
+    if (element.vertices[ver][0] > max_x) max_x = element.vertices[ver][0];
+    if (element.vertices[ver][0] < min_x) min_x = element.vertices[ver][0];
+    if (element.vertices[ver][1] > max_y) max_y = element.vertices[ver][1];
+    if (element.vertices[ver][1] < min_y) min_y = element.vertices[ver][1];
+    if (element.vertices[ver][2] > max_z) max_z = element.vertices[ver][2];
+    if (element.vertices[ver][2] < min_z) min_z = element.vertices[ver][2];
+  }
+
+  // Stores real coordinates in BBOX
+  min_x =
+    min_x * object.json.transform.scale[0] + object.json.transform.translate[0];
+  max_x =
+    max_x * object.json.transform.scale[0] + object.json.transform.translate[0];
+  min_y =
+    min_y * object.json.transform.scale[1] + object.json.transform.translate[1];
+  max_y =
+    max_y * object.json.transform.scale[1] + object.json.transform.translate[1];
+  min_z =
+    min_z * object.json.transform.scale[2] + object.json.transform.translate[2];
+  max_z =
+    max_z * object.json.transform.scale[2] + object.json.transform.translate[2];
+
+  element.geographicalExtent = [min_x, min_y, min_z, max_x, max_y, max_z];
+
+  element.transform = object.json.transform;
+
+  var location = {
+    type: "Polygon",
+    coordinates: [
+      [
+        [min_x, min_y],
+        [max_x, min_y],
+        [max_x, max_y],
+        [min_x, max_y],
+        [min_x, min_y]
+      ]
+    ]
+  };
+
+  element.location = location;
 
   // Populate geometries with the real vertices instead of indexes
   for (geom_id in element.geometry) {
     element.geometry[geom_id].boundaries = switchGeometry(
       element.geometry[geom_id].boundaries,
-      min_vertices
+      min_index
     );
   }
-
-  element.vertices = sub_vertices;
 
   try {
     switch (element.type) {
@@ -313,7 +409,7 @@ function saveCityObject(object, element) {
         );
         break;
       case "SolitaryVegetationObject":
-        return;
+        return { object: undefined, bbox: undefined };
         /*
         element["name"] = object.jsonName + "_" + key;
         var element_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(
@@ -362,5 +458,5 @@ function saveCityObject(object, element) {
     console.warn(err.message);
   }
 
-  return cityobject;
+  return { object: cityobject, bbox: element.geographicalExtent };
 }
