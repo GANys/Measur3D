@@ -3,50 +3,22 @@ import axios from "axios";
 
 import SplitPane from "react-split-pane";
 
-import Sidebar from "./Component/Sidebar";
-import Chart from "./Component/Chart";
-import ThreeScene from "./Component/ThreeScene";
-import Modal from "./Component/Modal";
-import Dropzone from "./Component/Dropzone";
-import Table from "./Component/Attributes_Manager";
+import ThreeScene from "../Measur3DComponent/ThreeScene";
+import Modal from "../Measur3DComponent/Modal";
+import AttributesManager from "../Measur3DComponent/AttributesManager";
 import Alert from "@material-ui/lab/Alert";
 import Collapse from "@material-ui/core/Collapse";
 import Container from "@material-ui/core/Container";
 
-import { makeStyles } from "@material-ui/core/styles";
-import HomeRoundedIcon from "@material-ui/icons/HomeRounded";
-import LocationCityRoundedIcon from "@material-ui/icons/LocationCityRounded";
-import SettingsRoundedIcon from "@material-ui/icons/SettingsRounded";
-import GitHubIcon from "@material-ui/icons/GitHub";
+import { EventEmitter } from "../Measur3DComponent/events";
 
-import { EventEmitter } from "./Component/events";
-
-import logo_ugeom from "./logo_geomatics.png";
-import logo_app from "./logo_app_white.png";
+import logo_ugeom from "../images/logo_geomatics.png";
+import logo_app from "../images/logo_app_white.png";
 
 // eslint-disable-next-line
-import styles from "./App.css";
+import styles from "./Measur3D.css";
 
-const items = [
-  "divider",
-  { name: "home", label: "Home", content: "modal_home", Icon: HomeRoundedIcon },
-  { name: "models", label: "City Models", content: "modal_models", Icon: LocationCityRoundedIcon },
-  {
-    name: "github",
-    label: "GitHub",
-    content: "modal_github",
-    Icon: GitHubIcon
-  },
-  "divider",
-  {
-    name: "export",
-    label: "Export model",
-    content: "modal_export",
-    Icon: SettingsRoundedIcon
-  }
-];
-
-class App extends Component {
+class Measur3D extends Component {
   constructor() {
     super();
 
@@ -56,18 +28,18 @@ class App extends Component {
 
     this.showError = this.debounce(this.showError.bind(this), 3000);
 
-    this.useStyles = this.useStyles.bind();
-
     this.uploadFile = this.uploadFile.bind();
 
     EventEmitter.subscribe("error", event => this.showError(event));
     EventEmitter.subscribe("success", event => this.showSuccess(event));
     EventEmitter.subscribe("info", event => this.showInfo(event));
+
+    EventEmitter.subscribe("showModal", event => this.showModal(event));
   }
 
   state = {
     show: false,
-    modal: ["", ""],
+    modal_label: "",
     errorMessage: "",
     successMessage: "",
     infoMessage: "",
@@ -123,11 +95,12 @@ class App extends Component {
     }, 3000);
   };
 
-  showModal = (label, content) => {
+  showModal = label => {
+
     // eslint-disable-next-line
     if (this.state.show == false) {
       this.setState({
-        modal: [label, content]
+        modal_label: label
       });
     }
 
@@ -135,15 +108,6 @@ class App extends Component {
       show: !this.state.show
     });
   };
-
-  useStyles = makeStyles(theme => ({
-    root: {
-      width: "100%",
-      "& > * + *": {
-        marginTop: theme.spacing(2)
-      }
-    }
-  }));
 
   uploadFile = file => {
     this.setState({ file: file });
@@ -153,42 +117,26 @@ class App extends Component {
     return (
       <Container>
         <React.Fragment>
-          <SplitPane split="vertical">
-            <SplitPane split="horizontal">
-              <img src={logo_app} className="logo_app" alt="logo_app" />
-              <SplitPane split="horizontal">
-                <Dropzone />
-                <SplitPane split="horizontal">
-                  <Sidebar items={items} showModal={this.showModal} />
-                  <div className="AttributeManager">
-                    <Table />
-                  </div>
-                </SplitPane>
-              </SplitPane>
-            </SplitPane>
-            <SplitPane split="horizontal" primary="second">
-              <div id="ThreeScene">
-                <a href="http://geomatics.ulg.ac.be/home.php" rel="noopener">
-                  <img
-                    src={logo_ugeom}
-                    className="logo_ugeom"
-                    alt="logo_ugeom"
-                  />
-                </a>
-                <ThreeScene />
+            <div id="ThreeScene">
+              <a href="http://geomatics.ulg.ac.be/home.php" rel="noopener">
+                <img src={logo_ugeom} className="logo_ugeom" alt="logo_ugeom" />
+              </a>
+              <ThreeScene />
+            </div>
+            <div id="bottomPane">
+            <SplitPane split="vertical" minSize="50%" defaultSize="50%">
+              <div id="AttributesManager">
+                <AttributesManager />
               </div>
-              <SplitPane split="vertical">
-                <Chart />
-                <Chart />
-              </SplitPane>
+              <img id="logo_app" src={logo_app} className="logo_app" alt="logo_app" />
             </SplitPane>
-          </SplitPane>
+            </div>
           <Modal
             onClose={this.showModal}
             show={this.state.show}
             onClickOutside={this.showModal}
           >
-            {this.state.modal}
+            {this.state.modal_label}
           </Modal>
         </React.Fragment>
         <Collapse in={this.state.showingAlert}>
@@ -213,13 +161,16 @@ class App extends Component {
   }
 }
 
-axios.interceptors.response.use((response) => {
+axios.interceptors.response.use(
+  response => {
     return response;
-}, (error) => {
+  },
+  error => {
     if (error.response.status === 429) {
-        EventEmitter.dispatch("error", error.response.data);
+      EventEmitter.dispatch("error", error.response.data);
     }
     return Promise.reject(error.message);
-});
+  }
+);
 
-export default App;
+export default Measur3D;

@@ -181,11 +181,13 @@ class BasicMaterialTable extends React.Component {
                 }
               );
 
-              var add_attribute_button = document.querySelector(
-                "div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
+              var action_button = document.querySelectorAll(
+                "div > div > span > button"
               );
 
-              add_attribute_button.style.visibility = "hidden";
+              action_button.forEach(function(button) {
+                button.style.visibility = "hidden";
+              });
 
               EventEmitter.dispatch(
                 "attObjectTitle",

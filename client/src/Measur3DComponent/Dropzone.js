@@ -61,11 +61,8 @@ class BasicDropzone extends React.Component {
             return (
               <div {...getRootProps()}>
                 <input {...getInputProps()} />
-                <div>
+                IMPORT NEW FILE
                 <GetAppRoundedIcon />
-                </div>
-                {!isDragActive && "Drop CityJSON file or click to browse."}
-                {isDragActive && "Drop JSON file here."}
               </div>
             );
           }}
@@ -76,3 +73,8 @@ class BasicDropzone extends React.Component {
 }
 
 export default BasicDropzone;
+
+/*
+{!isDragActive && "IMPORT FILE"}
+{isDragActive && "DROP FILE"}
+*/

@@ -5,6 +5,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const logger = require("morgan");
 const Data = require("./data");
+const path = require('path')
 
 const rateLimiterUsingThirdParty = require("./rateLimiter");
 
@@ -19,7 +20,7 @@ const API_PORT = 3001;
 const app = express();
 app.use(cors());
 app.use(compression());
-app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 25 calls/24Hours.
+app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
 const router = express.Router();
 
 // Limit of file exchanges set to 100 Mb.

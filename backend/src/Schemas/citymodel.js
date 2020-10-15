@@ -1,4 +1,5 @@
 let mongoose = require("mongoose");
+let proj4 = require("proj4")
 
 let Appearance = require("./appearance.js");
 let Bridge = require("./bridge.js");
@@ -217,10 +218,11 @@ module.exports = {
 
     var city = new CityModel(object.json);
 
-    // Build 2D index
-    mongoose.model('CityObject').schema.index({location: '2d'});
+      // Build 2D index
+      //mongoose.model("CityObject").schema.index({ 'location': '2dsphere' });
 
     await city.save();
+
   },
   Model: CityModel,
   Schema: CityModelSchema

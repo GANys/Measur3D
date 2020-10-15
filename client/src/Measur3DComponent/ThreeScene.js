@@ -228,8 +228,8 @@ class ThreeScene extends Component {
   };
 
   handleClick = evt => {
-    var add_attribute_button = document.querySelector(
-      "div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
+    var action_button = document.querySelectorAll(
+      "div > div > span > button"
     );
     // eslint-disable-next-line
     if (evt != undefined) {
@@ -242,7 +242,9 @@ class ThreeScene extends Component {
 
     if (!this.state.cityModel) return;
 
-    add_attribute_button.style.visibility = "visible";
+    action_button.forEach(function(button) {
+      button.style.visibility = "visible";
+    });
     Functions.intersectMeshes(evt, this);
   };
 

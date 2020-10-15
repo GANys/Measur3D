@@ -17,6 +17,11 @@ class Modal extends React.Component {
     this.exportCityModels = this.exportCityModels.bind();
 
     EventEmitter.subscribe("loadScene", event => this.onClose(event));
+    EventEmitter.subscribe("showModal", event => this.showModal(event));
+  }
+
+  state = {
+    label: ""
   }
 
   onClose = e => {
@@ -26,6 +31,10 @@ class Modal extends React.Component {
   handleClickOutside = e => {
     this.props.onClose && this.props.onClose(e);
   };
+
+  showModal = e => {
+    this.setState({label: e.label})
+  }
 
   exportCityModels = async e => {
     // Need to loop
@@ -51,18 +60,15 @@ class Modal extends React.Component {
 
     var modal_content;
 
-    switch (this.props.children[0]) {
-      case "Home":
-      modal_content = React.createElement('div', { dangerouslySetInnerHTML: { __html: html_home } })
-        break;
-      case "City Models":
+    switch (this.state.label) {
+      case "Models":
       modal_content = <CityPicker />
       break;
       case "GitHub":
         modal_content = React.createElement('div', { dangerouslySetInnerHTML: { __html: html_github } })
         break;
-      case "Export model":
-        this.exportCityModels();
+      case "Export":
+        //this.exportCityModels();
         modal_content = React.createElement('div', { dangerouslySetInnerHTML: { __html: html_export } })
         break;
       default:
@@ -72,7 +78,7 @@ class Modal extends React.Component {
 
     return (
       <div className="modal" id="modal">
-        <h2 className="modal_title">{this.props.children[0]}</h2>
+        <h2 className="modal_title">{this.state.label}</h2>
         <div className="modal_content">
           { modal_content }
         </div>
@@ -88,16 +94,12 @@ class Modal extends React.Component {
 
 Modal.propTypes = {
   onClose: PropTypes.func.isRequired,
-  onClickOutside: PropTypes.func.isRequired,
-  show: PropTypes.bool.isRequired
+  onClickOutside: PropTypes.func.isRequired
 };
-
-var html_home =
-  "Measur3D is a fullstack JS application for urban model management. <br><br> It is developped by the Geomatics Unit at the University of Liège.";
 
 var html_github =
   '<center><p>Code is available on <a href="https://github.com/GANys?tab=repositories" target="_blank">GitHub</a></p> <br> Reporting issues is strongly encouraged.</center>';
 
-var html_export = "Exporting model";
+var html_export = "<center>Not supported yet.<br><br>Important modifications in data model made it obsolete.</center>";
 
 export default onClickOutside(Modal);

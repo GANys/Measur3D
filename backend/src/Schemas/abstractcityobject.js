@@ -28,7 +28,7 @@ let CityObjectSchema = new mongoose.Schema({
   },
   location: {
     type: { type: String, enum: ["Polygon"] },
-    coordinates: { type: [[[Number]]] }
+    coordinates: { type: [[[Number]]]}
   },
   geometry: [mongoose.Schema.Types.Mixed],
   transform: {
