@@ -17,6 +17,7 @@
   background-color: var(--background-color);
   color: var(--font-color);
   border: 1px solid var(--border-color);
+  z-index: 12;
 }
 
 .modal.off {

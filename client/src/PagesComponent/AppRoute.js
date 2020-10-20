@@ -99,7 +99,7 @@ class AppRoute extends React.Component {
                   <Link to="/">Measur3D App</Link>
                 </MenuItem>
                 <MenuItem onClick={this.handleClose}>
-                  <Link to="/documentation">API Documentation</Link>
+                  <Link to="/api-docs">API Documentation</Link>
                 </MenuItem>
               </Menu>
               <Dropzone />
@@ -113,7 +113,7 @@ class AppRoute extends React.Component {
         </div>
         <div id="MPA">
           <Switch>
-            <Route path="/documentation">
+            <Route path="/api-docs">
               <Documentation />
             </Route>
             <Route path="/">

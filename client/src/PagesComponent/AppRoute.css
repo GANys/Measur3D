@@ -1,10 +1,32 @@
+
+:root {
+  --background-color: rgba(54, 54, 54, 1);
+  --background-color-hover: rgba(62, 62, 62, 0.75);
+  --border-color: rgba(18, 18, 18, 0.75);
+  --font-color: rgba(255, 255, 255, 1);
+  --font-color-highlight: rgba(255, 255, 255, 0.75);
+  --icon-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Adjust the app to window */
+html,
+body {
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  background: var(--background-color);
+  color: var(--font-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
+}
+
 /* -------------------------
   Grid formatting of the app
  ------------------------- */
 
 #NavBar,
 #NavBar > header {
-  height: 48px;
+  width: 100vw;
   color: var(--font-color);
   background-color: var(--background-color);
 }
@@ -14,15 +36,16 @@
 }
 
 #MPA {
-  display: flex;
   width: 100vw;
-  height: 100%;
+  height: 100vh;
+  position: relative;
   background-color: white;
 }
 
 #MPA > div.swagger-ui {
-  height: 100vh !important; /* There is a lack of 48px due to the AppBar at the bottom...*/
-  overflow-y: scroll !important;
+  height: 100%; /* Not the best solution imo */
+  overflow-y: scroll;
+  position: absolute;
 }
 
 /* Dropzone dimension */

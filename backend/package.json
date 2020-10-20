@@ -25,7 +25,6 @@
     "mongoose": "^5.9.7",
     "morgan": "^1.10.0",
     "proj4": "^2.6.2",
-    "swagger-jsdoc": "^4.3.0",
-    "swagger-ui-express": "^4.1.4"
+    "swagger-jsdoc": "^4.3.0"
   }
 }

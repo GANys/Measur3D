@@ -2,10 +2,90 @@
 This file proposes to validate and structure geometry families independently
 ---------------------------------------- */
 
+/**
+ *  @swagger
+ *   components:
+ *     schemas:
+ *       Geometry:
+ *         type: object
+ *         required:
+ *           - type
+ *           - CityModel
+ *           - CityObject
+ *           - lod
+ *           - boundaries
+ *         properties:
+ *           type:
+ *             type: string
+ *             format: ISO 19107
+ *             description: Geometric primitives that are non-decomposed objects presenting information about geometric configuration.
+ *           CityModel:
+ *             type: string
+ *             description: Reference to the parent CityModel - created by the method '#/Measur3D/uploadCityModel'.
+ *           CityObject:
+ *             type: string
+ *             description: Reference to the parent CityObject - created by the method '#/Measur3D/uploadCityModel'.
+ *           lod:
+ *             type: number
+ *             description: A number identifying the level-of-detail.
+ *           boundaries:
+ *             description: A hierarchy of arrays (the depth depends on the Geometry object) with integers. An integer refers to the index in the "vertices" array of the referenced CityObject (0-based).
+ *             type: array
+ *             items:
+ *               type: number
+ *           semantics:
+ *             description: A JSON object representing the semantics of a surface, and may also represent other attributes of the surface.
+ *             type: object
+ *             properties:
+ *               surfaces:
+ *                 description: An array of Semantic Surface Objects
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       description:
+ *                     parent:
+ *                       type: number
+ *                       description: An integer pointing to another Semantic Object of the same geometry (index of it, 0-based).
+ *                     children:
+ *                       type: array
+ *                       items:
+ *                         type: number
+ *                       description: An array of integers pointing to other Semantic Objects of the same geometry (index of it, 0-based).
+ *               values:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *                 description: A hierarchy of arrays with integers that refer to the index in the "surfaces" array of the same geometry (0-based).
+ *           material:
+ *             type: object
+ *             $ref: '#/components/schemas/Material'
+ *           texture:
+ *             type: object
+ *             $ref: '#/components/schemas/Texture'
+ *         example:
+ *           type: MultiSurface
+ *           lod: 2,
+ *           boundaries: [[[0, 3, 2, 1]], [[4, 5, 6, 7]], [[0, 1, 5, 4]], [[0, 2, 3, 8]], [[10, 12, 23, 48]]]
+ *           semantics:
+ *             surfaces: [ {
+ *               type: WallSurface,
+ *               slope: 33.4,
+ *               children: [2] }, {
+ *               type: RoofSurface,
+ *               slope: 66.6 }, {
+ *               type: Door,
+ *               parent: 0,
+ *               colour: blue } ]
+ *             values: [0, 0, null, 1, 2]
+ */
+
 let mongoose = require("mongoose");
 
 let GeometrySchema = new mongoose.Schema({
-  type: {},
+  type: { type: String },
   CityModel: { type: String, index: true },
   CityObject: { type: String, index: true },
   lod: { type: Number, required: true, validate: /([0-3]{1}\.?)+[0-3]?/ },

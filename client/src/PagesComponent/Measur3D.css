@@ -2,26 +2,6 @@
   General variable and app style
 */
 
-:root {
-  --background-color: rgba(54, 54, 54, 1);
-  --background-color-hover: rgba(62, 62, 62, 0.75);
-  --border-color: rgba(18, 18, 18, 0.75);
-  --font-color: rgba(255, 255, 255, 1);
-  --font-color-highlight: rgba(255, 255, 255, 0.75);
-  --icon-color: rgba(255, 255, 255, 0.6);
-}
-
-/* Adjust the app to window */
-html,
-body {
-  margin: 0;
-  overflow: hidden;
-  height: 100%;
-  width: 100%;
-  background: var(--background-color);
-  color: var(--font-color);
-  font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
-}
 
 /* No blue line around the component on focus */
 canvas:focus {
@@ -50,7 +30,7 @@ a {
 }
 
 #ThreeScene {
-  height: 60vh;
+  height: 66vh;
   width: 100%;
   position: relative;
 }
@@ -62,7 +42,7 @@ a {
 }
 
 #bottomPane {
-  height: 40vh;
+  height: 34vh;
   width: 100%;
 }
 

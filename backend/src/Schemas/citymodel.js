@@ -1,5 +1,5 @@
 let mongoose = require("mongoose");
-let proj4 = require("proj4")
+let proj4 = require("proj4");
 
 let Appearance = require("./appearance.js");
 let Bridge = require("./bridge.js");
@@ -14,6 +14,39 @@ let TINRelief = require("./tinrelief.js");
 let Transportation = require("./transportation.js");
 let Tunnel = require("./tunnel.js");
 let WaterBody = require("./waterbody.js");
+
+/**
+ *  @swagger
+ *   components:
+ *     schemas:
+ *       CityModel:
+ *         type: object
+ *         required:
+ *           - title
+ *           - author
+ *           - finished
+ *         properties:
+ *           id:
+ *             type: integer
+ *             description: The auto-generated id of the book.
+ *           title:
+ *             type: string
+ *             description: The title of your book.
+ *           author:
+ *             type: string
+ *             description: Who wrote the book?
+ *           finished:
+ *             type: boolean
+ *             description: Have you finished reading it?
+ *           createdAt:
+ *             type: string
+ *             format: date
+ *             description: The date of the record creation.
+ *         example:
+ *            title: The Pragmatic Programmer
+ *            author: Andy Hunt / Dave Thomas
+ *            finished: true
+ */
 
 let CityModelSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -201,6 +234,10 @@ module.exports = {
 
     object.json.location = location;
 
+    if (object.json.metadata == undefined) {
+      object.json.metadata = {}
+    }
+
     // Real citymodel bbox
     object.json.metadata.geographicalExtent = [
       min_x,
@@ -218,11 +255,10 @@ module.exports = {
 
     var city = new CityModel(object.json);
 
-      // Build 2D index
-      //mongoose.model("CityObject").schema.index({ 'location': '2dsphere' });
+    // Build 2D index
+    //mongoose.model("CityObject").schema.index({ 'location': '2dsphere' });
 
     await city.save();
-
   },
   Model: CityModel,
   Schema: CityModelSchema
@@ -300,18 +336,26 @@ async function saveCityObject(object, element) {
   }
 
   // Stores real coordinates in BBOX
-  min_x =
-    min_x * object.json.transform.scale[0] + object.json.transform.translate[0];
-  max_x =
-    max_x * object.json.transform.scale[0] + object.json.transform.translate[0];
-  min_y =
-    min_y * object.json.transform.scale[1] + object.json.transform.translate[1];
-  max_y =
-    max_y * object.json.transform.scale[1] + object.json.transform.translate[1];
-  min_z =
-    min_z * object.json.transform.scale[2] + object.json.transform.translate[2];
-  max_z =
-    max_z * object.json.transform.scale[2] + object.json.transform.translate[2];
+  if (object.json.transform != undefined) {
+    min_x =
+      min_x * object.json.transform.scale[0] +
+      object.json.transform.translate[0];
+    max_x =
+      max_x * object.json.transform.scale[0] +
+      object.json.transform.translate[0];
+    min_y =
+      min_y * object.json.transform.scale[1] +
+      object.json.transform.translate[1];
+    max_y =
+      max_y * object.json.transform.scale[1] +
+      object.json.transform.translate[1];
+    min_z =
+      min_z * object.json.transform.scale[2] +
+      object.json.transform.translate[2];
+    max_z =
+      max_z * object.json.transform.scale[2] +
+      object.json.transform.translate[2];
+  }
 
   element.geographicalExtent = [min_x, min_y, min_z, max_x, max_y, max_z];
 
