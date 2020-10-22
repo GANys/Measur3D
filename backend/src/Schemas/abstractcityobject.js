@@ -51,7 +51,7 @@ let mongoose = require("mongoose");
  *             properties:
  *               type:
  *                 type: string
- *                 enums: ['Polygon']
+ *                 default: ['Polygon']
  *               coordinates:
  *                 type: string
  *                 format: ISO19107

@@ -26,26 +26,138 @@ let WaterBody = require("./waterbody.js");
  *           - author
  *           - finished
  *         properties:
- *           id:
- *             type: integer
- *             description: The auto-generated id of the book.
- *           title:
+ *           name:
  *             type: string
- *             description: The title of your book.
- *           author:
+ *             description: Unique name of the CityModel (not its UUID) - created by the method '#/Measur3D/uploadCityModel'. Basically the name of the uploaded file.
+ *           type:
  *             type: string
- *             description: Who wrote the book?
- *           finished:
- *             type: boolean
- *             description: Have you finished reading it?
- *           createdAt:
+ *             default: CityJSON
+ *             description: Imposed.
+ *           version:
  *             type: string
- *             format: date
+ *             description: A string with the version (X.Y) of CityJSON used. Minor versions are not considered.
+ *           CityObjects:
+ *             type: object
+ *             properties:
+ *               '#/AbstractCityObject/name':
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: UUID id of the document in the database.
+ *                   type:
+ *                     type: string
+ *                     description: Type of the CityObject.
+ *             description: A collection of key-value pairs, where the key is the name of the CityObject, and the value is couple of key giving the object id and its type.
+ *           vertices:
+ *             type: array
+ *             items:
+ *               type: string
+ *             description: Remains of the initial CityJSON specs. Vertices are now stored in '#/AbstractCityObject'. Should be empty.
+ *           extension:
+ *             type: object
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 format: URL
+ *                 description: External link to the ressource.
+ *               version:
+ *                 type: string
+ *                 description: Version of the extension.
+ *             description: A JSON file that allows us to document how the core data model of CityJSON may be extended, and to validate CityJSON files.
+ *           metadata:
+ *             type: object
+ *             properties:
+ *               filesize:
+ *                 type: number
+ *                 description: Size of the CityJSON file in bits - created by the method '#/Measur3D/uploadCityModel'.
+ *               nbr_el:
+ *                 type: number
+ *                 descrption: Number of AbstractCityObject in the CityModel.
+ *               geographicalExtent:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *                 description: An array with 6 values - [minx, miny, minz, maxx, maxy, maxz].
+ *               location:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     default: ['Polygon']
+ *                   coordinates:
+ *                     type: string
+ *                     format: ISO19107
+ *                 description: A hierarchy of arrays following the ISO19107 standard. Duplicate information of the '#/geographicalExtent'. Useful in order to index objects spatialy.
+ *               referenceSystem:
+ *                 type: string
+ *                 format: OGC CRS URN
+ *                 description: A string that defines a coordinate reference system. Note that all CityObjects need to have the same CRS.
+ *               contactDetails:
+ *                 type: object
+ *                 properties:
+ *                   contactName:
+ *                     type: string
+ *                   phone:
+ *                     type: string
+ *                   address:
+ *                     type: string
+ *                   emailAddress:
+ *                     type: string
+ *                   contactType:
+ *                     type: string
+ *                     enums: [individual, organization]
+ *             description: A JSON object that may have different members giving information on the CityModel.
+ *           transform:
+ *             type: object
+ *             required:
+ *               - scale
+ *               - translate
+ *             properties:
+ *               scale:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *               translate:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *             description: Scale factor and the translation needed to obtain the original coordinates from the integer vertices (stored with floats/doubles).
+ *           appearance:
+ *             type: object
+ *             properties:
+ *               default-theme-texture:
+ *                 type: string
+ *               default-theme-material:
+ *                 type: string
+ *               materials:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#components/schemas/Material'
+ *               textures:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#components/schemas/Texture'
+ *               vertices-texture:
+ *                 type: array
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: number
+ *             description: JSON objects representing the textures and/or materials of surfaces.
+ *           geometry-templates:
+ *             type: object
+ *             properties:
+ *               templates:
+ *                 type: object
+ *                 description: Need to rework the GeometryInstance.
+ *               vertices-template:
+ *                 type: array
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: number
  *             description: The date of the record creation.
- *         example:
- *            title: The Pragmatic Programmer
- *            author: Andy Hunt / Dave Thomas
- *            finished: true
  */
 
 let CityModelSchema = new mongoose.Schema({
@@ -53,13 +165,13 @@ let CityModelSchema = new mongoose.Schema({
   type: { type: String, default: "CityJSON", required: true },
   version: {
     type: String,
-    default: "1.0.1",
+    default: "1.0",
     required: true,
     validate: /^([0-9]\.)+([0-9])$/
   },
   CityObjects: { type: {}, required: true, index: true }, // No need of rules and schemas as it is already handled in the insertCity function
   vertices: {},
-  extension: {
+  extensions: {
     url: {
       type: String,
       required: function() {
@@ -78,6 +190,10 @@ let CityModelSchema = new mongoose.Schema({
     filesize: String,
     nbr_el: Number,
     geographicalExtent: { type: [Number], default: undefined },
+    location: {
+      type: { type: String, enum: "Polygon" },
+      coordinates: { type: [[[Number]]] }
+    },
     referenceSystem: {
       type: String,
       default: "urn:ogc:def:crs:EPSG::4326",
@@ -149,10 +265,6 @@ let CityModelSchema = new mongoose.Schema({
       }
     }
   },
-  location: {
-    type: { type: String, enum: "Polygon" },
-    coordinates: { type: [[[Number]]] }
-  },
   appearance: {
     // No additional properties
     "default-theme-texture": String,
@@ -161,7 +273,7 @@ let CityModelSchema = new mongoose.Schema({
       type: [mongoose.model("Material").schema],
       default: undefined
     },
-    texture: { type: [mongoose.model("Texture").schema], default: undefined },
+    textures: { type: [mongoose.model("Texture").schema], default: undefined },
     "vertices-texture": { type: [[Number]], default: undefined } //length == 2
   },
   "geometry-templates": {
@@ -232,11 +344,11 @@ module.exports = {
       ]
     };
 
-    object.json.location = location;
-
     if (object.json.metadata == undefined) {
       object.json.metadata = {}
     }
+
+    object.json.metadata.location = location;
 
     // Real citymodel bbox
     object.json.metadata.geographicalExtent = [
