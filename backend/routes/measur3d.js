@@ -9,47 +9,82 @@ let Functions = require("./util/functions");
 
 const router = express.Router();
 /**
- * @swagger
- * tags:
- *   name: Measur3D
- *   description: CityJSON file management and interraction with database.
- */
+* @swagger
+* tags:
+*   name: Measur3D
+*   description: CityJSON file management and interraction with database for the Measur3D application.
+*/
 
- /**
-  * @swagger
-  * /uploadCityModel:
-  *   post:
-  *     description: Returns users
-  *     tags: [Measur3D]
-  *     produces:
-  *       - application/json
-  *     parameters:
-  *     responses:
-  *       200:
-  *         description: users
-  */
+/**
+* @swagger
+* /uploadCityModel:
+*     post:
+*       summary: Uploads a CityModel.
+*       description: This function allows to upload a CityJSON file (v 1.0.x). The file will be processed in order to distribute the information in the different documents in the database following the CityModel, AbstractCityObject and Geometry schemas (other schemas will be supported in further developments).
+*       tags: [Measur3D]
+*       parameters:
+*       - name: jsonName
+*         description: Name of the CityModel - name of the file in the Measur3D application.
+*         in: body
+*         required: true
+*         type: string
+*       - name: content
+*         description: The content of the JSON file as a JSON object.
+*         in: body
+*         required: true
+*         type: object
+*         schema:
+*           $ref: '#/components/schemas/CityModel'
+*       responses:
+*         201:
+*           description: Created - upload of the CityJSON file successful.
+*           content:
+*             application/json:
+*               schema:
+*                 type: object
+*                 properties:
+*                   success:
+*                     type: string
+*                     default: "File uploaded"
+*               example: {success: "File uploaded"}
+*         408:
+*           description: Request timeout - took over 10 minutes (Uploading a CityModel can be very long).
+*/
 router.post("/uploadCityModel", (req, res) => {
   req.setTimeout(10 * 60 * 1000); // Special timeOut
 
   Cities.insertCity(req.body).then(function(data) {
-    return res.status(201).send(data);
+    return res.status(201).send({ success: "File uploaded"});
   });
 });
 
 /**
- * @swagger
- * /getCityModelsList:
- *   get:
- *     description: Returns users
- *     tags: [Measur3D]
- *     produces:
- *       - application/json
- *     parameters:
- *       - $ref: '#/parameters/username'
- *     responses:
- *       200:
- *         description: users
- */
+* @swagger
+* /getCityModelsList:
+*     get:
+*       summary: Get list of available CityModels.
+*       description: Concurrent models can be stored in the database. This function allows describing these models providing summary information.
+*       tags: [Measur3D]
+*       responses:
+*         200:
+*           description: OK - returns.
+*           content:
+*             application/json:
+*               schema:
+*                 type: array
+*                 items:
+*                   type: object
+*                   properties:
+*                     name:
+*                       type: string
+*                     nbr_el:
+*                       type: number
+*                     filesize:
+*                       type: string
+*               example: [{name: model_1, nbr_el: 845, filesize: 1.24Mb}, {name: model_2, nbr_el: 642, filesize: 835.1Kb}]
+*         404:
+*           description: Not found - There is no CityModel in the database.
+*/
 router.get("/getCityModelsList", (req, res) => {
   mongoose
     .model("CityModel")
@@ -57,7 +92,7 @@ router.get("/getCityModelsList", (req, res) => {
       if (err) {
         return res
           .status(404)
-          .send({ error: "There is no CityModels in the DB." });
+          .send({ error: "There is no CityModels in the database." });
       }
 
       var responseCities = [];
@@ -80,16 +115,25 @@ router.get("/getCityModelsList", (req, res) => {
 /**
  * @swagger
  * /getNamedCityModel:
- *   get:
- *     description: Returns users
- *     tags: [Measur3D]
- *     produces:
- *       - application/json
- *     parameters:
- *       - $ref: '#/parameters/username'
- *     responses:
- *       200:
- *         description: users
+ *     get:
+ *       summary: Get a specific CityModel.
+ *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
+ *       tags: [Measur3D]
+ *       parameters:
+ *       - name: name
+ *         description: Name of the CityModel - name of the file in the Measur3D application.
+ *         in: body
+ *         required: true
+ *         type: string
+ *       responses:
+ *         200:
+ *           description: OK - returns a '#/CityModel'.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 $ref: '#/components/schemas/CityModel'
+ *         500:
+ *           description: Not found - There is no CityModel in the database.
  */
 router.get("/getNamedCityModel", async (req, res) => {
   var cityModel = await mongoose
@@ -98,7 +142,7 @@ router.get("/getNamedCityModel", async (req, res) => {
       if (err) {
         return res
           .status(500)
-          .send({ error: "There is no CityModel with this name in the DB." });
+          .send({ error: "There is no CityModel with this name in the database." });
       }
     })
     .lean();
@@ -180,37 +224,45 @@ router.get("/getNamedCityModel", async (req, res) => {
 /**
  * @swagger
  * /deleteNamedCityModel:
- *   delete:
- *     description: Returns users
- *     tags: [Measur3D]
- *     produces:
- *       - application/json
- *     parameters:
- *       - $ref: '#/parameters/username'
- *     responses:
- *       200:
- *         description: users
+ *     delete:
+ *       summary: Delete a specific CityModel.
+ *       description: This function allows deleting a specific CityModel. It deletes all information related to the model in the different collections from the database.
+ *       tags: [Measur3D]
+ *       responses:
+ *         200:
+ *           description: OK - returns a JSON success.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   success:
+ *                     type: string
+ *                     default: City model deleted with success !
+ *               example: {success: "City model deleted with success !"}
+ *         404:
+ *           description: Not found - There is no document with that name.
  */
 router.delete("/deleteNamedCityModel", (req, res) => {
   mongoose.model("CityModel").deleteOne({ name: req.body.name }, err => {
     if (err)
       return res
         .status(500)
-        .send({ error: "There is no object with that name." });
+        .send({ error: "There is no document with that name." });
   });
 
   mongoose.model("CityObject").deleteMany({ CityModel: req.body.name }, err => {
     if (err)
       return res
         .status(500)
-        .send({ error: "There is no object with that name." });
+        .send({ error: "There is no document with that name." });
   });
 
   mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, err => {
     if (err)
       return res
         .status(500)
-        .send({ error: "There is no object with that name." });
+        .send({ error: "There is no document with that name." });
   });
 
   mongoose
@@ -219,21 +271,21 @@ router.delete("/deleteNamedCityModel", (req, res) => {
       if (err)
         return res
           .status(500)
-          .send({ error: "There is no object with that name." });
+          .send({ error: "There is no document with that name." });
     });
 
   mongoose.model("Material").deleteMany({ CityModel: req.body.name }, err => {
     if (err)
       return res
         .status(500)
-        .send({ error: "There is no object with that name." });
+        .send({ error: "There is no document with that name." });
   });
 
   mongoose.model("Texture").deleteMany({ CityModel: req.body.name }, err => {
     if (err)
       return res
         .status(500)
-        .send({ error: "There is no object with that name." });
+        .send({ error: "There is no document with that name." });
   });
 
   return res.json({ success: "City model deleted with success !" });
@@ -242,21 +294,45 @@ router.delete("/deleteNamedCityModel", (req, res) => {
 /**
  * @swagger
  * /getObject:
- *   get:
- *     description: Returns users
- *     tags: [Measur3D]
- *     produces:
- *       - application/json
- *     parameters:
- *       - $ref: '#/parameters/username'
- *     responses:
- *       200:
- *         description: users
+ *     get:
+ *       summary: Get a specific CityObject.
+ *       description: This function allows getting a specific CityObject. It gathers the object and its highest lod geometry.
+ *       tags: [Measur3D]
+ *       parameters:
+ *       - name: name
+ *         description: Name of the object.
+ *         in: body
+ *         type: string
+ *       - name: id
+ *         description: Id of the object.
+ *         in: body
+ *         type: string
+ *       - name: CityObjectType
+ *         description: Type of the object.
+ *         in: body
+ *         required: true
+ *         type: string
+ *       responses:
+ *         200:
+ *           description: OK - returns a '#/AbstractCityObject'.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 $ref: '#/components/schemas/AbstractCityObject'
+ *         400:
+ *           description: Bad request - Params are not valid.
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               default: "Params are not valid."
+ *         500:
+ *           description: Internal error - getObject could not find Object in Collection. Error is sent by database.
  */
 router.get("/getObject", (req, res) => {
   if (typeof req.query.name != "undefined") {
     mongoose
-      .model(req.query.CityObjectClass)
+      .model(req.query.CityObjectType)
       .findOne({ name: req.query.name }, (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
@@ -264,7 +340,7 @@ router.get("/getObject", (req, res) => {
       .lean();
   } else if (typeof req.query.id != "undefined") {
     mongoose
-      .model(req.query.CityObjectClass)
+      .model(req.query.CityObjectType)
       .findById(req.query.id, (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
@@ -273,7 +349,7 @@ router.get("/getObject", (req, res) => {
   } else {
     return res.status(400).send({
       error:
-        "Params are not valid - getObject could not find Object in Collection."
+        "Params are not valid."
     });
   }
 });
@@ -281,16 +357,24 @@ router.get("/getObject", (req, res) => {
 /**
  * @swagger
  * /deleteObject:
- *   delete:
- *     description: Returns users
- *     tags: [Measur3D]
- *     produces:
- *       - application/json
- *     parameters:
- *       - $ref: '#/parameters/username'
- *     responses:
- *       200:
- *         description: users
+ *     delete:
+ *       summary: Delete a specific CityObject.
+ *       description: This function allows deleting a specific CityObject. It deletes an object and all its related geometries.
+ *       tags: [Measur3D]
+ *       responses:
+ *         200:
+ *           description: OK - returns a JSON success.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   success:
+ *                     type: string
+ *                     default: City model deleted with success !
+ *               example: {success: "Object and children deleted !"}
+ *         500:
+ *           description: Something went bad - error generated by the database.
  */
 router.delete("/deleteObject", async (req, res) => {
   // Need of a recursive delete because of children
@@ -299,22 +383,49 @@ router.delete("/deleteObject", async (req, res) => {
     CityModel: req.body.CityModel
   });
 
-  return res.status(200).send({ success: "Object and children deleted." });
+  return res.status(200).send({ success: "Object and children deleted !" });
 });
 
 /**
  * @swagger
  * /getObjectAttributes:
- *   get:
- *     description: Returns users
- *     tags: [Measur3D]
- *     produces:
- *       - application/json
- *     parameters:
- *       - $ref: '#/parameters/username'
- *     responses:
- *       200:
- *         description: users
+ *     get:
+ *       summary: Get the attributes of a specific CityObject.
+ *       description: This function allows getting the attributes of a specific CityObject. It gathers the object attributes in order to render in the AttributesManager Component.
+ *       tags: [Measur3D]
+ *       parameters:
+ *       - name: name
+ *         description: Name of the object.
+ *         in: body
+ *         type: string
+ *       - name: id
+ *         description: Id of the object.
+ *         in: body
+ *         type: string
+ *       - name: CityObjectType
+ *         description: Type of the object.
+ *         in: body
+ *         required: true
+ *         type: string
+ *       responses:
+ *         200:
+ *           description: OK - returns an array of all the '#/AbstractCityObject.attributes'.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               example: Key/Value pairs
+ *         400:
+ *           description: Bad request - Params are not valid.
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               default: "Params are not valid."
+ *         500:
+ *           description: Internal error - getObjectAttributes could not find Object in Collection. Error is sent by database.
  */
 router.get("/getObjectAttributes", (req, res) => {
   var cityObjectType = req.query.CityObjectType
@@ -367,22 +478,61 @@ router.get("/getObjectAttributes", (req, res) => {
 /**
  * @swagger
  * /updateObjectAttribute:
- *   put:
- *     description: Returns users
- *     tags: [Measur3D]
- *     produces:
- *       - application/json
- *     parameters:
- *       - $ref: '#/parameters/username'
- *     responses:
- *       200:
- *         description: users
+ *     put:
+ *       summary: Update/delete an attribute of a specific CityObject.
+ *       description: This function allows updating or deleting a key/value pair in the attributes of a specific CityObject. It corresponds to a modification of a line in the AttributesManager Component. If a new key or value is given, the pair is updated. If a value is not given, the old key is deleted from the document. If a new key is given, the key/value pair is created within the document.
+ *       tags: [Measur3D]
+ *       parameters:
+ *       - name: jsonName
+ *         description: Name of the object.
+ *         in: body
+ *         type: string
+ *       - name: CityObjectType
+ *         description: Type of the object.
+ *         in: body
+ *         required: true
+ *         type: string
+ *       - name: key
+ *         description: The new key.
+ *         in: body
+ *         required: true
+ *         type: string
+ *       - name: old_key
+ *         description: The old key.
+ *         in: body
+ *         type: string
+ *       - name: value
+ *         description: The value (can be empty).
+ *         in: body
+ *         required: true
+ *         type: string
+ *       responses:
+ *         200:
+ *           description: OK - returns a success message in a JSON object.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   success:
+ *                     type: string
+ *                     default: "Object updated."
+ *               example: Key/Value pairs
+ *         400:
+ *           description: Bad request - Params are not valid.
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               default: "Params are not valid."
+ *         500:
+ *           description: Internal error - updateObjectAttribute could not find Object in Collection. Error is sent by database.
  */
 router.put("/updateObjectAttribute", async (req, res) => {
   mongoose
-    .model(req.body.CityObjectClass)
+    .model(req.body.CityObjectType)
     .findOne({ name: req.body.jsonName }, (err, data) => {
-      if (err) return res.status(500).send(err);
+      if (err) return res.status(400).send({error: "Params are not valid."});
 
       //var attributes = data.attributes;
       var attributes = Object.assign({}, data.attributes); // Copy the CityObject attributes from Schema -> Undefined value if key is empty.

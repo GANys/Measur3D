@@ -51,7 +51,7 @@ let mongoose = require("mongoose");
  */
 
 let MaterialSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: { type: String },  // Will be set to required after rework.
   CityModel: String,
   ambientIntensity: Number,
   diffuseColor: {
@@ -116,7 +116,7 @@ let MaterialSchema = new mongoose.Schema({
  */
 
 let TextureSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: { type: String }, // Will be set to required after rework.
   CityModel: String,
   type: { type: String, enum: ["PNG", "JPG"] },
   image: String,

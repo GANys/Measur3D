@@ -126,7 +126,7 @@ class BasicMaterialTable extends React.Component {
       key: newData.key,
       value: newData.value,
       jsonName: this.state.tableTitle,
-      CityObjectClass: this.state.CityObjectClass
+      CityObjectType: this.state.CityObjectType
     });
   };
 

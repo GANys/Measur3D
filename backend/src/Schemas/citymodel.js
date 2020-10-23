@@ -22,9 +22,11 @@ let WaterBody = require("./waterbody.js");
  *       CityModel:
  *         type: object
  *         required:
- *           - title
- *           - author
- *           - finished
+ *           - name
+ *           - type
+ *           - version
+ *           - CityObjects
+ *           - vertices
  *         properties:
  *           name:
  *             type: string
@@ -371,6 +373,8 @@ module.exports = {
     //mongoose.model("CityObject").schema.index({ 'location': '2dsphere' });
 
     await city.save();
+
+    return;
   },
   Model: CityModel,
   Schema: CityModelSchema
