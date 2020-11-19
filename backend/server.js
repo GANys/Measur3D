@@ -88,6 +88,7 @@ app.get("/api-docs", (req, res) => {
 
 // append /api for our http requests
 app.use("/measur3d", require("./routes/measur3d"));
+app.use("/features", require("./routes/features"));
 
 // launch our backend into a port
 app.listen(API_PORT, () => console.log(`LISTENING ON PORT ${API_PORT}`));

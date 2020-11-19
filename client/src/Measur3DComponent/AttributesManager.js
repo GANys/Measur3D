@@ -69,7 +69,7 @@ class BasicMaterialTable extends React.Component {
     ],
     data: [],
     tableTitle: "Object attributes",
-    CityObjectClass: null,
+    CityObjectType: null,
     CityModel: null
   };
 
@@ -106,14 +106,14 @@ class BasicMaterialTable extends React.Component {
     if (data == null) {
       this.setState({
         tableTitle: "Object attributes",
-        CityObjectClass: null
+        CityObjectType: null
       });
       return;
     }
 
     this.setState({
       tableTitle: data.title,
-      CityObjectClass: data.type
+      CityObjectType: data.type
     });
   };
 
@@ -136,7 +136,7 @@ class BasicMaterialTable extends React.Component {
       key: newData.key,
       value: newData.value,
       jsonName: this.state.tableTitle,
-      CityObjectClass: this.state.CityObjectClass
+      CityObjectType: this.state.CityObjectType
     });
   };
 
@@ -145,7 +145,7 @@ class BasicMaterialTable extends React.Component {
       key: oldData.key,
       value: "",
       jsonName: this.state.tableTitle,
-      CityObjectClass: this.state.CityObjectClass
+      CityObjectType: this.state.CityObjectType
     });
   };
 
@@ -199,7 +199,7 @@ class BasicMaterialTable extends React.Component {
         ]}
         title={
           <div style={{ display: "flex", alignItems: "center" }}>
-            <div className="COClassIcon">{map[this.state.CityObjectClass]}</div>
+            <div className="COClassIcon">{map[this.state.CityObjectType]}</div>
             {this.state.tableTitle}
           </div>
         }

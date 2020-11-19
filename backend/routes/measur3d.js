@@ -562,7 +562,7 @@ router.put("/updateObjectAttribute", async (req, res) => {
       }
 
       mongoose
-        .model(req.body.CityObjectClass)
+        .model(req.body.CityObjectType)
         .updateOne({ name: req.body.jsonName }, { attributes }, (err, data) => {
           // Be carefull that object might change has it is not loaded by updateOne
           if (err) return res.status(500).send(err);

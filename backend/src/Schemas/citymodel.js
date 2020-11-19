@@ -1,4 +1,5 @@
 let mongoose = require("mongoose");
+const axios = require("axios");
 let proj4 = require("proj4");
 
 let Appearance = require("./appearance.js");
@@ -81,6 +82,9 @@ let WaterBody = require("./waterbody.js");
  *                 items:
  *                   type: number
  *                 description: An array with 6 values - [minx, miny, minz, maxx, maxy, maxz].
+ *               spatialIndex:
+ *                 type: boolean
+ *                 description: A boolean specifiying if the object is spatially indexed or not.
  *               location:
  *                 type: object
  *                 properties:
@@ -196,6 +200,7 @@ let CityModelSchema = new mongoose.Schema({
       type: { type: String, enum: "Polygon" },
       coordinates: { type: [[[Number]]] }
     },
+    spatialIndex: { type: Boolean, default: false },
     referenceSystem: {
       type: String,
       default: "urn:ogc:def:crs:EPSG::4326",
@@ -333,21 +338,53 @@ module.exports = {
       if (result.bbox[2] < min_z) min_z = result.bbox[2];
     }
 
-    var location = {
-      type: "Polygon",
-      coordinates: [
-        [
-          [min_x, min_y],
-          [max_x, min_y],
-          [max_x, max_y],
-          [min_x, max_y],
-          [min_x, min_y]
-        ]
-      ]
-    };
-
     if (object.json.metadata == undefined) {
-      object.json.metadata = {}
+      object.json.metadata = {};
+    }
+
+    var epsg_code = object.json.metadata.referenceSystem;
+
+    var reg = /\d/g; // Only numbers
+
+    var location;
+
+    if (epsg_code != undefined) {
+      var epsgio =
+        "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
+
+      var proj_string = await axios.get(epsgio);
+
+      proj4.defs("currentProj", proj_string.data);
+
+      location = {
+        type: "Polygon",
+        coordinates: [
+          [
+            proj4("currentProj", "WGS84", [min_y, min_x]),
+            proj4("currentProj", "WGS84", [max_y, min_x]),
+            proj4("currentProj", "WGS84", [max_y, max_x]),
+            proj4("currentProj", "WGS84", [min_y, max_x]),
+            proj4("currentProj", "WGS84", [min_y, min_x])
+          ]
+        ]
+      };
+
+      object.json.metadata.spatialIndex = true;
+    } else {
+      location = {
+        type: "Polygon",
+        coordinates: [
+          [
+            [min_x, min_y],
+            [max_x, min_y],
+            [max_x, max_y],
+            [min_x, max_y],
+            [min_x, min_y]
+          ]
+        ]
+      };
+
+      object.json.metadata.spatialIndex = false;
     }
 
     object.json.metadata.location = location;
@@ -370,7 +407,7 @@ module.exports = {
     var city = new CityModel(object.json);
 
     // Build 2D index
-    //mongoose.model("CityObject").schema.index({ 'location': '2dsphere' });
+    //mongoose.model("CityObject").schema.index({ location: '2dsphere' });
 
     await city.save();
 
@@ -477,18 +514,49 @@ async function saveCityObject(object, element) {
 
   element.transform = object.json.transform;
 
-  var location = {
-    type: "Polygon",
-    coordinates: [
-      [
-        [min_x, min_y],
-        [max_x, min_y],
-        [max_x, max_y],
-        [min_x, max_y],
-        [min_x, min_y]
+  var epsg_code = object.json.metadata.referenceSystem;
+
+  var reg = /\d/g; // Only numbers
+
+  var location;
+
+  if (epsg_code != undefined) {
+    var epsgio = "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
+
+    var proj_string = await axios.get(epsgio);
+
+    proj4.defs("currentProj", proj_string.data);
+
+    location = {
+      type: "Polygon",
+      coordinates: [
+        [
+          proj4("currentProj", "WGS84", [min_y, min_x]),
+          proj4("currentProj", "WGS84", [max_y, min_x]),
+          proj4("currentProj", "WGS84", [max_y, max_x]),
+          proj4("currentProj", "WGS84", [min_y, max_x]),
+          proj4("currentProj", "WGS84", [min_y, min_x])
+        ]
       ]
-    ]
-  };
+    };
+
+    element.spatialIndex = true;
+  } else {
+    location = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [min_x, min_y],
+          [max_x, min_y],
+          [max_x, max_y],
+          [min_x, max_y],
+          [min_x, min_y]
+        ]
+      ]
+    };
+
+    element.spatialIndex = false;
+  }
 
   element.location = location;
 

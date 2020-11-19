@@ -8,12 +8,7 @@ let mongoose = require("mongoose");
  *         type: object
  *         required:
  *           - name
- *           - name
- *           - name
- *           - name
- *           - name
- *           - name
- *           - name
+ *           - CityModel
  *         properties:
  *           name:
  *             type: string
@@ -46,6 +41,9 @@ let mongoose = require("mongoose");
  *             items:
  *               type: number
  *             description: An array with 6 values - [minx, miny, minz, maxx, maxy, maxz].
+ *           spatialIndex:
+ *             type: boolean
+ *             description: A boolean specifiying if the object is spatially indexed or not.
  *           location:
  *             type: object
  *             properties:
@@ -123,8 +121,9 @@ let CityObjectSchema = new mongoose.Schema({
   },
   location: {
     type: { type: String, enum: ["Polygon"] },
-    coordinates: { type: [[[Number]]]}
+    coordinates: { type: [[[Number]]] }
   },
+  spatialIndex: { type: Boolean, default: false },
   geometry: [mongoose.Schema.Types.Mixed],
   transform: {
     // No additional properties
@@ -145,6 +144,8 @@ let CityObjectSchema = new mongoose.Schema({
   },
   vertices: [[Number]]
 });
+
+CityObjectSchema.index({ location: '2dsphere' })
 
 CityObject = mongoose.model("CityObject", CityObjectSchema);
 
