@@ -3,6 +3,7 @@ let mongoose = require("mongoose");
 /**
  *  @swagger
  *   components:
+ *     tags: [Measur3D]
  *     schemas:
  *       AbstractCityObject:
  *         type: object

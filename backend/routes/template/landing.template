@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Measur3D - OGC API Features{% endblock %}</title>
+
+  {% block head %}
+  <link rel="stylesheet" type="text/css" href="style">
+  {% endblock %}
+</head>
+
+<body>
+<h1>{{ title }}</h1>
+<h2> Accessing CityJSON models and its Features </h2>
+<p> by {{ author }} </p>
+<p> special thanks to Bart De Lathouwer for its insight (https://github.com/LudoWhereat/ogc-api-features) </p>
+<p>self = <a href="{{ url }}/">{{ title }}</a> (application/json)</p>
+<p>service = <a href="{{ url }}/api">the API definition (JSON)</a> (application/openapi+json;version=3.0)</p>
+<p>service = <a href="{{ url }}/api.html">the API definition (HTML)</a> (text/html)</p>
+<p>conformance = <a href="{{ url }}/conformance">OGC API - Features conformance classes implemented by this server</a> (application/json)</p>
+<p>data = <a href="{{ url }}/collections">Metadata about the feature collections</a> (application/json)</p>
+<p>Get raw <a href="{{ url }}/?f=json">JSON</a></p>
+</body>
+</html>

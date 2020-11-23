@@ -27,6 +27,7 @@
     "mongoose": "^5.9.7",
     "morgan": "^1.10.0",
     "proj4": "^2.6.2",
-    "swagger-jsdoc": "^4.3.0"
+    "swagger-jsdoc": "^4.3.0",
+    "swig-templates": "^2.0.3"
   }
 }

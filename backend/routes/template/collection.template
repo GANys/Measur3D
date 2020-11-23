@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Measur3D - OGC API Features{% endblock %}</title>
+
+  {% block head %}
+  <link rel="stylesheet" type="text/css" href="style">
+  {% endblock %}
+</head>
+
+<body>
+
+<h1>Metadata about the feature collections</h1>
+
+<h2>Collections.</h2>
+<h3>{{ collection.title }} ({{ collection.title }})</h3>
+<p>{{ collection.title }}</p>
+
+<h4>Links for the collection</h4>
+<p>item = <a href="{{ collection.url }}/collections/{{ collection.title }}/items">{{ collection.title }}</a> (application/json)</p>
+
+<h2>Links</h2>
+
+<p>
+    self =
+<a href="{{ collection.url }}/collections">Metadata about the feature collections</a>
+(application/json)
+</p>
+
+<h2>JSON output</h2>
+<p>Get raw <a href="{{ collection.url }}/collections?f=json">JSON</a></p>
+
+
+</body>
+</html>

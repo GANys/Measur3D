@@ -45,9 +45,15 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:3001/measur3d"
+        url: "http://localhost:3001/measur3d",
+        description: "Measur3D RESTful API"
+      },
+      {
+        url: "http://localhost:3001/features",
+        description: "OGC API - Features"
       }
-    ]
+    ],
+    tags: ["Measur3D", "Features"]
   },
   apis: [
     "./routes/measur3d.js",
@@ -55,7 +61,8 @@ const options = {
     "./src/Schemas/citymodel.js",
     "./src/Schemas/abstractcityobject.js",
     "./src/Schemas/geometry.js",
-    "./src/Schemas/appearance.js"
+    "./src/Schemas/appearance.js",
+    "./routes/contentNegotiation.js"
   ]
 };
 
