@@ -19,6 +19,8 @@ function link(href, rel, type, title) {
   return item;
 }
 
+//-------------------------------------------------------------------------------------
+
 // Service Metadata
 const serviceTitle = "Measur3D OGC API - Features server";
 const serviceDescription =
@@ -189,4 +191,30 @@ function collection(t, collectionId) {
 
 //-------------------------------------------------------------------------------------
 
-module.exports = { landing, collections, collection };
+function itemsJSON(collectionId, geojson) {
+    return JSON.parse(JSON.stringify(geojson));
+}
+
+function itemsHTML(collectionId, geojson) {
+
+    var item = {};
+    item.url = serviceUrl;
+    item.title = collectionId;
+    item.geojson = JSON.stringify(geojson);
+
+    var tmpl = swig.compileFile(__dirname + '/template/items.template'),
+    renderedHtml = tmpl({
+        collection: item,
+    });
+
+    return renderedHtml;
+}
+
+function items(t, collectionId, geojson) {
+    if (t == "json")
+        return itemsJSON(collectionId, geojson);
+    return itemsHTML(collectionId, geojson);
+}
+
+//-------------------------------------------------------------------------------------
+module.exports = { landing, collections, collection, items };

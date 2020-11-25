@@ -44,7 +44,7 @@ router.get("/", function(req, res) {
     else {
       res.json(
         400,
-        "{'code': 'InvalidParameterValue', 'description': 'Invalid format'}"
+        {error: {code: 'InvalidParameterValue', description: 'Invalid format'}}
       );
       return;
     }
@@ -244,7 +244,7 @@ router.get("/collections/:collectionId", function(req, res) {
   if (!collections.includes(req.params.collectionId)) {
     res
       .status(404)
-      .send("The requested URL " + req.url + " was not found on this server");
+      .send({error: "The requested URL " + req.url + " was not found on this server"});
     return;
   }
 
@@ -259,7 +259,7 @@ router.get("/collections/:collectionId", function(req, res) {
   else
     res.json(
       400,
-      "{'code': 'InvalidParameterValue', 'description': 'Invalid format'}"
+      {error: {code: 'InvalidParameterValue', description: 'Invalid format'}}
     );
 });
 
@@ -310,14 +310,28 @@ router.get("/collections/:collectionId/items", async function(req, res) {
       break;
   }
 
-  var test;
-
-  await mongoose
+  var items = await mongoose
     .model(model)
     .find({}, async (err, data) => {
-      res.send(200, data);
+      if (err) res.status(500).send({error: err})
     })
     .lean();
+
+  if (items == null)
+  {
+    res.status(404).send("The requested URL " + req.url + " was not found on this server");
+    return;
+  }
+
+  var urlParts = url.parse(req.url, true);
+  if (null == urlParts.query.f)
+    res.send(negoc.items("html", req.params.collectionId, items));
+  else if ("json" == urlParts.query.f)
+    res.json(negoc.items("json", req.params.collectionId, items));
+  else if ("html" == urlParts.query.f)
+    res.send(negoc.items("html", req.params.collectionId, items));
+  else
+    res.json(400, {error: {code: 'InvalidParameterValue', description: 'Invalid format'}})
 });
 
 /**

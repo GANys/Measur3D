@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Data from collection "{{ collection.title }}"</h1>
+
+<h2>Links.</h2>
+<p>self = <a href="{{ collection.url }}/collections/{{ collection.title }}/items">{{ collection.title }}</a> (application/json)</p>
+
+<h2>Features</h2>
+
+<h2>JSON Output</h2>
+<p>
+{{ collection.geojson }}
+</p>
+
+</body>
+</html>

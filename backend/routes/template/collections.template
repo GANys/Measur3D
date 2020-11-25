@@ -6,7 +6,7 @@
   <title>{% block title %}Measur3D - OGC API Features{% endblock %}</title>
 
   {% block head %}
-  <link rel="stylesheet" type="text/css" href="./style">
+  <link rel="stylesheet" type="text/css" href="../style.css">
   {% endblock %}
 </head>
 
