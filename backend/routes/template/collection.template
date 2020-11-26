@@ -4,10 +4,6 @@
 <head>
   <meta charset="utf-8">
   <title>{% block title %}Measur3D - OGC API Features{% endblock %}</title>
-
-  {% block head %}
-  <link rel="stylesheet" type="text/css" href="../style.css">
-  {% endblock %}
 </head>
 
 <body>

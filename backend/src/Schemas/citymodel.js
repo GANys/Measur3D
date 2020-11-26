@@ -360,11 +360,11 @@ module.exports = {
         type: "Polygon",
         coordinates: [
           [
-            proj4("currentProj", "WGS84", [min_y, min_x]),
-            proj4("currentProj", "WGS84", [max_y, min_x]),
-            proj4("currentProj", "WGS84", [max_y, max_x]),
-            proj4("currentProj", "WGS84", [min_y, max_x]),
-            proj4("currentProj", "WGS84", [min_y, min_x])
+            proj4("currentProj", "WGS84", [min_x, min_y]),
+            proj4("currentProj", "WGS84", [min_x, max_y]),
+            proj4("currentProj", "WGS84", [max_x, max_y]),
+            proj4("currentProj", "WGS84", [max_x, min_y]),
+            proj4("currentProj", "WGS84", [min_x, min_y])
           ]
         ]
       };
@@ -376,9 +376,9 @@ module.exports = {
         coordinates: [
           [
             [min_x, min_y],
-            [max_x, min_y],
-            [max_x, max_y],
             [min_x, max_y],
+            [max_x, max_y],
+            [max_x, min_y],
             [min_x, min_y]
           ]
         ]
@@ -531,11 +531,11 @@ async function saveCityObject(object, element) {
       type: "Polygon",
       coordinates: [
         [
-          proj4("currentProj", "WGS84", [min_y, min_x]),
-          proj4("currentProj", "WGS84", [max_y, min_x]),
-          proj4("currentProj", "WGS84", [max_y, max_x]),
-          proj4("currentProj", "WGS84", [min_y, max_x]),
-          proj4("currentProj", "WGS84", [min_y, min_x])
+          proj4("currentProj", "WGS84", [min_x, min_y]),
+          proj4("currentProj", "WGS84", [min_x, max_y]),
+          proj4("currentProj", "WGS84", [max_x, max_y]),
+          proj4("currentProj", "WGS84", [max_x, min_y]),
+          proj4("currentProj", "WGS84", [min_x, min_y])
         ]
       ]
     };
@@ -547,9 +547,9 @@ async function saveCityObject(object, element) {
       coordinates: [
         [
           [min_x, min_y],
-          [max_x, min_y],
-          [max_x, max_y],
           [min_x, max_y],
+          [max_x, max_y],
+          [max_x, min_y],
           [min_x, min_y]
         ]
       ]
