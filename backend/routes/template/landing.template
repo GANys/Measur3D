@@ -11,11 +11,11 @@
 <h2> Accessing CityJSON models and their features </h2>
 <p> by {{ author }} </p>
 <p> A special thanks to Bart De Lathouwer for its insight and the API basics <a href="https://github.com/LudoWhereat/ogc-api-features">OGC API Features Github</a> </p>
-<p>self = <a href="{{ url }}/">{{ title }}</a> (application/json)</p>
+<p>self = <a href="{{ url }}/">{{ title }}</a> (text/html)</p>
+<p>alternate = <a href="{{ url }}/?f=json">{{ title }}</a> (application/json)</p>
 <p>service = <a href="{{ url }}/api">the API definition (JSON)</a> (application/openapi+json;version=3.0)</p>
 <p>service = <a href="{{ url }}/api.html">the API definition (HTML)</a> (text/html)</p>
 <p>conformance = <a href="{{ url }}/conformance">OGC API - Features conformance classes implemented by this server</a> (application/json)</p>
 <p>data = <a href="{{ url }}/collections">Metadata about the feature collections</a> (application/json)</p>
-<p>Get raw <a href="{{ url }}/?f=json">JSON</a></p>
 </body>
 </html>

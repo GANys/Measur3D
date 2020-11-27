@@ -187,27 +187,21 @@ router.get("/api.html", function (req, res) {
 router.get("/collections", async function (req, res) {
   var urlParts = url.parse(req.url, true);
 
-  var citymodels = await mongoose
+  var collections = await mongoose
     .model("CityModel")
-    .find({}, "name", async (err, data) => {
+    .find({}, "name metadata", async (err, data) => {
       if (err) {
         return res.status(404).send({ error: "There is no collections." });
       }
     })
     .lean();
 
-  var collections = [];
-
-  for (var citymodel in citymodels) {
-    collections.push(citymodels[citymodel].name);
-  }
-
   if (null == urlParts.query.f) {
-    res.send(negoc.collections("html", collections));
+    res.send(await negoc.collections("html", collections));
   } else if ("json" == urlParts.query.f) {
-    res.json(negoc.collections("json", collections));
+    res.json(await negoc.collections("json", collections));
   } else if ("html" == urlParts.query.f)
-    res.send(negoc.collections("html", collections));
+    res.send(await negoc.collections("html", collections));
   else res.json(400, { error: "InvalidParameterValue" });
 });
 
@@ -223,12 +217,21 @@ router.get("/collections", async function (req, res) {
 router.get("/collections/:collectionId", async function (req, res) {
   var urlParts = url.parse(req.url, true);
 
+  var collection = await mongoose
+    .model("CityModel")
+    .findOne({name: req.params.collectionId}, "name metadata", async (err, data) => {
+      if (err) {
+        return res.status(404).send({ error: "There is no collection " +  req.params.collectionId});
+      }
+    })
+    .lean();
+
   if (null == urlParts.query.f)
-    res.send(negoc.collection("html", req.params.collectionId));
+    res.send(await negoc.collection("html", collection));
   else if ("json" == urlParts.query.f)
-    res.json(negoc.collection("json", req.params.collectionId));
+    res.json(await negoc.collection("json", collection));
   else if ("html" == urlParts.query.f)
-    res.send(negoc.collection("html", req.params.collectionId));
+    res.send(await negoc.collection("html", collection));
   else
     res.json(400, {
       error: { code: "InvalidParameterValue", description: "Invalid format" },
@@ -363,7 +366,7 @@ router.get("/collections/:collectionId/items", async function (req, res) {
 
   var abstractCityObjects = await mongoose
     .model("CityObject")
-    .find({CityModel: req.params.collectionId}, async (err, data) => {
+    .find({ CityModel: req.params.collectionId }, async (err, data) => {
       if (err) {
         return res
           .status(404)

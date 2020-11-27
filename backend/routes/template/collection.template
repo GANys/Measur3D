@@ -15,18 +15,20 @@
 <p>{{ collection.title }}</p>
 
 <h4>Links for the collection</h4>
-<p>item = <a href="{{ collection.url }}/collections/{{ collection.title }}/items">{{ collection.title }}</a> (application/json)</p>
+<p>CityObjects = <a href="{{ collection.url }}/collections/{{ collection.title }}/items">{{ collection.title }}</a> (application/json)</p>
 
 <h2>Links</h2>
 
 <p>
     self =
-<a href="{{ collection.url }}/collections">Metadata about the feature collections</a>
+<a href="{{ collection.url }}/collections/{{ collection.title }}">this document</a>
+(text/html)
+</p>
+<p>
+    alternate =
+<a href="{{ collection.url }}/collections/{{ collection.title }}?f=json">this document as JSON</a>
 (application/json)
 </p>
-
-<h2>JSON output</h2>
-<p>Get raw <a href="{{ collection.url }}/collections?f=json">JSON</a></p>
 
 
 </body>
