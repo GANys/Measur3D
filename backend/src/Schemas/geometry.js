@@ -45,7 +45,7 @@ This file proposes to validate and structure geometry families independently
  *                   properties:
  *                     type:
  *                       type: string
- *                       description:
+ *                       description: Type of the object.
  *                     parent:
  *                       type: number
  *                       description: An integer pointing to another Semantic Object of the same geometry (index of it, 0-based).

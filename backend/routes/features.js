@@ -4,6 +4,41 @@ const mongoose = require("mongoose");
 var url = require("url");
 var fs = require("fs");
 var negoc = require("./contentNegotiation");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
+const yaml = require('js-yaml');
+
+
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Measur3D : OGC API - Features",
+      version: "0.2.2",
+      description: "A REST API to access CityJSON features compliing with OGC API - Features: Core (Part 1).",
+      license: {
+        name: "Apache-2.0",
+        url: "https://www.apache.org/licenses/LICENSE-2.0"
+      },
+      contact: {
+        name: "Gilles-Antoine Nys",
+        email: "ganys@uliege.be"
+      }
+    },
+    servers: [
+      {
+        url: "http://localhost:3001/features",
+        description: "OGC API - Features"
+      }
+    ],
+    tags: ["Features"]
+  },
+  apis: [
+    "./routes/features.js",
+  ]
+};
+
+const specs = swaggerJsdoc(options);
 
 /**
  * @swagger
@@ -66,7 +101,6 @@ router.get("/", function (req, res) {
  *       summary: Access to the conformance page.
  *       description: To support "generic" clients that want to access multiple OGC API Features implementations - and not "just" a specific API / server, the server has to declare the conformance classes it implements and conforms to.
  *       tags: [Features]
- *       parameters:
  *       responses:
  *         200:
  *           description: Returns the conformance array.
@@ -107,15 +141,9 @@ router.get("/conformance", function (req, res) {
  * @swagger
  * /api:
  *     get:
- *       summary: Get a specific CityModel.
+ *       summary: Get the API documentation as YAML.
  *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
  *       tags: [Features]
- *       parameters:
- *       - name: name
- *         description: Name of the CityModel - name of the file in the Measur3D application.
- *         in: body
- *         required: true
- *         type: string
  *       responses:
  *         200:
  *           description: OK - returns a '#/CityModel'.
@@ -127,22 +155,18 @@ router.get("/conformance", function (req, res) {
  *           description: Not found - There is no CityModel in the database.
  */
 router.get("/api", function (req, res) {
-  res.json("{api def here in json}");
+  const swaggerSpecYaml = yaml.dump(specs);
+  res.setHeader('Content-Type', 'text/plain');
+  res.status(201).send(swaggerSpecYaml);
 });
 
 /**
  * @swagger
  * /api.html:
  *     get:
- *       summary: Get a specific CityModel.
+ *       summary: Get the API documentation as HTML.
  *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
  *       tags: [Features]
- *       parameters:
- *       - name: name
- *         description: Name of the CityModel - name of the file in the Measur3D application.
- *         in: body
- *         required: true
- *         type: string
  *       responses:
  *         200:
  *           description: OK - returns a '#/CityModel'.
@@ -153,8 +177,10 @@ router.get("/api", function (req, res) {
  *         500:
  *           description: Not found - There is no CityModel in the database.
  */
+
 router.get("/api.html", function (req, res) {
-  res.send("api description in html");
+
+  res.status(201).send(specs);
 });
 
 /**
@@ -164,6 +190,13 @@ router.get("/api.html", function (req, res) {
  *       summary: Access to the collections page - About page.
  *       description: Information can be accessed in HTML or JSON formats.
  *       tags: [Features]
+ *       parameters:
+ *         - in: query
+ *           name: f
+ *           schema:
+ *             type: string
+ *             enum: [HTML, json]
+ *             default: HTML
  *       responses:
  *         200:
  *           description: Returns an about page on collections.
@@ -212,7 +245,17 @@ router.get("/collections", async function (req, res) {
  *       summary: Get a specific collection by its id.
  *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
  *       tags: [Features]
-
+ *       parameters:
+ *         - in: query
+ *           name: f
+ *           schema:
+ *             type: string
+ *             enum: [HTML, json]
+ *             default: HTML
+ *         - in: path
+ *           name: collectionId
+ *           schema:
+ *             type: string
  */
 router.get("/collections/:collectionId", async function (req, res) {
   var urlParts = url.parse(req.url, true);
@@ -246,11 +289,16 @@ router.get("/collections/:collectionId", async function (req, res) {
  *       description: This function allows getting all the items of a specific collection (limited to 10 items by default).
  *       tags: [Features]
  *       parameters:
- *       - name: name
- *         description: Name of the CityModel - name of the file in the Measur3D application.
- *         in: body
- *         required: true
- *         type: string
+ *         - in: query
+ *           name: f
+ *           schema:
+ *             type: string
+ *             enum: [HTML, json]
+ *             default: HTML
+ *         - in: path
+ *           name: collectionId
+ *           schema:
+ *             type: string
  *       responses:
  *         200:
  *           description: Returns a CityModel formalised following the OGC API Features - Part 1.
@@ -408,11 +456,12 @@ router.get("/collections/:collectionId/items", async function (req, res) {
  *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
  *       tags: [Features]
  *       parameters:
- *       - name: name
- *         description: Name of the CityModel - name of the file in the Measur3D application.
- *         in: body
- *         required: true
- *         type: string
+ *         - in: query
+ *           name: f
+ *           schema:
+ *             type: string
+ *             enum: [HTML, json]
+ *             default: HTML
  *       responses:
  *         200:
  *           description: OK - returns a '#/CityModel'.

@@ -8,12 +8,6 @@ let Cities = require("../src/Schemas/citymodel.js");
 let Functions = require("./util/functions");
 
 const router = express.Router();
-/**
-* @swagger
-* tags:
-*   name: Measur3D
-*   description: CityJSON file management and interraction with database for the Measur3D application.
-*/
 
 /**
 * @swagger

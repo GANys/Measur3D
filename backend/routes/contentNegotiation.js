@@ -194,27 +194,6 @@ function collectionsHTML(collections) {
   return renderedHtml;
 }
 
-/**
- *  @swagger
- *   components:
- *     tags: [Features]
- *     schemas:
- *       collections:
- *         type: object
- *         required:
- *           - links
- *           - collections
- *         properties:
- *           links:
- *             type: array
- *             items:
- *               $ref: http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml
- *           collections:
- *             type: array
- *             items:
- *               $ref: http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/collection.yaml
- */
-
 async function collections(t, collections) {
   if (t == "json") return await collectionsJSON(collections);
   return await collectionsHTML(collections);
