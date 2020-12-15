@@ -112,8 +112,6 @@ db.on("error", console.error.bind(console, "MongoDB connection error:"));
 app.get("/api-docs", (req, res) => {
   var urlParts = url.parse(req.url, true);
 
-  console.log(specs)
-
   if (null == urlParts.query.f) {
     res.setHeader("Content-Type", "application/json");
     return res.status(201).send(specs);

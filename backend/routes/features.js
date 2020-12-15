@@ -6,8 +6,7 @@ var fs = require("fs");
 var negoc = require("./contentNegotiation");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
-const yaml = require('js-yaml');
-
+const yaml = require("js-yaml");
 
 const options = {
   definition: {
@@ -15,27 +14,26 @@ const options = {
     info: {
       title: "Measur3D : OGC API - Features",
       version: "0.2.2",
-      description: "A REST API to access CityJSON features compliing with OGC API - Features: Core (Part 1).",
+      description:
+        "A REST API to access CityJSON features compliing with OGC API - Features: Core (Part 1).",
       license: {
         name: "Apache-2.0",
-        url: "https://www.apache.org/licenses/LICENSE-2.0"
+        url: "https://www.apache.org/licenses/LICENSE-2.0",
       },
       contact: {
         name: "Gilles-Antoine Nys",
-        email: "ganys@uliege.be"
-      }
+        email: "ganys@uliege.be",
+      },
     },
     servers: [
       {
         url: "http://localhost:3001/features",
-        description: "OGC API - Features"
-      }
+        description: "OGC API - Features",
+      },
     ],
-    tags: ["Features"]
+    tags: ["Features"],
   },
-  apis: [
-    "./routes/features.js",
-  ]
+  apis: ["./routes/features.js"],
 };
 
 const specs = swaggerJsdoc(options);
@@ -141,23 +139,34 @@ router.get("/conformance", function (req, res) {
  * @swagger
  * /api:
  *     get:
- *       summary: Get the API documentation as YAML.
- *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
+ *       summary: Get the full API documentation.
+ *       description: The documentation can be queried in YAML or JSON format.
  *       tags: [Features]
+ *       parameters:
+ *         - in: query
+ *           name: f
+ *           schema:
+ *             type: string
+ *             enum: [YAML, json]
+ *             default: json
  *       responses:
- *         200:
- *           description: OK - returns a '#/CityModel'.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/CityModel'
- *         500:
- *           description: Not found - There is no CityModel in the database.
+ *         201:
+ *           description: Full documentation of the APIs Measur3D and Features.
  */
 router.get("/api", function (req, res) {
-  const swaggerSpecYaml = yaml.dump(specs);
-  res.setHeader('Content-Type', 'text/plain');
-  res.status(201).send(swaggerSpecYaml);
+  var urlParts = url.parse(req.url, true);
+
+  if (null == urlParts.query.f) {
+    res.setHeader("Content-Type", "application/json");
+    return res.status(201).send(specs);
+  } else if ("yaml" == urlParts.query.f) {
+    const swaggerSpecYaml = yaml.dump(specs);
+    res.setHeader("Content-Type", "text/plain");
+    res.status(201).send(swaggerSpecYaml);
+  } else if ("json" == urlParts.query.f) {
+    res.setHeader("Content-Type", "application/json");
+    return res.status(201).send(specs);
+  } else res.json(400, { error: "InvalidParameterValue" });
 });
 
 /**
@@ -179,7 +188,6 @@ router.get("/api", function (req, res) {
  */
 
 router.get("/api.html", function (req, res) {
-
   res.status(201).send(specs);
 });
 
@@ -242,7 +250,7 @@ router.get("/collections", async function (req, res) {
  * @swagger
  * /collections/:collectionId:
  *     get:
- *       summary: Get a specific collection by its id.
+ *       summary: Get a specific collection.
  *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
  *       tags: [Features]
  *       parameters:
@@ -262,12 +270,24 @@ router.get("/collections/:collectionId", async function (req, res) {
 
   var collection = await mongoose
     .model("CityModel")
-    .findOne({name: req.params.collectionId}, "name metadata", async (err, data) => {
-      if (err) {
-        return res.status(404).send({ error: "There is no collection " +  req.params.collectionId});
+    .findOne(
+      { name: req.params.collectionId },
+      "name metadata",
+      async (err, data) => {
+        if (err) {
+          return res.status(404).send({
+            error: "There is no collection " + req.params.collectionId,
+          });
+        }
       }
-    })
+    )
     .lean();
+
+  if(collection == null) {
+    return res.status(404).send({
+      error: "There is no collection " + req.params.collectionId,
+    });
+  }
 
   if (null == urlParts.query.f)
     res.send(await negoc.collection("html", collection));
@@ -295,6 +315,38 @@ router.get("/collections/:collectionId", async function (req, res) {
  *             type: string
  *             enum: [HTML, json]
  *             default: HTML
+ *           style: form
+ *           explode: false
+ *           required: false
+ *         - in: query
+ *           name: limit
+ *           schema:
+ *             type: integer
+ *             minimum: 1
+ *             maximum: 10000
+ *             default: 10
+ *           style: form
+ *           explode: false
+ *           required: false
+ *         - in: query
+ *           name: offset
+ *           schema:
+ *             type: integer
+ *             default: 0
+ *           style: form
+ *           explode: false
+ *           required: false
+ *         - in: query
+ *           name: bbox
+ *           schema:
+ *             type: array
+ *             minItems: 4
+ *             maxItems: 6
+ *             items:
+ *               type: number
+ *           style: form
+ *           explode: false
+ *           required: false
  *         - in: path
  *           name: collectionId
  *           schema:
@@ -398,7 +450,7 @@ router.get("/collections/:collectionId", async function (req, res) {
 router.get("/collections/:collectionId/items", async function (req, res) {
   var urlParts = url.parse(req.url, true);
 
-  var limit, offset;
+  var limit, offset, bbox;
 
   if (urlParts.query.limit != undefined) {
     limit = Number(urlParts.query.limit);
@@ -412,18 +464,90 @@ router.get("/collections/:collectionId/items", async function (req, res) {
     offset = 0;
   }
 
-  var abstractCityObjects = await mongoose
-    .model("CityObject")
-    .find({ CityModel: req.params.collectionId }, async (err, data) => {
-      if (err) {
-        return res
-          .status(404)
-          .send({ error: "Error: There is no items in this collection." });
+  if (urlParts.query.bbox != undefined) {
+    var bbox = urlParts.query.bbox;
+
+    bbox = bbox.split(",");
+
+    for (var i = 0; i < bbox.length; i++) {
+      bbox[i] = Number(bbox[i]);
+    }
+
+    var min_x, max_x, min_y, max_y;
+
+    if (bbox.length == 4) {
+      if (bbox[0] > bbox[2] || bbox[1] > bbox[3])
+        return res.status(400).send({ error: "Error: bbox is not well formated." });
+      if (bbox[0] > -180 && bbox[0] < 180) {
+        min_x = bbox[0];
+      } else {
+        return res.status(400).send({ error: "Error: bbox is not well formated." });
       }
-    })
-    .limit(limit)
-    .skip(offset)
-    .lean();
+      if (bbox[1] > -90 && bbox[1] < 90) {
+        min_y = bbox[1];
+      } else {
+        return res.status(400).send({ error: "Error: bbox is not well formated." });
+      }
+      if (bbox[2] > -180 && bbox[2] < 180) {
+        max_x = bbox[2];
+      } else {
+        return res.status(400).send({ error: "Error: bbox is not well formated." });
+      }
+      if (bbox[3] > -90 && bbox[3] < 90) {
+        max_y = bbox[3];
+      } else {
+        return res.status(400).send({ error: "Error: bbox is not well formated." });
+      }
+    } else {
+      return res
+        .status(500)
+        .send({
+          error:
+            "Error: Only 2dsphere index is currently supported by the database.",
+        });
+    }
+
+    bbox = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [min_x, min_y],
+          [min_x, max_y],
+          [max_x, max_y],
+          [max_x, min_y],
+          [min_x, min_y],
+        ],
+      ],
+    };
+
+    var abstractCityObjects = await mongoose
+      .model("CityObject")
+      .find({ CityModel: req.params.collectionId }, async (err, data) => {
+        if (err) {
+          return res
+            .status(404)
+            .send({ error: "Error: There is no items in this collection." });
+        }
+      })
+      .where("location")
+      .within(bbox)
+      .limit(limit)
+      .skip(offset)
+      .lean();
+  } else {
+    var abstractCityObjects = await mongoose
+      .model("CityObject")
+      .find({ CityModel: req.params.collectionId }, async (err, data) => {
+        if (err) {
+          return res
+            .status(404)
+            .send({ error: "Error: There is no items in this collection." });
+        }
+      })
+      .limit(limit)
+      .skip(offset)
+      .lean();
+  }
 
   if (
     Object.keys(abstractCityObjects).length == 0 ||
@@ -431,7 +555,8 @@ router.get("/collections/:collectionId/items", async function (req, res) {
     abstractCityObjects == undefined
   ) {
     res.status(404).send({
-      error: "Error: Collections is empty",
+      error:
+        "Error: there is no items in this collection under this conditions.",
     });
     return;
   }
