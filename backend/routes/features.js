@@ -283,7 +283,7 @@ router.get("/collections/:collectionId", async function (req, res) {
     )
     .lean();
 
-  if(collection == null) {
+  if (collection == null) {
     return res.status(404).send({
       error: "There is no collection " + req.params.collectionId,
     });
@@ -344,6 +344,13 @@ router.get("/collections/:collectionId", async function (req, res) {
  *             maxItems: 6
  *             items:
  *               type: number
+ *           style: form
+ *           explode: false
+ *           required: false
+ *         - in: query
+ *           name: datetime
+ *           schema:
+ *             type: string
  *           style: form
  *           explode: false
  *           required: false
@@ -448,14 +455,35 @@ router.get("/collections/:collectionId", async function (req, res) {
  *                         - http://www.opengis.net/def/crs/OGC/1.3/CRS84
  */
 router.get("/collections/:collectionId/items", async function (req, res) {
+  //Next is not implemented. Might be useful in huge datasets.
+
   var urlParts = url.parse(req.url, true);
 
   var limit, offset, bbox;
+  var default_limit = 10;
+
+  if (urlParts.query.datetime != undefined) {
+    return res
+      .status(400)
+      .send({ error: "Error: datetime is not supported yet." });
+
+    if (
+      !/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(
+        String(urlParts.query.datetime)
+      )
+    )
+      return res.status(400).send({
+        error: {
+          code: "InvalidParameterValue",
+          description: "Invalid datetime format",
+        },
+      });
+  }
 
   if (urlParts.query.limit != undefined) {
     limit = Number(urlParts.query.limit);
   } else {
-    limit = 10;
+    limit = default_limit;
   }
 
   if (urlParts.query.offset != undefined) {
@@ -464,8 +492,29 @@ router.get("/collections/:collectionId/items", async function (req, res) {
     offset = 0;
   }
 
+  var find_objects = {};
+  var key;
+
+  find_objects.CityModel = req.params.collectionId;
+
+  for (var i = 0; i < Object.keys(urlParts.query).length; i++) {
+    key = Object.keys(urlParts.query)[i];
+
+    if (!["f", "limit", "offset", "bbox", "datetime"].includes(key)) {
+      find_objects[key] = urlParts.query[key];
+    }
+  }
+
   if (urlParts.query.bbox != undefined) {
     var bbox = urlParts.query.bbox;
+
+    if (!/((\d)+(\.)?(\d)*\,){3,}((\d)+(\.)?(\d)*){1}/.test(String(bbox)))
+      return res.status(400).send({
+        error: {
+          code: "InvalidParameterValue",
+          description: "Invalid bbox format",
+        },
+      });
 
     bbox = bbox.split(",");
 
@@ -476,35 +525,59 @@ router.get("/collections/:collectionId/items", async function (req, res) {
     var min_x, max_x, min_y, max_y;
 
     if (bbox.length == 4) {
-      if (bbox[0] > bbox[2] || bbox[1] > bbox[3])
-        return res.status(400).send({ error: "Error: bbox is not well formated." });
+      if (bbox[0] >= bbox[2] || bbox[1] >= bbox[3])
+        return res.status(400).send({
+          error: {
+            code: "InvalidParameterValue",
+            description:
+              "Invalid bbox format - min and max coordinates are not respected",
+          },
+        });
       if (bbox[0] > -180 && bbox[0] < 180) {
         min_x = bbox[0];
       } else {
-        return res.status(400).send({ error: "Error: bbox is not well formated." });
+        return res.status(400).send({
+          error: {
+            code: "InvalidParameterValue",
+            description: "Invalid bbox format - min longitude problem",
+          },
+        });
       }
       if (bbox[1] > -90 && bbox[1] < 90) {
         min_y = bbox[1];
       } else {
-        return res.status(400).send({ error: "Error: bbox is not well formated." });
+        return res.status(400).send({
+          error: {
+            code: "InvalidParameterValue",
+            description: "Invalid bbox format - min latitude problem",
+          },
+        });
       }
       if (bbox[2] > -180 && bbox[2] < 180) {
         max_x = bbox[2];
       } else {
-        return res.status(400).send({ error: "Error: bbox is not well formated." });
+        return res.status(400).send({
+          error: {
+            code: "InvalidParameterValue",
+            description: "Invalid bbox format - max longitude problem",
+          },
+        });
       }
       if (bbox[3] > -90 && bbox[3] < 90) {
         max_y = bbox[3];
       } else {
-        return res.status(400).send({ error: "Error: bbox is not well formated." });
+        return res.status(400).send({
+          error: {
+            code: "InvalidParameterValue",
+            description: "Invalid bbox format - max latitude problem",
+          },
+        });
       }
     } else {
-      return res
-        .status(500)
-        .send({
-          error:
-            "Error: Only 2dsphere index is currently supported by the database.",
-        });
+      return res.status(500).send({
+        error:
+          "Error: Only 2dsphere index is currently supported by the database.",
+      });
     }
 
     bbox = {
@@ -522,11 +595,11 @@ router.get("/collections/:collectionId/items", async function (req, res) {
 
     var abstractCityObjects = await mongoose
       .model("CityObject")
-      .find({ CityModel: req.params.collectionId }, async (err, data) => {
+      .find(find_objects, async (err, data) => {
         if (err) {
           return res
             .status(404)
-            .send({ error: "Error: There is no items in this collection." });
+            .send({ error: "Error: There is no item in this collection." });
         }
       })
       .where("location")
@@ -537,11 +610,11 @@ router.get("/collections/:collectionId/items", async function (req, res) {
   } else {
     var abstractCityObjects = await mongoose
       .model("CityObject")
-      .find({ CityModel: req.params.collectionId }, async (err, data) => {
+      .find(find_objects, async (err, data) => {
         if (err) {
           return res
             .status(404)
-            .send({ error: "Error: There is no items in this collection." });
+            .send({ error: "Error: There is no item in this collection." });
         }
       })
       .limit(limit)
@@ -556,21 +629,56 @@ router.get("/collections/:collectionId/items", async function (req, res) {
   ) {
     res.status(404).send({
       error:
-        "Error: there is no items in this collection under this conditions.",
+        "Error: there is no items in this collection under these conditions.",
     });
     return;
   }
 
-  if (null == urlParts.query.f)
-    res.send(negoc.items("html", req.params.collectionId, abstractCityObjects));
-  else if ("json" == urlParts.query.f)
-    res.json(negoc.items("json", req.params.collectionId, abstractCityObjects));
-  else if ("html" == urlParts.query.f)
-    res.send(negoc.items("html", req.params.collectionId, abstractCityObjects));
-  else
+  var self = urlParts.search.replace("?", "");
+  var alternate = urlParts.search.replace("?", "");
+
+  if (null == urlParts.query.f) {
+    self = self + "&f=html";
+    alternate = alternate + "&f=json";
+
+    res.send(
+      negoc.items(
+        "html",
+        self,
+        alternate,
+        req.params.collectionId,
+        abstractCityObjects
+      )
+    );
+  } else if ("json" == urlParts.query.f) {
+    alternate = alternate.replace("json", "html");
+
+    res.json(
+      negoc.items(
+        "json",
+        self,
+        alternate,
+        req.params.collectionId,
+        abstractCityObjects
+      )
+    );
+  } else if ("html" == urlParts.query.f) {
+    alternate = alternate.replace("html", "json");
+
+    res.send(
+      negoc.items(
+        "html",
+        self,
+        alternate,
+        req.params.collectionId,
+        abstractCityObjects
+      )
+    );
+  } else {
     res.json(400, {
       error: { code: "InvalidParameterValue", description: "Invalid format" },
     });
+  }
 });
 
 /**

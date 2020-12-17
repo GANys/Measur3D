@@ -35,7 +35,12 @@ function landingJSON() {
     link(serviceUrl, "self", "application/json", "this document")
   );
   landingPage.links.push(
-    link(serviceUrl + "?f=html", "alternate", "text/html", "this document as HTML")
+    link(
+      serviceUrl + "?f=html",
+      "alternate",
+      "text/html",
+      "this document as HTML"
+    )
   );
   landingPage.links.push(
     link(
@@ -94,10 +99,11 @@ function landing(t) {
 async function collectionsJSON(collections) {
   var json = {};
 
-  json.links = [];
+  json = header("Feature collections", "CityModels from the database");
+
   json.links.push(
     link(
-      serviceUrl + "collections?f=json",
+      serviceUrl + "/collections?f=json",
       "self",
       "application/json",
       "this document"
@@ -105,7 +111,7 @@ async function collectionsJSON(collections) {
   );
   json.links.push(
     link(
-      serviceUrl + "collections?f=html",
+      serviceUrl + "/collections?f=html",
       "alternate",
       "text/html",
       "this document as HTML"
@@ -164,10 +170,10 @@ async function collectionsJSON(collections) {
 
     item.links.push(
       link(
-        serviceUrl + "collections/" + collections[collection].name + "/items",
+        serviceUrl + "/collections/" + collections[collection].name + "/items",
         "items",
         "application/json",
-        "items of "  + collections[collection].name
+        "items of " + collections[collection].name
       )
     );
     json.collections.push(item);
@@ -205,7 +211,7 @@ async function collectionJSON(collection) {
   var json = {};
 
   var json = header(
-    collection.name,
+    "Feature collection " + collection.name,
     "CityModel object - " + collection.name
   );
 
@@ -218,9 +224,7 @@ async function collectionJSON(collection) {
 
         var epsgio =
           "https://epsg.io/" +
-          collection.metadata.referenceSystem
-            .match(reg)
-            .join("") +
+          collection.metadata.referenceSystem.match(reg).join("") +
           ".proj4";
 
         var proj_string = await axios.get(epsgio);
@@ -239,13 +243,10 @@ async function collectionJSON(collection) {
 
         json.extent.spatial.bbox = [bbox];
       } else {
-        json.extent.spatial.bbox = [
-          collection.metadata.geographicalExtent,
-        ];
+        json.extent.spatial.bbox = [collection.metadata.geographicalExtent];
       }
 
-      json.extent.spatial.crs =
-        "http://www.opengis.net/def/crs/OGC/1.3/CRS84";
+      json.extent.spatial.crs = "http://www.opengis.net/def/crs/OGC/1.3/CRS84";
     }
     json.extent.temporal = null;
   }
@@ -271,7 +272,7 @@ async function collectionJSON(collection) {
     link(
       serviceUrl + "/collections/" + collection.name + "/items",
       "items",
-      "application/json",
+      "application/geo+json",
       "CityObjects"
     )
   );
@@ -299,15 +300,40 @@ async function collection(t, collectionId) {
 
 //-------------------------------------------------------------------------------------
 
-function itemsJSON(collectionId, geojson) {
+function itemsJSON(self, alternate, collectionId, geojson) {
+  var json = {};
+
+  var json = header(collection.name, "CityObjects from " + collectionId);
+
+  json.links = [];
+
+  json.links.push(
+    link(
+      serviceUrl + "/collections/" + collectionId + "/items?" + self,
+      "self",
+      "application/geo+json",
+      "CityObjects"
+    )
+  );
+  json.links.push(
+    link(
+      serviceUrl + "/collections/" + collectionId + "/items?" + alternate,
+      "alternate",
+      "text/html",
+      "CityObjects"
+    )
+  );
+
   return JSON.parse(JSON.stringify(geojson));
 }
 
-function itemsHTML(collectionId, geojson) {
+function itemsHTML(self, alternate, collectionId, geojson) {
   var item = {};
   item.url = serviceUrl;
   item.title = collectionId;
   item.geojson = JSON.stringify(geojson);
+  item.self = self;
+  item.alternate = alternate;
 
   var tmpl = swig.compileFile(__dirname + "/template/items.template"),
     renderedHtml = tmpl({
@@ -317,9 +343,9 @@ function itemsHTML(collectionId, geojson) {
   return renderedHtml;
 }
 
-function items(t, collectionId, geojson) {
-  if (t == "json") return itemsJSON(collectionId, geojson);
-  return itemsHTML(collectionId, geojson);
+function items(t, self, alternate, collectionId, geojson) {
+  if (t == "json") return itemsJSON(self, alternate, collectionId, geojson);
+  return itemsHTML(self, alternate, collectionId, geojson);
 }
 
 //-------------------------------------------------------------------------------------
