@@ -163,6 +163,8 @@ router.get("/api", function (req, res) {
     const swaggerSpecYaml = yaml.dump(specs);
     res.setHeader("Content-Type", "text/plain");
     res.status(201).send(swaggerSpecYaml);
+  } else if ("html" == urlParts.query.f) {
+    res.status(308).redirect("/features/api.html");
   } else if ("json" == urlParts.query.f) {
     res.setHeader("Content-Type", "application/json");
     return res.status(201).send(specs);
@@ -349,6 +351,14 @@ router.get("/collections/:collectionId", async function (req, res) {
  *           required: false
  *         - in: query
  *           name: datetime
+ *           schema:
+ *             type: string
+ *           style: form
+ *           explode: false
+ *           required: false
+ *         - in: query
+ *           name: any
+ *           description: a feature property that has a simple value (for example, a string or integer) that is expected to be useful for applications using the service to filter the features of the collection based on this property, a parameter with the name of the feature property.
  *           schema:
  *             type: string
  *           style: form
@@ -634,8 +644,10 @@ router.get("/collections/:collectionId/items", async function (req, res) {
     return;
   }
 
-  var self = urlParts.search.replace("?", "");
-  var alternate = urlParts.search.replace("?", "");
+  if (urlParts.search != undefined) {
+    var self = urlParts.search.replace("?", "");
+    var alternate = urlParts.search.replace("?", "");
+  }
 
   if (null == urlParts.query.f) {
     self = self + "&f=html";
@@ -685,8 +697,8 @@ router.get("/collections/:collectionId/items", async function (req, res) {
  * @swagger
  * /collections/:collectionId/items/:item:
  *     get:
- *       summary: Get a specific CityModel.
- *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
+ *       summary: Get a specific CityObject.
+ *       description: This function allows getting a specific CityObject. It gathers all information related to the object in the different collections from the database.
  *       tags: [Features]
  *       parameters:
  *         - in: query
@@ -695,19 +707,55 @@ router.get("/collections/:collectionId/items", async function (req, res) {
  *             type: string
  *             enum: [HTML, json]
  *             default: HTML
+ *         - in: path
+ *           name: collectionId
+ *           schema:
+ *             type: string
+ *         - in: path
+ *           name: item
+ *           schema:
+ *             type: string
  *       responses:
  *         200:
- *           description: OK - returns a '#/CityModel'.
+ *           description: OK - returns a '#/AbstractCityObject'.
  *           content:
  *             application/json:
  *               schema:
- *                 $ref: '#/components/schemas/CityModel'
+ *                 $ref: '#/components/schemas/AbstractCityObject'
  *         500:
  *           description: Not found - There is no CityModel in the database.
  */
-router.get("/collections/:collectionId/items/:item", function (req, res) {
-  console.log(req.params);
-  res.send("collections/:collectionId/items/:item");
+router.get("/collections/:collectionId/items/:item", async function (req, res) {
+
+  var urlParts = url.parse(req.url, true);
+
+  var abstractCityObject = await mongoose
+    .model("CityObject")
+    .findOne({name: req.params.item}, async (err, data) => {
+      if (err) {
+        return res
+          .status(404)
+          .send({ error: "Error: " + err });
+      }
+    })
+    .lean();
+
+    if (abstractCityObject == null) {
+      return res.status(404).send({
+        error: "This item does not exist in this collection.",
+      });
+    }
+
+    if (null == urlParts.query.f)
+      res.send(await negoc.item("html", req.params.collectionId, abstractCityObject));
+    else if ("json" == urlParts.query.f)
+      res.json(await negoc.item("json", req.params.collectionId, abstractCityObject));
+    else if ("html" == urlParts.query.f)
+      res.send(await negoc.item("html", req.params.collectionId, abstractCityObject));
+    else
+      res.json(400, {
+        error: { code: "InvalidParameterValue", description: "Invalid format" },
+      });
 });
 
 module.exports = router;

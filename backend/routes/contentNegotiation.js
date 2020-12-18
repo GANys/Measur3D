@@ -303,6 +303,63 @@ async function collection(t, collectionId) {
 function itemsJSON(self, alternate, collectionId, geojson) {
   var json = {};
 
+  item.numberReturned = geojson.length
+  item.numberMatched = geojson.length
+
+  var json = header(collection.name, "CityObjects from " + collectionId);
+
+  json.items = JSON.parse(JSON.stringify(geojson))
+
+  json.links = [];
+
+  json.links.push(
+    link(
+      serviceUrl + "/collections/" + collectionId + "/items?" + self,
+      "self",
+      "application/geo+json",
+      "CityObjects"
+    )
+  );
+  json.links.push(
+    link(
+      serviceUrl + "/collections/" + collectionId + "/items?" + alternate,
+      "alternate",
+      "text/html",
+      "CityObjects"
+    )
+  );
+
+  return json;
+}
+
+function itemsHTML(self, alternate, collectionId, geojson) {
+  var item = {};
+  item.url = serviceUrl;
+  item.title = collectionId;
+  item.geojson = JSON.stringify(geojson);
+  item.self = self;
+  item.alternate = alternate;
+  item.numberReturned = geojson.length
+  item.numberMatched = geojson.length
+
+  var tmpl = swig.compileFile(__dirname + "/template/items.template"),
+    renderedHtml = tmpl({
+      collection: item,
+    });
+
+  return renderedHtml;
+}
+
+function items(t, self, alternate, collectionId, geojson) {
+  if (t == "json") return itemsJSON(self, alternate, collectionId, geojson);
+  return itemsHTML(self, alternate, collectionId, geojson);
+}
+
+//-------------------------------------------------------------------------------------
+
+function itemJSON(self, alternate, collectionId, geojson) {
+  var json = {};
+
   var json = header(collection.name, "CityObjects from " + collectionId);
 
   json.links = [];
@@ -327,7 +384,7 @@ function itemsJSON(self, alternate, collectionId, geojson) {
   return JSON.parse(JSON.stringify(geojson));
 }
 
-function itemsHTML(self, alternate, collectionId, geojson) {
+function itemHTML(self, alternate, collectionId, geojson) {
   var item = {};
   item.url = serviceUrl;
   item.title = collectionId;
@@ -337,16 +394,87 @@ function itemsHTML(self, alternate, collectionId, geojson) {
 
   var tmpl = swig.compileFile(__dirname + "/template/items.template"),
     renderedHtml = tmpl({
-      collection: item,
+      item: item,
     });
 
   return renderedHtml;
 }
 
-function items(t, self, alternate, collectionId, geojson) {
+function item(t, self, alternate, collectionId, geojson) {
   if (t == "json") return itemsJSON(self, alternate, collectionId, geojson);
   return itemsHTML(self, alternate, collectionId, geojson);
 }
 
 //-------------------------------------------------------------------------------------
-module.exports = { landing, collections, collection, items };
+
+async function itemJSON(collectionId, geojson) {
+  var json = {};
+
+  var json = header(
+    "Feature object " + geojson.name,
+    "Information on the object " + geojson.name
+  );
+
+  json.feature = geojson
+
+  json.links = [];
+  json.links.push(
+    link(
+      serviceUrl + "/collections/" + collectionId + "/items/" + geojson.name + "?f=json",
+      "self",
+      "application/geo+json",
+      "this document"
+    )
+  );
+  json.links.push(
+    link(
+      serviceUrl + "/collections/" + collectionId + "/items/" + geojson.name + "?f=html",
+      "alternate",
+      "text/html",
+      "this document as HTML"
+    )
+  );
+  json.links.push(
+    link(
+      serviceUrl + "/collections/" + collectionId + "?f=json",
+      "collection",
+      "application/json",
+      "The feature collection that contains this feature"
+    )
+  );
+  json.links.push(
+    link(
+      serviceUrl + "/collections/" + collectionId + "?f=html",
+      "collection",
+      "text/html",
+      "The feature collection that contains this feature"
+    )
+  );
+
+  return json;
+}
+
+function itemHTML(collectionId, geojson) {
+
+  var item = {};
+  item.url = serviceUrl;
+  item.collectionId = collectionId
+  item.geojson = JSON.stringify(geojson);
+  item.title = geojson.name;
+
+  var tmpl = swig.compileFile(__dirname + "/template/item.template"),
+    renderedHtml = tmpl({
+      item: item,
+    });
+
+  return renderedHtml;
+}
+
+async function item(t, collectionId, geojson) {
+  if (t == "json") return await itemJSON(collectionId, geojson);
+  return await itemHTML(collectionId, geojson);
+}
+
+//-------------------------------------------------------------------------------------
+
+module.exports = { landing, collections, collection, items, item };

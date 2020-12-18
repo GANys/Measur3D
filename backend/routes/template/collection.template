@@ -8,9 +8,9 @@
 
 <body>
 
-<h1>Metadata about the feature collections</h1>
+<h1>Metadata about the feature collection</h1>
 
-<h2>Collections.</h2>
+<h2>Collection</h2>
 <h3>{{ collection.title }} ({{ collection.title }})</h3>
 <p>{{ collection.title }}</p>
 
