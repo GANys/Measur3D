@@ -38,6 +38,10 @@ const options = {
 
 const specs = swaggerJsdoc(options);
 
+router.post("*", function (req, res) {
+  res.status(405).send({ error: "POST requests are not supported." });
+});
+
 /**
  * @swagger
  * /:
@@ -63,6 +67,22 @@ const specs = swaggerJsdoc(options);
  *                     type: array
  *                     items:
  *                       $ref: http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml
+ *         400:
+ *           description: Returns an error due to format.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: object
+ *                     properties:
+ *                       code:
+ *                         type: string
+ *                         example: "InvalidParameterValue"
+ *                       description:
+ *                         type: string
+ *                         example: "Invalid format"
  */
 router.get("/", function (req, res) {
   var contentType = "";
@@ -152,6 +172,24 @@ router.get("/conformance", function (req, res) {
  *       responses:
  *         201:
  *           description: Full documentation of the APIs Measur3D and Features.
+ *         308:
+ *           description: Redirect to .html.
+ *         400:
+ *           description: Returns an error due to format.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: object
+ *                     properties:
+ *                       code:
+ *                         type: string
+ *                         example: "InvalidParameterValue"
+ *                       description:
+ *                         type: string
+ *                         example: "Invalid format"
  */
 router.get("/api", function (req, res) {
   var urlParts = url.parse(req.url, true);
@@ -168,7 +206,10 @@ router.get("/api", function (req, res) {
   } else if ("json" == urlParts.query.f) {
     res.setHeader("Content-Type", "application/json");
     return res.status(201).send(specs);
-  } else res.json(400, { error: "InvalidParameterValue" });
+  } else
+    res.json(400, {
+      error: { code: "InvalidParameterValue", description: "Invalid format" },
+    });
 });
 
 /**
@@ -176,21 +217,12 @@ router.get("/api", function (req, res) {
  * /api.html:
  *     get:
  *       summary: Get the API documentation as HTML.
- *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
+ *       description: NOT AVAILABLE - This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
  *       tags: [Features]
- *       responses:
- *         200:
- *           description: OK - returns a '#/CityModel'.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/CityModel'
- *         500:
- *           description: Not found - There is no CityModel in the database.
  */
 
 router.get("/api.html", function (req, res) {
-  res.status(201).send(specs);
+  res.status(400).send("Not yet available");
 });
 
 /**
@@ -226,6 +258,32 @@ router.get("/api.html", function (req, res) {
  *                     type: array
  *                     items:
  *                       $ref: http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/collection.yaml
+ *         400:
+ *           description: Returns an error due to format.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: object
+ *                     properties:
+ *                       code:
+ *                         type: string
+ *                         example: "InvalidParameterValue"
+ *                       description:
+ *                         type: string
+ *                         example: "Invalid format"
+ *         404:
+ *           description: There is no collections in the database.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     example: There is no collection in the database.
  */
 router.get("/collections", async function (req, res) {
   var urlParts = url.parse(req.url, true);
@@ -234,7 +292,9 @@ router.get("/collections", async function (req, res) {
     .model("CityModel")
     .find({}, "name metadata", async (err, data) => {
       if (err) {
-        return res.status(404).send({ error: "There is no collections." });
+        return res
+          .status(404)
+          .send({ error: "There is no collection in the database." });
       }
     })
     .lean();
@@ -245,7 +305,10 @@ router.get("/collections", async function (req, res) {
     res.json(await negoc.collections("json", collections));
   } else if ("html" == urlParts.query.f)
     res.send(await negoc.collections("html", collections));
-  else res.json(400, { error: "InvalidParameterValue" });
+  else
+    res.json(400, {
+      error: { code: "InvalidParameterValue", description: "Invalid format" },
+    });
 });
 
 /**
@@ -266,6 +329,40 @@ router.get("/collections", async function (req, res) {
  *           name: collectionId
  *           schema:
  *             type: string
+ *       responses:
+ *         200:
+ *           description: Returns a collection of features and its metadata.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 $ref: http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/collection.yaml
+ *         400:
+ *           description: Returns an error due to format.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: object
+ *                     properties:
+ *                       code:
+ *                         type: string
+ *                         example: "InvalidParameterValue"
+ *                       description:
+ *                         type: string
+ *                         example: "Invalid format"
+ *         404:
+ *           description: There is no collections in the database.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     example: There is no collection in the database.
  */
 router.get("/collections/:collectionId", async function (req, res) {
   var urlParts = url.parse(req.url, true);
@@ -463,6 +560,42 @@ router.get("/collections/:collectionId", async function (req, res) {
  *                       type: string
  *                       default:
  *                         - http://www.opengis.net/def/crs/OGC/1.3/CRS84
+ *         400:
+ *           description: Returns an error due to format. Refer the erroneous parameter.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: object
+ *                     properties:
+ *                       code:
+ *                         type: string
+ *                         example: "InvalidParameterValue"
+ *                       description:
+ *                         type: string
+ *                         example: "Invalid # format"
+ *         404:
+ *           description: There is no item in the database.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     example: There is no item in this collection.
+ *         500:
+ *           description: There is no item in the database.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     example: There is no item in the database.
  */
 router.get("/collections/:collectionId/items", async function (req, res) {
   //Next is not implemented. Might be useful in huge datasets.
@@ -492,6 +625,14 @@ router.get("/collections/:collectionId/items", async function (req, res) {
 
   if (urlParts.query.limit != undefined) {
     limit = Number(urlParts.query.limit);
+    if (limit == NaN || limit % 1 !== 0) {
+      return res.status(400).send({
+        error: {
+          code: "InvalidParameterValue",
+          description: "Invalid limit format",
+        },
+      });
+    }
   } else {
     limit = default_limit;
   }
@@ -722,40 +863,67 @@ router.get("/collections/:collectionId/items", async function (req, res) {
  *             application/json:
  *               schema:
  *                 $ref: '#/components/schemas/AbstractCityObject'
- *         500:
- *           description: Not found - There is no CityModel in the database.
+ *         404:
+ *           description: This item does not exist in this collection.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     example: This item does not exist in this collection.
+ *         400:
+ *           description: Returns an error due to format.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: object
+ *                     properties:
+ *                       code:
+ *                         type: string
+ *                         example: "InvalidParameterValue"
+ *                       description:
+ *                         type: string
+ *                         example: "Invalid format"
  */
 router.get("/collections/:collectionId/items/:item", async function (req, res) {
-
   var urlParts = url.parse(req.url, true);
 
   var abstractCityObject = await mongoose
     .model("CityObject")
-    .findOne({name: req.params.item}, async (err, data) => {
+    .findOne({ name: req.params.item }, async (err, data) => {
       if (err) {
-        return res
-          .status(404)
-          .send({ error: "Error: " + err });
+        return res.status(404).send({ error: "Error: " + err });
       }
     })
     .lean();
 
-    if (abstractCityObject == null) {
-      return res.status(404).send({
-        error: "This item does not exist in this collection.",
-      });
-    }
+  if (abstractCityObject == null) {
+    return res.status(404).send({
+      error: "This item does not exist in this collection.",
+    });
+  }
 
-    if (null == urlParts.query.f)
-      res.send(await negoc.item("html", req.params.collectionId, abstractCityObject));
-    else if ("json" == urlParts.query.f)
-      res.json(await negoc.item("json", req.params.collectionId, abstractCityObject));
-    else if ("html" == urlParts.query.f)
-      res.send(await negoc.item("html", req.params.collectionId, abstractCityObject));
-    else
-      res.json(400, {
-        error: { code: "InvalidParameterValue", description: "Invalid format" },
-      });
+  if (null == urlParts.query.f)
+    res.send(
+      await negoc.item("html", req.params.collectionId, abstractCityObject)
+    );
+  else if ("json" == urlParts.query.f)
+    res.json(
+      await negoc.item("json", req.params.collectionId, abstractCityObject)
+    );
+  else if ("html" == urlParts.query.f)
+    res.send(
+      await negoc.item("html", req.params.collectionId, abstractCityObject)
+    );
+  else
+    res.json(400, {
+      error: { code: "InvalidParameterValue", description: "Invalid format" },
+    });
 });
 
 module.exports = router;
