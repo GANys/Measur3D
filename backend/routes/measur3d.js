@@ -2,7 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const logger = require("morgan");
-const path = require('path');
+const path = require("path");
 
 let Cities = require("../src/Schemas/citymodel.js");
 let Functions = require("./util/functions");
@@ -10,96 +10,119 @@ let Functions = require("./util/functions");
 const router = express.Router();
 
 //-------------------------------------------------------------------------------------
-// Web caching Middleware
+// Web caching Middleware - clear after 24h
 
-var cache = {}
+var cache = {};
+
+var array = [];
+
+function push(key) {
+  array.push({
+    value: key,
+    time: Date.now(),
+  });
+}
+
+setInterval(function () {
+  var time = Date.now();
+
+  array = array.filter(function (item) {
+    if (time < item.time + (1000 * 60 * 60 * 24)) {
+      return true;
+    } else {
+      delete cache[item.value];
+      return false;
+    }
+  });
+}, (1000 * 60 * 60 * 24));
 
 var midWareCaching = (req, res, next) => {
-    const key = req.url
-    if (cache[key]) {
-        res.send(cache[key])
-    } else {
-        res.sendResponse = res.send
-        res.send = (body) => {
-            cache[key] = body
-            res.sendResponse(body)
-        }
-        next()
-    }
-}
+  const key = req.url;
+  if (cache[key]) {
+    res.send(cache[key]);
+  } else {
+    res.sendResponse = res.send;
+    res.send = (body) => {
+      cache[key] = body;
+      res.sendResponse(body);
+    };
+    push(key)
+    next();
+  }
+};
 
 //-------------------------------------------------------------------------------------
 
 /**
-* @swagger
-* /uploadCityModel:
-*     post:
-*       summary: Uploads a CityModel.
-*       description: This function allows to upload a CityJSON file (v 1.0.x). The file will be processed in order to distribute the information in the different documents in the database following the CityModel, AbstractCityObject and Geometry schemas (other schemas will be supported in further developments).
-*       tags: [Measur3D]
-*       parameters:
-*       - name: jsonName
-*         description: Name of the CityModel - name of the file in the Measur3D application.
-*         in: body
-*         required: true
-*         type: string
-*       - name: content
-*         description: The content of the JSON file as a JSON object.
-*         in: body
-*         required: true
-*         type: object
-*         schema:
-*           $ref: '#/components/schemas/CityModel'
-*       responses:
-*         201:
-*           description: Created - upload of the CityJSON file successful.
-*           content:
-*             application/json:
-*               schema:
-*                 type: object
-*                 properties:
-*                   success:
-*                     type: string
-*                     default: "File uploaded"
-*               example: {success: "File uploaded"}
-*         408:
-*           description: Request timeout - took over 10 minutes (Uploading a CityModel can be very long).
-*/
+ * @swagger
+ * /uploadCityModel:
+ *     post:
+ *       summary: Uploads a CityModel.
+ *       description: This function allows to upload a CityJSON file (v 1.0.x). The file will be processed in order to distribute the information in the different documents in the database following the CityModel, AbstractCityObject and Geometry schemas (other schemas will be supported in further developments).
+ *       tags: [Measur3D]
+ *       parameters:
+ *       - name: jsonName
+ *         description: Name of the CityModel - name of the file in the Measur3D application.
+ *         in: body
+ *         required: true
+ *         type: string
+ *       - name: content
+ *         description: The content of the JSON file as a JSON object.
+ *         in: body
+ *         required: true
+ *         type: object
+ *         schema:
+ *           $ref: '#/components/schemas/CityModel'
+ *       responses:
+ *         201:
+ *           description: Created - upload of the CityJSON file successful.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   success:
+ *                     type: string
+ *                     default: "File uploaded"
+ *               example: {success: "File uploaded"}
+ *         408:
+ *           description: Request timeout - took over 10 minutes (Uploading a CityModel can be very long).
+ */
 router.post("/uploadCityModel", (req, res) => {
   req.setTimeout(10 * 60 * 1000); // Special timeOut
 
-  Cities.insertCity(req.body).then(function(data) {
-    return res.status(201).send({ success: "File uploaded"});
+  Cities.insertCity(req.body).then(function (data) {
+    return res.status(201).send({ success: "File uploaded" });
   });
 });
 
 /**
-* @swagger
-* /getCityModelsList:
-*     get:
-*       summary: Get list of available CityModels.
-*       description: Concurrent models can be stored in the database. This function allows describing these models providing summary information.
-*       tags: [Measur3D]
-*       responses:
-*         200:
-*           description: OK - returns.
-*           content:
-*             application/json:
-*               schema:
-*                 type: array
-*                 items:
-*                   type: object
-*                   properties:
-*                     name:
-*                       type: string
-*                     nbr_el:
-*                       type: number
-*                     filesize:
-*                       type: string
-*               example: [{name: model_1, nbr_el: 845, filesize: 1.24Mb}, {name: model_2, nbr_el: 642, filesize: 835.1Kb}]
-*         404:
-*           description: Not found - There is no CityModel in the database.
-*/
+ * @swagger
+ * /getCityModelsList:
+ *     get:
+ *       summary: Get list of available CityModels.
+ *       description: Concurrent models can be stored in the database. This function allows describing these models providing summary information.
+ *       tags: [Measur3D]
+ *       responses:
+ *         200:
+ *           description: OK - returns.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     nbr_el:
+ *                       type: number
+ *                     filesize:
+ *                       type: string
+ *               example: [{name: model_1, nbr_el: 845, filesize: 1.24Mb}, {name: model_2, nbr_el: 642, filesize: 835.1Kb}]
+ *         404:
+ *           description: Not found - There is no CityModel in the database.
+ */
 router.get("/getCityModelsList", midWareCaching, (req, res) => {
   mongoose
     .model("CityModel")
@@ -117,7 +140,7 @@ router.get("/getCityModelsList", midWareCaching, (req, res) => {
         responseCities.push({
           name: data[i].name,
           nbr_el: Object.keys(data[i].CityObjects).length,
-          filesize: Functions.formatBytes(filesize)
+          filesize: Functions.formatBytes(filesize),
         });
       }
 
@@ -157,7 +180,9 @@ router.get("/getNamedCityModel", midWareCaching, async (req, res) => {
       if (err) {
         return res
           .status(500)
-          .send({ error: "There is no CityModel with this name in the database." });
+          .send({
+            error: "There is no CityModel with this name in the database.",
+          });
       }
     })
     .lean();
@@ -259,21 +284,23 @@ router.get("/getNamedCityModel", midWareCaching, async (req, res) => {
  *           description: Not found - There is no document with that name.
  */
 router.delete("/deleteNamedCityModel", (req, res) => {
-  mongoose.model("CityModel").deleteOne({ name: req.body.name }, err => {
+  mongoose.model("CityModel").deleteOne({ name: req.body.name }, (err) => {
     if (err)
       return res
         .status(500)
         .send({ error: "There is no document with that name." });
   });
 
-  mongoose.model("CityObject").deleteMany({ CityModel: req.body.name }, err => {
-    if (err)
-      return res
-        .status(500)
-        .send({ error: "There is no document with that name." });
-  });
+  mongoose
+    .model("CityObject")
+    .deleteMany({ CityModel: req.body.name }, (err) => {
+      if (err)
+        return res
+          .status(500)
+          .send({ error: "There is no document with that name." });
+    });
 
-  mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, err => {
+  mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, (err) => {
     if (err)
       return res
         .status(500)
@@ -282,21 +309,21 @@ router.delete("/deleteNamedCityModel", (req, res) => {
 
   mongoose
     .model("GeometryInstance")
-    .deleteMany({ CityModel: req.body.name }, err => {
+    .deleteMany({ CityModel: req.body.name }, (err) => {
       if (err)
         return res
           .status(500)
           .send({ error: "There is no document with that name." });
     });
 
-  mongoose.model("Material").deleteMany({ CityModel: req.body.name }, err => {
+  mongoose.model("Material").deleteMany({ CityModel: req.body.name }, (err) => {
     if (err)
       return res
         .status(500)
         .send({ error: "There is no document with that name." });
   });
 
-  mongoose.model("Texture").deleteMany({ CityModel: req.body.name }, err => {
+  mongoose.model("Texture").deleteMany({ CityModel: req.body.name }, (err) => {
     if (err)
       return res
         .status(500)
@@ -363,8 +390,7 @@ router.get("/getObject", midWareCaching, (req, res) => {
       .lean();
   } else {
     return res.status(400).send({
-      error:
-        "Params are not valid."
+      error: "Params are not valid.",
     });
   }
 });
@@ -395,7 +421,7 @@ router.delete("/deleteObject", async (req, res) => {
   // Need of a recursive delete because of children
   await Functions.recursiveDelete({
     name: req.body.name,
-    CityModel: req.body.CityModel
+    CityModel: req.body.CityModel,
   });
 
   return res.status(200).send({ success: "Object and children deleted !" });
@@ -443,7 +469,7 @@ router.delete("/deleteObject", async (req, res) => {
  *           description: Internal error - getObjectAttributes could not find Object in Collection. Error is sent by database.
  */
 router.get("/getObjectAttributes", midWareCaching, (req, res) => {
-  var cityObjectType = req.query.CityObjectType
+  var cityObjectType = req.query.CityObjectType;
 
   switch (cityObjectType) {
     case "BuildingPart":
@@ -485,7 +511,7 @@ router.get("/getObjectAttributes", midWareCaching, (req, res) => {
   } else {
     return res.status(400).send({
       error:
-        "Params are not valid - getObjectAttributes could not find Object in Collection."
+        "Params are not valid - getObjectAttributes could not find Object in Collection.",
     });
   }
 });
@@ -547,7 +573,7 @@ router.put("/updateObjectAttribute", async (req, res) => {
   mongoose
     .model(req.body.CityObjectType)
     .findOne({ name: req.body.jsonName }, (err, data) => {
-      if (err) return res.status(400).send({error: "Params are not valid."});
+      if (err) return res.status(400).send({ error: "Params are not valid." });
 
       //var attributes = data.attributes;
       var attributes = Object.assign({}, data.attributes); // Copy the CityObject attributes from Schema -> Undefined value if key is empty.
