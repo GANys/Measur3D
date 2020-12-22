@@ -8,6 +8,27 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const yaml = require("js-yaml");
 
+//-------------------------------------------------------------------------------------
+// Web caching Middleware
+
+var cache = {}
+
+var midWareCaching = (req, res, next) => {
+    const key = req.url
+    if (cache[key]) {
+        res.send(cache[key])
+    } else {
+        res.sendResponse = res.send
+        res.send = (body) => {
+            cache[key] = body
+            res.sendResponse(body)
+        }
+        next()
+    }
+}
+
+//-------------------------------------------------------------------------------------
+
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -37,6 +58,8 @@ const options = {
 };
 
 const specs = swaggerJsdoc(options);
+
+//-------------------------------------------------------------------------------------
 
 router.post("*", function (req, res) {
   res.status(405).send({ error: "POST requests are not supported." });
@@ -84,7 +107,7 @@ router.post("*", function (req, res) {
  *                         type: string
  *                         example: "Invalid format"
  */
-router.get("/", function (req, res) {
+router.get("/", midWareCaching, function (req, res) {
   var contentType = "";
   var accept = req.headers.accept;
 
@@ -134,7 +157,7 @@ router.get("/", function (req, res) {
  *                     items:
  *                       type: string
  */
-router.get("/conformance", function (req, res) {
+router.get("/conformance", midWareCaching, function (req, res) {
   var conformance = {};
 
   conformance.conformsTo = [];
@@ -191,7 +214,7 @@ router.get("/conformance", function (req, res) {
  *                         type: string
  *                         example: "Invalid format"
  */
-router.get("/api", function (req, res) {
+router.get("/api", midWareCaching, function (req, res) {
   var urlParts = url.parse(req.url, true);
 
   if (null == urlParts.query.f) {
@@ -221,7 +244,7 @@ router.get("/api", function (req, res) {
  *       tags: [Features]
  */
 
-router.get("/api.html", function (req, res) {
+router.get("/api.html", midWareCaching, function (req, res) {
   res.status(400).send("Not yet available");
 });
 
@@ -285,7 +308,7 @@ router.get("/api.html", function (req, res) {
  *                     type: string
  *                     example: There is no collection in the database.
  */
-router.get("/collections", async function (req, res) {
+router.get("/collections", midWareCaching, async function (req, res) {
   var urlParts = url.parse(req.url, true);
 
   var collections = await mongoose
@@ -364,7 +387,7 @@ router.get("/collections", async function (req, res) {
  *                     type: string
  *                     example: There is no collection in the database.
  */
-router.get("/collections/:collectionId", async function (req, res) {
+router.get("/collections/:collectionId", midWareCaching, async function (req, res) {
   var urlParts = url.parse(req.url, true);
 
   var collection = await mongoose
@@ -597,7 +620,7 @@ router.get("/collections/:collectionId", async function (req, res) {
  *                     type: string
  *                     example: There is no item in the database.
  */
-router.get("/collections/:collectionId/items", async function (req, res) {
+router.get("/collections/:collectionId/items", midWareCaching, async function (req, res) {
   //Next is not implemented. Might be useful in huge datasets.
 
   var urlParts = url.parse(req.url, true);
@@ -890,7 +913,7 @@ router.get("/collections/:collectionId/items", async function (req, res) {
  *                         type: string
  *                         example: "Invalid format"
  */
-router.get("/collections/:collectionId/items/:item", async function (req, res) {
+router.get("/collections/:collectionId/items/:item", midWareCaching, async function (req, res) {
   var urlParts = url.parse(req.url, true);
 
   var abstractCityObject = await mongoose

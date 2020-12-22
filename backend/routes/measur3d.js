@@ -9,6 +9,27 @@ let Functions = require("./util/functions");
 
 const router = express.Router();
 
+//-------------------------------------------------------------------------------------
+// Web caching Middleware
+
+var cache = {}
+
+var midWareCaching = (req, res, next) => {
+    const key = req.url
+    if (cache[key]) {
+        res.send(cache[key])
+    } else {
+        res.sendResponse = res.send
+        res.send = (body) => {
+            cache[key] = body
+            res.sendResponse(body)
+        }
+        next()
+    }
+}
+
+//-------------------------------------------------------------------------------------
+
 /**
 * @swagger
 * /uploadCityModel:
@@ -79,7 +100,7 @@ router.post("/uploadCityModel", (req, res) => {
 *         404:
 *           description: Not found - There is no CityModel in the database.
 */
-router.get("/getCityModelsList", (req, res) => {
+router.get("/getCityModelsList", midWareCaching, (req, res) => {
   mongoose
     .model("CityModel")
     .find({}, async (err, data) => {
@@ -129,7 +150,7 @@ router.get("/getCityModelsList", (req, res) => {
  *         500:
  *           description: Not found - There is no CityModel in the database.
  */
-router.get("/getNamedCityModel", async (req, res) => {
+router.get("/getNamedCityModel", midWareCaching, async (req, res) => {
   var cityModel = await mongoose
     .model("CityModel")
     .findOne({ name: req.query.name }, async (err, data) => {
@@ -323,7 +344,7 @@ router.delete("/deleteNamedCityModel", (req, res) => {
  *         500:
  *           description: Internal error - getObject could not find Object in Collection. Error is sent by database.
  */
-router.get("/getObject", (req, res) => {
+router.get("/getObject", midWareCaching, (req, res) => {
   if (typeof req.query.name != "undefined") {
     mongoose
       .model(req.query.CityObjectType)
@@ -421,7 +442,7 @@ router.delete("/deleteObject", async (req, res) => {
  *         500:
  *           description: Internal error - getObjectAttributes could not find Object in Collection. Error is sent by database.
  */
-router.get("/getObjectAttributes", (req, res) => {
+router.get("/getObjectAttributes", midWareCaching, (req, res) => {
   var cityObjectType = req.query.CityObjectType
 
   switch (cityObjectType) {
