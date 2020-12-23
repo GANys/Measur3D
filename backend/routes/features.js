@@ -26,14 +26,14 @@ setInterval(function () {
   var time = Date.now();
 
   array = array.filter(function (item) {
-    if (time < item.time + (1000 * 60 * 60 * 24)) {
+    if (time < item.time + 1000 * 60 * 60 * 24) {
       return true;
     } else {
       delete cache[item.value];
       return false;
     }
   });
-}, (1000 * 60 * 60 * 24));
+}, 1000 * 60 * 60 * 24);
 
 var midWareCaching = (req, res, next) => {
   const key = req.url;
@@ -45,7 +45,7 @@ var midWareCaching = (req, res, next) => {
       cache[key] = body;
       res.sendResponse(body);
     };
-    push(key)
+    push(key);
     next();
   }
 };
@@ -410,7 +410,10 @@ router.get("/collections", midWareCaching, async function (req, res) {
  *                     type: string
  *                     example: There is no collection in the database.
  */
-router.get("/collections/:collectionId", midWareCaching, async function (req, res) {
+router.get("/collections/:collectionId", midWareCaching, async function (
+  req,
+  res
+) {
   var urlParts = url.parse(req.url, true);
 
   var collection = await mongoose
@@ -643,7 +646,10 @@ router.get("/collections/:collectionId", midWareCaching, async function (req, re
  *                     type: string
  *                     example: There is no item in the database.
  */
-router.get("/collections/:collectionId/items", midWareCaching, async function (req, res) {
+router.get("/collections/:collectionId/items", midWareCaching, async function (
+  req,
+  res
+) {
   //Next is not implemented. Might be useful in huge datasets.
 
   var urlParts = url.parse(req.url, true);
@@ -831,6 +837,39 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (r
     return;
   }
 
+  for (var object in abstractCityObjects) {
+    var geometries = [];
+
+    for (var geom in abstractCityObjects[object].geometry) {
+      geometries.push(
+        await mongoose // Get geometries for the CityObject
+          .model("Geometry")
+          .findOne(
+            { _id: abstractCityObjects[object].geometry[geom] },
+            async (err, res_geom) => {
+              if (err) return res.status(500).send(err);
+
+              return res_geom;
+            }
+          )
+          .lean()
+      );
+    }
+
+    var max_lod = 0;
+    var max_id = -1;
+
+    for (var geom in geometries) {
+      // Extract the highest LoD only
+      if (geometries[geom].lod > Number(max_lod)) {
+        max_lod = Number(geometries[geom].lod);
+        max_id = geom;
+      }
+    }
+
+    abstractCityObjects[object].geometry = [geometries[max_id]];
+  }
+
   if (urlParts.search != undefined) {
     var self = urlParts.search.replace("?", "");
     var alternate = urlParts.search.replace("?", "");
@@ -936,40 +975,75 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (r
  *                         type: string
  *                         example: "Invalid format"
  */
-router.get("/collections/:collectionId/items/:item", midWareCaching, async function (req, res) {
-  var urlParts = url.parse(req.url, true);
+router.get(
+  "/collections/:collectionId/items/:item",
+  midWareCaching,
+  async function (req, res) {
+    var urlParts = url.parse(req.url, true);
 
-  var abstractCityObject = await mongoose
-    .model("CityObject")
-    .findOne({ name: req.params.item }, async (err, data) => {
-      if (err) {
-        return res.status(404).send({ error: "Error: " + err });
+    var abstractCityObject = await mongoose
+      .model("CityObject")
+      .findOne({ name: req.params.item }, async (err, data) => {
+        if (err) {
+          return res.status(404).send({ error: "Error: " + err });
+        }
+      })
+      .lean();
+
+    if (abstractCityObject == null) {
+      return res.status(404).send({
+        error: "This item does not exist in this collection.",
+      });
+    }
+
+    var geometries = [];
+
+    for (var geom in abstractCityObject.geometry) {
+      geometries.push(
+        await mongoose // Get geometries for the CityObject
+          .model("Geometry")
+          .findOne(
+            { _id: abstractCityObject.geometry[geom] },
+            async (err, res_geom) => {
+              if (err) return res.status(500).send(err);
+
+              return res_geom;
+            }
+          )
+          .lean()
+      );
+    }
+
+    var max_lod = 0;
+    var max_id = -1;
+
+    for (var geom in geometries) {
+      // Extract the highest LoD only
+      if (geometries[geom].lod > Number(max_lod)) {
+        max_lod = Number(geometries[geom].lod);
+        max_id = geom;
       }
-    })
-    .lean();
+    }
 
-  if (abstractCityObject == null) {
-    return res.status(404).send({
-      error: "This item does not exist in this collection.",
-    });
+    abstractCityObject.geometry = [geometries[max_id]];
+
+    if (null == urlParts.query.f)
+      res.send(
+        await negoc.item("html", req.params.collectionId, abstractCityObject)
+      );
+    else if ("json" == urlParts.query.f)
+      res.json(
+        await negoc.item("json", req.params.collectionId, abstractCityObject)
+      );
+    else if ("html" == urlParts.query.f)
+      res.send(
+        await negoc.item("html", req.params.collectionId, abstractCityObject)
+      );
+    else
+      res.json(400, {
+        error: { code: "InvalidParameterValue", description: "Invalid format" },
+      });
   }
-
-  if (null == urlParts.query.f)
-    res.send(
-      await negoc.item("html", req.params.collectionId, abstractCityObject)
-    );
-  else if ("json" == urlParts.query.f)
-    res.json(
-      await negoc.item("json", req.params.collectionId, abstractCityObject)
-    );
-  else if ("html" == urlParts.query.f)
-    res.send(
-      await negoc.item("html", req.params.collectionId, abstractCityObject)
-    );
-  else
-    res.json(400, {
-      error: { code: "InvalidParameterValue", description: "Invalid format" },
-    });
-});
+);
 
 module.exports = router;
