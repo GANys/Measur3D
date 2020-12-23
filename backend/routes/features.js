@@ -38,7 +38,7 @@ setInterval(function () {
 var midWareCaching = (req, res, next) => {
   const key = req.url;
   if (cache[key]) {
-    res.send(cache[key]);
+    res.json(JSON.parse(cache[key]));
   } else {
     res.sendResponse = res.send;
     res.send = (body) => {
