@@ -51,6 +51,7 @@ var midWareCaching = (req, res, next) => {
     } else if (cache[key][0] == "<") { // HTML
       res.send(cache[key])
     } else { // Need to find a solution for YAML
+      res.setHeader("Content-Type", "text/plain");
       res.send(cache[key])
     }
   } else {
