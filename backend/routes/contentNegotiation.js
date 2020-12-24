@@ -254,7 +254,7 @@ async function collectionJSON(collection) {
   json.links = [];
   json.links.push(
     link(
-      serviceUrl + "/collections?f=json",
+      serviceUrl + "/collections/" + collection.name + "?f=json",
       "self",
       "application/json",
       "this document"
@@ -262,7 +262,7 @@ async function collectionJSON(collection) {
   );
   json.links.push(
     link(
-      serviceUrl + "/collections?f=html",
+      serviceUrl + "/collections/" + collection.name + "?f=html",
       "alternate",
       "text/html",
       "this document as HTML"

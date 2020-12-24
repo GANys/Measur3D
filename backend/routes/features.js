@@ -15,10 +15,11 @@ var cache = {};
 
 var array = [];
 
-function push(key) {
+function push(key, format) {
   array.push({
     value: key,
     time: Date.now(),
+    format: format
   });
 }
 
@@ -38,14 +39,27 @@ setInterval(function () {
 var midWareCaching = (req, res, next) => {
   const key = req.url;
   if (cache[key]) {
-    res.json(JSON.parse(cache[key]));
+
+    for (var i = 0; i < array.length; i++) {
+      if (array[i].value === key) {
+        array[i].time = Date.now();
+      }
+    }
+
+    if (cache[key][0] == "{") { // JSON
+      res.json(JSON.parse(cache[key]));
+    } else if (cache[key][0] == "<") { // HTML
+      res.send(cache[key])
+    } else { // Need to find a solution for YAML
+      res.send(cache[key])
+    }
   } else {
     res.sendResponse = res.send;
     res.send = (body) => {
       cache[key] = body;
       res.sendResponse(body);
     };
-    push(key);
+    push(key, "json");
     next();
   }
 };

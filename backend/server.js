@@ -5,9 +5,11 @@ const url = require("url");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const logger = require("morgan");
+const helmet = require("helmet");
 const path = require("path");
 const swaggerJsdoc = require("swagger-jsdoc");
 const yaml = require("js-yaml");
+var rfs = require("rotating-file-stream"); // version 2.x
 
 const rateLimiterUsingThirdParty = require("./rateLimiter");
 
@@ -21,13 +23,40 @@ const API_PORT = 3001;
 
 const app = express();
 app.use(cors());
+app.use(helmet());
 app.use(compression());
 app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
 
 // Limit of file exchanges set to 100 Mb.
 app.use(bodyParser.json({ limit: "100mb" }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
-app.use(logger("dev"));
+
+//-------------------------------------------------------------------------------------
+// Logging Middleware
+
+// create a rotating write stream
+var logStream = rfs.createStream("file.log", {
+  interval: "3d", // rotate every 3 days
+  path: path.join(__dirname, "log"),
+});
+
+// log only 4xx and 5xx responses to console
+app.use(
+  logger("tiny", { // Can be "short" for more information
+    skip: function (req, res) {
+      return res.statusCode < 400;
+    },
+  })
+);
+
+// log all requests to access.log
+app.use(
+  logger("short", {
+    stream: logStream,
+  })
+);
+
+//-------------------------------------------------------------------------------------
 
 const options = {
   definition: {
