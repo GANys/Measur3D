@@ -22,7 +22,7 @@ const database = "citymodel"; // REPLACE WITH YOUR DB NAME
 const API_PORT = 3001;
 
 const app = express();
-app.use(cors());
+app.use(cors()); // Cross-Origin Resource Sharing
 app.use(helmet());
 app.use(compression());
 app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.

@@ -13,20 +13,19 @@ const yaml = require("js-yaml");
 
 var cache = {};
 
-var array = [];
+var cacheMetadata = [];
 
-function push(key, format) {
-  array.push({
+function push(key) {
+  cacheMetadata.push({
     value: key,
-    time: Date.now(),
-    format: format
+    time: Date.now()
   });
 }
 
 setInterval(function () {
   var time = Date.now();
 
-  array = array.filter(function (item) {
+  cacheMetadata = cacheMetadata.filter(function (item) {
     if (time < item.time + 1000 * 60 * 60 * 24) {
       return true;
     } else {
@@ -40,9 +39,9 @@ var midWareCaching = (req, res, next) => {
   const key = req.url;
   if (cache[key]) {
 
-    for (var i = 0; i < array.length; i++) {
-      if (array[i].value === key) {
-        array[i].time = Date.now();
+    for (var i = 0; i < cacheMetadata.length; i++) {
+      if (cacheMetadata[i].value === key) {
+        cacheMetadata[i].time = Date.now();
       }
     }
 
@@ -60,7 +59,7 @@ var midWareCaching = (req, res, next) => {
       cache[key] = body;
       res.sendResponse(body);
     };
-    push(key, "json");
+    push(key);
     next();
   }
 };
