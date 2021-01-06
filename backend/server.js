@@ -21,7 +21,7 @@ const database = "citymodel"; // REPLACE WITH YOUR DB NAME
 
 const API_PORT = 3001;
 
-const app = express();
+const app = express(); // Middleware order is important
 // Security Middleware - low stack - Counters many small attacks type
 app.use(helmet());
 // Limit the connection - Counters DDOS
