@@ -884,9 +884,11 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
     abstractCityObjects[object].geometry = [geometries[max_id]];
   }
 
+  var self = "", alternate = "" // Care of encoding
+
   if (urlParts.search != undefined) {
-    var self = urlParts.search.replace("?", "");
-    var alternate = urlParts.search.replace("?", "");
+    self = urlParts.search.replace("?", "");
+    alternate = urlParts.search.replace("?", "");
   }
 
   if (null == urlParts.query.f) {
@@ -903,7 +905,7 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
       )
     );
   } else if ("json" == urlParts.query.f) {
-    alternate = alternate.replace("json", "html");
+    alternate = alternate.replace("f=json", "f=html");
 
     res.json(
       negoc.items(
@@ -915,7 +917,7 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
       )
     );
   } else if ("html" == urlParts.query.f) {
-    alternate = alternate.replace("html", "json");
+    alternate = alternate.replace("f=html", "f=json");
 
     res.send(
       negoc.items(

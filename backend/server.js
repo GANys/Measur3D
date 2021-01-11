@@ -11,7 +11,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const yaml = require("js-yaml");
 var rfs = require("rotating-file-stream"); // version 2.x
 
-const rateLimiterUsingThirdParty = require("./rateLimiter");
+const {auth, rateLimiterUsingThirdParty} = require("./middleware");
 
 let Cities = require("./src/Schemas/citymodel.js");
 let Functions = require("./util/functions");
@@ -24,6 +24,8 @@ const API_PORT = 3001;
 const app = express(); // Middleware order is important
 // Security Middleware - low stack - Counters many small attacks type
 app.use(helmet());
+// Authentication layer
+//app.use(auth);
 // Limit the connection - Counters DDOS
 app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
 // Allows server to fecth information from different origins but different ports/API aswell.

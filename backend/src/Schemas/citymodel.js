@@ -330,6 +330,8 @@ module.exports = {
 
       new_objects[object.jsonName + "_" + key] = result.object;
 
+      console.log(result.bbox)
+
       if (result.bbox[3] > max_x) max_x = result.bbox[3];
       if (result.bbox[0] < min_x) min_x = result.bbox[0];
       if (result.bbox[4] > max_y) max_y = result.bbox[4];
@@ -353,6 +355,8 @@ module.exports = {
         "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
 
       var proj_string = await axios.get(epsgio);
+
+      console.log(epsg_code)
 
       proj4.defs("currentProj", proj_string.data);
 
