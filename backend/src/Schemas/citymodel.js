@@ -2,6 +2,8 @@ let mongoose = require("mongoose");
 const axios = require("axios");
 let proj4 = require("proj4");
 
+let Geometry = require("./geometry.js");
+
 let Appearance = require("./appearance.js");
 let Bridge = require("./bridge.js");
 let Building = require("./building.js");
@@ -173,24 +175,24 @@ let CityModelSchema = new mongoose.Schema({
     type: String,
     default: "1.0",
     required: true,
-    validate: /^([0-9]\.)+([0-9])$/
+    validate: /^([0-9]\.)+([0-9])$/,
   },
   CityObjects: { type: {}, required: true, index: true }, // No need of rules and schemas as it is already handled in the insertCity function
   vertices: {},
   extensions: {
     url: {
       type: String,
-      required: function() {
+      required: function () {
         return this.hasOwnProperty("extension") && validURL(this.url);
-      }
+      },
     },
     version: {
       type: String,
       validate: /^([0-9]\.)+([0-9])$/,
-      required: function() {
+      required: function () {
         return this.hasOwnProperty("extension");
-      }
-    }
+      },
+    },
   },
   metadata: {
     filesize: String,
@@ -198,27 +200,27 @@ let CityModelSchema = new mongoose.Schema({
     geographicalExtent: { type: [Number], default: undefined },
     location: {
       type: { type: String, enum: "Polygon" },
-      coordinates: { type: [[[Number]]] }
+      coordinates: { type: [[[Number]]] },
     },
     spatialIndex: { type: Boolean, default: false },
     referenceSystem: {
       type: String,
       default: "urn:ogc:def:crs:EPSG::4326",
-      required: true
+      required: true,
     },
     contactDetails: {
       contactName: {
-        type: String
+        type: String,
       },
       phone: {
-        type: String
+        type: String,
       },
       address: {
-        type: String
+        type: String,
       },
       emailAddress: {
         type: String,
-        validate: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        validate: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
       },
       contactType: {
         type: String,
@@ -245,32 +247,32 @@ let CityModelSchema = new mongoose.Schema({
             "rightsHolder",
             "contributor",
             "funder",
-            "stakeholder"
-          ]
+            "stakeholder",
+          ],
         },
         organization: String,
         website: {
-          validate: /^http(s)?:.*/
-        }
-      }
-    }
+          validate: /^http(s)?:.*/,
+        },
+      },
+    },
   },
   transform: {
     // No additional properties
     scale: {
       type: [Number],
       default: undefined,
-      validate: function() {
+      validate: function () {
         return this.transform["scale"].length == 3;
-      }
+      },
     },
     translate: {
       type: [Number],
       default: undefined,
-      validate: function() {
+      validate: function () {
         return this.transform["translate"].length == 3;
-      }
-    }
+      },
+    },
   },
   appearance: {
     // No additional properties
@@ -278,21 +280,21 @@ let CityModelSchema = new mongoose.Schema({
     "default-theme-material": String,
     materials: {
       type: [mongoose.model("Material").schema],
-      default: undefined
+      default: undefined,
     },
     textures: { type: [mongoose.model("Texture").schema], default: undefined },
-    "vertices-texture": { type: [[Number]], default: undefined } //length == 2
+    "vertices-texture": { type: [[Number]], default: undefined }, //length == 2
   },
   "geometry-templates": {
     // No additional properties
     templates: {
       type: [mongoose.model("GeometryInstance").schema],
-      default: undefined
+      default: undefined,
     },
     "vertices-template": {
       type: [[Number]],
       default: undefined,
-      validate: function() {
+      validate: function () {
         for (var vertex in this["geometry-templates"]["vertices-template"]) {
           if (
             this["geometry-templates"]["vertices-template"][vertex].length != 3
@@ -300,15 +302,15 @@ let CityModelSchema = new mongoose.Schema({
             return false;
         }
         return true;
-      }
-    }
-  }
+      },
+    },
+  },
 });
 
 CityModel = mongoose.model("CityModel", CityModelSchema);
 
 module.exports = {
-  insertCity: async object => {
+  insertCity: async (object) => {
     var new_objects = {};
     var objectPromises = [];
 
@@ -329,8 +331,6 @@ module.exports = {
       objectPromises.push(result.object);
 
       new_objects[object.jsonName + "_" + key] = result.object;
-
-      console.log(result.bbox)
 
       if (result.bbox[3] > max_x) max_x = result.bbox[3];
       if (result.bbox[0] < min_x) min_x = result.bbox[0];
@@ -356,8 +356,6 @@ module.exports = {
 
       var proj_string = await axios.get(epsgio);
 
-      console.log(epsg_code)
-
       proj4.defs("currentProj", proj_string.data);
 
       location = {
@@ -368,9 +366,9 @@ module.exports = {
             proj4("currentProj", "WGS84", [min_x, max_y]),
             proj4("currentProj", "WGS84", [max_x, max_y]),
             proj4("currentProj", "WGS84", [max_x, min_y]),
-            proj4("currentProj", "WGS84", [min_x, min_y])
-          ]
-        ]
+            proj4("currentProj", "WGS84", [min_x, min_y]),
+          ],
+        ],
       };
 
       object.json.metadata.spatialIndex = true;
@@ -383,9 +381,9 @@ module.exports = {
             [min_x, max_y],
             [max_x, max_y],
             [max_x, min_y],
-            [min_x, min_y]
-          ]
-        ]
+            [min_x, min_y],
+          ],
+        ],
       };
 
       object.json.metadata.spatialIndex = false;
@@ -400,25 +398,30 @@ module.exports = {
       min_z,
       max_x,
       max_y,
-      max_z
+      max_z,
     ];
 
     await Promise.all(objectPromises);
 
     object.json.CityObjects = new_objects;
     object.json.vertices = []; // Can be emptied as vertices are in CityObjects now
+    object.json["geometry-templates"] = {}; // Can be emptied as geometries have been updated in the objects
 
     var city = new CityModel(object.json);
 
     // Build 2D index
     //mongoose.model("CityObject").schema.index({ location: '2dsphere' });
 
-    await city.save();
+    try {
+      await city.save();
+    } catch (err) {
+      console.warn(err.message);
+    }
 
     return;
   },
   Model: CityModel,
-  Schema: CityModelSchema
+  Schema: CityModelSchema,
 };
 
 function validURL(str) {
@@ -466,22 +469,61 @@ async function saveCityObject(object, element) {
     min_z = Infinity,
     max_z = -Infinity;
 
+  var geometryTemplates = object.json["geometry-templates"];
+
+  element.vertices = [];
+
   // Help extracting vertices between the min and max index in all geometries
   // It is the complex part
-  for (var geom_id in element.geometry) {
-    [min_index, max_index] = getExtreme(
-      element.geometry[geom_id].boundaries,
-      min_index,
-      max_index
-    );
-  }
+  for (geometry in element.geometry) {
+    if (element.geometry[geometry].type == "GeometryInstance") {
+      // Deep clone of a template - Shallow copy create tooo much problems afterwards
+      var copyTemplate = JSON.parse(
+        JSON.stringify(
+          geometryTemplates.templates[element.geometry[geometry].template]
+        )
+      );
 
-  // Extract only the relevant vertices for the CityObject
-  element.vertices = object.json.vertices.slice().splice(
-    // Makes a copy without altering the vertices
-    min_index,
-    max_index - min_index + 1
-  );
+      var instance = await Geometry.getGeometryInstance(
+        element.geometry[geometry],
+        copyTemplate,
+        object.json.vertices,
+        object.json.transform,
+        geometryTemplates["vertices-templates"]
+      );
+
+      element.geometry[geometry] = instance[0];
+      element.vertices = element.vertices.concat(instance[1]);
+
+      for (var vertex in element.vertices) {
+        for (var el in element.vertices[vertex]) {
+          element.vertices[vertex][el] =
+            (element.vertices[vertex][el] -
+              object.json.transform.translate[el]) /
+            object.json.transform.scale[el];
+        }
+      }
+    } else {
+      [min_index, max_index] = getExtreme(
+        element.geometry[geometry].boundaries,
+        min_index,
+        max_index
+      );
+
+      // Extract only the relevant vertices for the CityObject
+      element.vertices = object.json.vertices.slice().splice(
+        // Slice() makes a deep copy
+        min_index,
+        max_index - min_index + 1
+      );
+
+      // Populate geometries with the real vertices instead of indexes
+      element.geometry[geometry].boundaries = switchGeometry(
+        element.geometry[geometry].boundaries,
+        min_index
+      );
+    }
+  }
 
   for (ver in element.vertices) {
     if (element.vertices[ver][0] > max_x) max_x = element.vertices[ver][0];
@@ -539,9 +581,9 @@ async function saveCityObject(object, element) {
           proj4("currentProj", "WGS84", [min_x, max_y]),
           proj4("currentProj", "WGS84", [max_x, max_y]),
           proj4("currentProj", "WGS84", [max_x, min_y]),
-          proj4("currentProj", "WGS84", [min_x, min_y])
-        ]
-      ]
+          proj4("currentProj", "WGS84", [min_x, min_y]),
+        ],
+      ],
     };
 
     element.spatialIndex = true;
@@ -554,23 +596,15 @@ async function saveCityObject(object, element) {
           [min_x, max_y],
           [max_x, max_y],
           [max_x, min_y],
-          [min_x, min_y]
-        ]
-      ]
+          [min_x, min_y],
+        ],
+      ],
     };
 
     element.spatialIndex = false;
   }
 
   element.location = location;
-
-  // Populate geometries with the real vertices instead of indexes
-  for (geom_id in element.geometry) {
-    element.geometry[geom_id].boundaries = switchGeometry(
-      element.geometry[geom_id].boundaries,
-      min_index
-    );
-  }
 
   try {
     switch (element.type) {
@@ -600,11 +634,13 @@ async function saveCityObject(object, element) {
         );
         break;
       case "CityObjectGroup":
-        element["name"] = object.jsonName + "_" + key;
+        return { object: undefined, bbox: undefined };
+        /*element["name"] = object.jsonName + "_" + key;
         var element_id = CityObjectGroup.insertCityObjectGroup(
           element,
           object.jsonName
         );
+        */
         break;
       case "CityFurniture":
         element["name"] = object.jsonName + "_" + key;
@@ -643,15 +679,11 @@ async function saveCityObject(object, element) {
         );
         break;
       case "SolitaryVegetationObject":
-        return { object: undefined, bbox: undefined };
-        /*
         element["name"] = object.jsonName + "_" + key;
         var element_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(
           element,
           object.jsonName
         );
-        */
-
         break;
       case "TINRelief":
         element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document

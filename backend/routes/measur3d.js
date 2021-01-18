@@ -174,6 +174,7 @@ router.get("/getCityModelsList", midWareCaching, (req, res) => {
  *           description: Not found - There is no CityModel in the database.
  */
 router.get("/getNamedCityModel", midWareCaching, async (req, res) => {
+
   var cityModel = await mongoose
     .model("CityModel")
     .findOne({ name: req.query.name }, async (err, data) => {

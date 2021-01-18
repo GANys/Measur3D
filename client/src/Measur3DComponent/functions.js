@@ -92,7 +92,6 @@ export async function loadCityObjects(threescene, cm_name) {
 
         var childrenMeshes = [];
 
-        //try {
         //parse cityObj that it can be displayed in three js
         var returnChildren = await parseObject(
           json.CityObjects[cityObj],
@@ -183,7 +182,7 @@ function to_2d(p, n) {
   return re;
 }
 
-//convert json file to viwer-object
+//convert json file to viewer-object
 async function parseObject(object, transform, cityObj, geoms) {
   // CityObject, CityObject.name, threeScene.Geoms
   var boundaries;
@@ -276,8 +275,7 @@ async function parseObject(object, transform, cityObj, geoms) {
   return object.children;
 }
 
-function decomposeFaces(geom, boundary, indices, vertices, transform)
-    {
+function decomposeFaces(geom, boundary, indices, vertices, transform) {
       var new_boundary = []
       var j
       for (j = 0; j < boundary.length; j++) {

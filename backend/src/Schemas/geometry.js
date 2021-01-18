@@ -92,7 +92,7 @@ let GeometrySchema = new mongoose.Schema({
   boundaries: {},
   semantics: {},
   material: {},
-  texture: {}
+  texture: {},
 });
 
 let GeometryInstanceSchema = new mongoose.Schema({
@@ -100,23 +100,23 @@ let GeometryInstanceSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    default: "GeometryInstance"
+    default: "GeometryInstance",
   },
   CityModel: String,
   template: {
-    type: Number
+    type: Number,
   },
   boundaries: {
     type: [[Array]],
-    required: true
+    required: true,
   },
   transformationMatrix: {
     type: [Number],
     required: true,
-    validate: function() {
+    validate: function () {
       return this["transformationMatrix"].length % 16 == 0;
-    }
-  }
+    },
+  },
 });
 
 GeometryInstance = mongoose.model("GeometryInstance", GeometryInstanceSchema);
@@ -128,23 +128,23 @@ let SolidGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       enum: "Solid",
-      required: true
+      required: true,
     },
     boundaries: { type: [[[[Number]]]], required: true },
     semantics: {
       surfaces: { type: [], default: undefined },
-      values: [[Number]]
+      values: [[Number]],
     },
     material: {
       visual: {
-        values: { type: [[Number]], default: undefined }
-      }
+        values: { type: [[Number]], default: undefined },
+      },
     },
     texture: {
       visual: {
-        values: { type: [[[[Number]]]], default: undefined }
-      }
-    }
+        values: { type: [[[[Number]]]], default: undefined },
+      },
+    },
   })
 );
 
@@ -154,23 +154,23 @@ let MultiSolidGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       enum: ["MultiSolid", "CompositeSolid"],
-      required: true
+      required: true,
     },
     boundaries: { type: [[[[[Number]]]]], required: true },
     semantics: {
       surfaces: { type: [], default: undefined },
-      values: [[[Number]]]
+      values: [[[Number]]],
     },
     material: {
       visual: {
-        values: { type: [[[Number]]], default: undefined }
-      }
+        values: { type: [[[Number]]], default: undefined },
+      },
     },
     texture: {
       visual: {
-        values: { type: [[[[[Number]]]]], default: undefined }
-      }
-    }
+        values: { type: [[[[[Number]]]]], default: undefined },
+      },
+    },
   })
 );
 
@@ -180,20 +180,20 @@ let MultiSurfaceGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       enum: ["MultiSurface", "CompositeSurface"],
-      required: true
+      required: true,
     },
     boundaries: { type: [[[Number]]], required: true },
     semantics: { surfaces: { type: [], default: undefined }, values: [Number] },
     material: {
       visual: {
-        values: { type: [Number], default: undefined }
-      }
+        values: { type: [Number], default: undefined },
+      },
     },
     texture: {
       visual: {
-        values: { type: [[[Number]]], default: undefined }
-      }
-    }
+        values: { type: [[[Number]]], default: undefined },
+      },
+    },
   })
 );
 
@@ -203,9 +203,9 @@ let MultiLineStringGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       enum: "MultiLineString",
-      required: true
+      required: true,
     },
-    boundaries: { type: [[Number]], required: true }
+    boundaries: { type: [[Number]], required: true },
   })
 );
 
@@ -215,9 +215,9 @@ let MultiPointGeometry = mongoose.model("Geometry").discriminator(
     type: {
       type: String,
       enum: "MultiLineString",
-      required: true
+      required: true,
     },
-    boundaries: { type: [Number], required: true }
+    boundaries: { type: [Number], required: true },
   })
 );
 
@@ -256,7 +256,93 @@ module.exports = {
       console.error(err.message);
     }
   },
+  getGeometryInstance: async (
+    geometry,
+    geometryTemplate,
+    global_vertices,
+    transform,
+    vertices
+  ) => {
+
+    var new_vertices = []
+    var response
+
+    response = await switchGeometries(
+      geometryTemplate.boundaries,
+      vertices,
+      []
+    );
+
+    geometryTemplate.boundaries = response[0]
+    new_vertices = response[1]
+
+    var m = geometry.transformationMatrix;
+
+    for (var vertex in new_vertices) {
+      var n = new_vertices[vertex].slice();
+      n.push(1);
+
+      for (var i in n) {
+        new_vertices[vertex][i] =
+          m[i * 4] * n[0] +
+          m[i * 4 + 1] * n[1] +
+          m[i * 4 + 2] * n[2] +
+          m[i * 4 + 3] * n[3];
+      }
+
+      for (var i in n) {
+        new_vertices[vertex][i] = new_vertices[vertex][i]/new_vertices[vertex][3]
+      }
+
+      new_vertices[vertex].splice(-1,1)
+    }
+
+    var refPoint = global_vertices[geometry.boundaries].slice();
+
+    for (var i in refPoint) {
+      refPoint[i] = refPoint[i] * transform.scale[i] + transform.translate[i];
+    }
+
+    for (vertex in new_vertices) {
+      new_vertices[vertex][0] += refPoint[0];
+      new_vertices[vertex][1] += refPoint[1];
+      new_vertices[vertex][2] += refPoint[2];
+    }
+
+    return [geometryTemplate, new_vertices];
+  },
 
   Model: Geometry,
-  Schema: GeometrySchema
+  Schema: GeometrySchema,
 };
+
+async function switchGeometries(array, vertices, new_vertices) {
+  for (var el in array) {
+    if (array[el].constructor === Array) {
+      var response = await switchGeometries(
+        array[el],
+        vertices,
+        new_vertices
+      );
+      array[el] = response[0]
+      new_vertices = response[1]
+    } else {
+      var index = -1;
+      for (var i in new_vertices) {
+        if (String(new_vertices[i]) == String(vertices[array[el]])) {
+          // Cast to String to avoid errors
+          array[el] = i;
+          index = i;
+        }
+      }
+
+      if (index == -1) {
+        var copyArray = vertices[array[el]].slice();
+        array[el] = new_vertices.length;
+        new_vertices.push(copyArray);
+      }
+    }
+  }
+
+  return [array, new_vertices];
+}
