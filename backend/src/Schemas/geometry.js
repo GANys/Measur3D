@@ -214,7 +214,7 @@ let MultiPointGeometry = mongoose.model("Geometry").discriminator(
   new mongoose.Schema({
     type: {
       type: String,
-      enum: "MultiLineString",
+      enum: "MultiPoint",
       required: true,
     },
     boundaries: { type: [Number], required: true },

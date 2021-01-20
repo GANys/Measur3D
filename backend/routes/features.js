@@ -9,7 +9,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const yaml = require("js-yaml");
 
 //-------------------------------------------------------------------------------------
-// Web caching Middleware - clear after 24h
+// Web caching Middleware - clear after 15 minutes
 
 var cache = {};
 
@@ -26,14 +26,14 @@ setInterval(function () {
   var time = Date.now();
 
   cacheMetadata = cacheMetadata.filter(function (item) {
-    if (time < item.time + 1000 * 60 * 60 * 24) {
+    if (time < item.time + 1000 * 60 * 15) {
       return true;
     } else {
       delete cache[item.value];
       return false;
     }
   });
-}, 1000 * 60 * 60 * 24);
+}, 1000 * 60 * 15);
 
 var midWareCaching = (req, res, next) => {
   const key = req.url;

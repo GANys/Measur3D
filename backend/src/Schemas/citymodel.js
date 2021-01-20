@@ -560,7 +560,11 @@ async function saveCityObject(object, element) {
 
   element.transform = object.json.transform;
 
-  var epsg_code = object.json.metadata.referenceSystem;
+  try {
+    var epsg_code = object.json.metadata.referenceSystem;
+  } catch (err) {
+    console.warn("No reference have been provided. SpatialIndex wont be used for object : " + object.jsonName + "_" + key);
+  }
 
   var reg = /\d/g; // Only numbers
 

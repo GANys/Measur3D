@@ -33,7 +33,7 @@ var ALLCOLOURS = {
   Tunnel: 0x999999,
   TunnelPart: 0x999999,
   TunnelInstallation: 0x999999,
-  WaterBody: 0x4da6ff
+  WaterBody: 0x4da6ff,
 };
 
 //convert CityObjects to mesh and add them to the viewer
@@ -41,10 +41,10 @@ export async function loadCityObjects(threescene, cm_name) {
   await axios
     .get("http://localhost:3001/measur3d/getNamedCityModel", {
       params: {
-        name: cm_name
-      }
+        name: cm_name,
+      },
     })
-    .then(async responseCity => {
+    .then(async (responseCity) => {
       var json = responseCity.data;
 
       var ext = json.metadata.geographicalExtent;
@@ -111,30 +111,46 @@ export async function loadCityObjects(threescene, cm_name) {
           continue;
         }*/
 
-        //set color of object
         var coType = json.CityObjects[cityObj].type;
-        var material = new THREE.MeshStandardMaterial();
-        material.color.setHex(ALLCOLOURS[coType]);
 
-        //create mesh
-        var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
+        //set color of object
+        if (json.CityObjects[cityObj].geometry[0].type !== "MultiPoint") {
+          var material = new THREE.MeshStandardMaterial();
+          material.color.setHex(ALLCOLOURS[coType]);
 
-        // Added by Measur3D
-        coMesh.name = cityObj;
-        coMesh.CityObjectClass = json.CityObjects[cityObj].type;
-        coMesh.jsonName = json.name;
-        coMesh.childrenMeshes = childrenMeshes;
+          //create mesh
+          var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
 
-        coMesh.castShadow = true;
-        coMesh.receiveShadow = true;
-        threescene.scene.add(coMesh);
-        threescene.meshes.push(coMesh);
+          // Added by Measur3D
+          coMesh.name = cityObj;
+          coMesh.CityObjectClass = json.CityObjects[cityObj].type;
+          coMesh.jsonName = json.name;
+          coMesh.childrenMeshes = childrenMeshes;
+
+          coMesh.castShadow = true;
+          coMesh.receiveShadow = true;
+          threescene.scene.add(coMesh);
+          threescene.meshes.push(coMesh);
+        } else {
+          var dotGeometry = threescene.geoms[cityObj];
+
+          // Added by Measur3D
+          dotGeometry.name = cityObj;
+          dotGeometry.CityObjectClass = json.CityObjects[cityObj].type;
+          dotGeometry.jsonName = json.name;
+          dotGeometry.childrenMeshes = childrenMeshes;
+
+          dotGeometry.castShadow = true;
+          dotGeometry.receiveShadow = true;
+          threescene.scene.add(dotGeometry);
+          threescene.meshes.push(dotGeometry);
+        }
       }
     })
     .then(() => {
       threescene.setState({
         boolJSONload: false, //enable clicking functions
-        cityModel: true
+        cityModel: true,
       });
 
       threescene.renderer.render(threescene.scene, threescene.camera);
@@ -195,6 +211,9 @@ async function parseObject(object, transform, cityObj, geoms) {
   //each geometrytype must be handled different
   var geomType = object.geometry[0].type;
 
+  var object_vertices = object.vertices;
+  var face_vertices = [];
+
   // eslint-disable-next-line
   if (geomType == "Solid") {
     // eslint-disable-next-line
@@ -206,13 +225,51 @@ async function parseObject(object, transform, cityObj, geoms) {
     // eslint-disable-next-line
   } else if (geomType == "MultiSolid" || geomType == "CompositeSolid") {
     boundaries = object.geometry[0].boundaries;
+    // eslint-disable-next-line
+  } else if (geomType == "MultiPoint") {
+    //return object.children
+    boundaries = object.geometry[0].boundaries;
+
+    var dotGeometry = new THREE.BufferGeometry();
+
+    const vertices = [];
+
+    for (var vertex in boundaries) {
+      //positions[3 * vertex] = object_vertices[boundaries[vertex]][0]
+      //positions[3 * vertex + 1] = object_vertices[boundaries[vertex]][1]
+      //positions[3 * vertex + 2] = object_vertices[boundaries[vertex]][2]
+      vertices.push(
+        object_vertices[boundaries[vertex]][0],
+        object_vertices[boundaries[vertex]][1],
+        object_vertices[boundaries[vertex]][2]
+      );
+    }
+
+    //ALLCOLOURS[object.type]
+
+    dotGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(vertices, 3)
+    );
+
+    //dotGeometry.computeBoundingBox();
+    dotGeometry.computeBoundingSphere();
+
+    var dotMaterial = new THREE.PointsMaterial({
+      size: 2,
+      sizeAttenuation: false,
+      color: ALLCOLOURS[object.type],
+    });
+    var dots = new THREE.Points(dotGeometry, dotMaterial);
+
+    geoms[object.name] = dots;
+
+    return object.children;
   }
 
-  var object_vertices = object.vertices;
-  var face_vertices = []
-
   for (var i = 0; i < boundaries.length; i++) {
-    var boundary = [], holes = [];
+    var boundary = [],
+      holes = [];
     for (var j = 0; j < boundaries[i].length; j++) {
       if (boundary.length > 0) {
         holes.push(boundary.length);
@@ -230,13 +287,14 @@ async function parseObject(object, transform, cityObj, geoms) {
       geom.faces.push(new THREE.Face3(boundary[0], boundary[1], boundary[2]));
     } else if (boundary.length > 3) {
       //create list of points
-      var pList = [], k;
+      var pList = [],
+        k;
 
       for (k = 0; k < boundary.length; k++) {
         pList.push({
           x: object_vertices[face_vertices[boundary[k]]][0],
           y: object_vertices[face_vertices[boundary[k]]][1],
-          z: object_vertices[face_vertices[boundary[k]]][2]
+          z: object_vertices[face_vertices[boundary[k]]][2],
         });
       }
       //get normal of these points
@@ -276,40 +334,39 @@ async function parseObject(object, transform, cityObj, geoms) {
 }
 
 function decomposeFaces(geom, boundary, indices, vertices, transform) {
-      var new_boundary = []
-      var j
-      for (j = 0; j < boundary.length; j++) {
-        //the original index from the json file
-        var index = boundary[j];
+  var new_boundary = [];
+  var j;
+  for (j = 0; j < boundary.length; j++) {
+    //the original index from the json file
+    var index = boundary[j];
 
-        //if this index is already there
-        if (indices.includes(index)) {
-          var vertPos = indices.indexOf(index)
-          new_boundary.push(vertPos)
-        }
-        else {
-          // Add vertex to geometry
-          if (transform !== undefined) {
-            var point = new THREE.Vector3(
-            vertices[index][0] * transform.scale[0] + transform.translate[0],
-            vertices[index][1] * transform.scale[1] + transform.translate[1],
-            vertices[index][2] * transform.scale[2] + transform.translate[2]
-            );
-          } else {
-            point = new THREE.Vector3(
-            vertices[index][0],
-            vertices[index][1],
-            vertices[index][2]
-            );
-          }
-          geom.vertices.push(point)
-
-          new_boundary.push(indices.length)
-          indices.push(index)
-        }
+    //if this index is already there
+    if (indices.includes(index)) {
+      var vertPos = indices.indexOf(index);
+      new_boundary.push(vertPos);
+    } else {
+      // Add vertex to geometry
+      if (transform !== undefined) {
+        var point = new THREE.Vector3(
+          vertices[index][0] * transform.scale[0] + transform.translate[0],
+          vertices[index][1] * transform.scale[1] + transform.translate[1],
+          vertices[index][2] * transform.scale[2] + transform.translate[2]
+        );
+      } else {
+        point = new THREE.Vector3(
+          vertices[index][0],
+          vertices[index][1],
+          vertices[index][2]
+        );
       }
-      return new_boundary
+      geom.vertices.push(point);
+
+      new_boundary.push(indices.length);
+      indices.push(index);
     }
+  }
+  return new_boundary;
+}
 
 //action if mouseclick (for getting attributes ofobjects)
 export async function intersectMeshes(event, threescene) {
@@ -333,16 +390,21 @@ export async function intersectMeshes(event, threescene) {
   //if clicked on nothing return
   // eslint-disable-next-line
   if (intersects.length == 0) {
-    if (threescene.HIGHLIGHTED)
-      threescene.HIGHLIGHTED.material.emissive.setHex(
-        threescene.HIGHLIGHTED.currentHex
-      );
+    if (threescene.HIGHLIGHTED !== null) {
+      if (threescene.HIGHLIGHTED.material.emissive !== undefined) {
+        threescene.HIGHLIGHTED.material.emissive.setHex(
+          threescene.HIGHLIGHTED.currentHex
+        );
+      } else {
+        threescene.HIGHLIGHTED.material.color.setHex(
+          threescene.HIGHLIGHTED.currentHex
+        );
+      }
+    }
 
-    var action_button = document.querySelectorAll(
-      "div > div > span > button"
-    );
+    var action_button = document.querySelectorAll("div > div > span > button");
 
-    action_button.forEach(function(button) {
+    action_button.forEach(function (button) {
       button.style.visibility = "hidden";
     });
 
@@ -356,28 +418,48 @@ export async function intersectMeshes(event, threescene) {
   if (intersects.length > 0) {
     // eslint-disable-next-line
     if (threescene.HIGHLIGHTED != intersects[0].object) {
-      if (threescene.HIGHLIGHTED)
+      if (threescene.HIGHLIGHTED !== null) {
+        if (threescene.HIGHLIGHTED.material.emissive !== undefined) {
+          threescene.HIGHLIGHTED.material.emissive.setHex(
+            threescene.HIGHLIGHTED.currentHex
+          );
+        } else {
+          threescene.HIGHLIGHTED.material.color.setHex(
+            threescene.HIGHLIGHTED.currentHex
+          );
+        }
+      }
+
+      threescene.HIGHLIGHTED = intersects[0].object;
+
+      if (threescene.HIGHLIGHTED.material.emissive !== undefined) {
+        threescene.HIGHLIGHTED.currentHex = threescene.HIGHLIGHTED.material.emissive.getHex();
+        threescene.HIGHLIGHTED.material.emissive.setHex(0xffffff);
+        threescene.HIGHLIGHTED.material.emissiveIntensity = 0.2;
+      } else {
+        threescene.HIGHLIGHTED.currentHex = threescene.HIGHLIGHTED.material.color.getHex();
+        threescene.HIGHLIGHTED.material.color.setHex(0xffffff);
+      }
+    }
+  } else {
+    if (threescene.HIGHLIGHTED !== null) {
+      if (threescene.HIGHLIGHTED.material.emissive !== undefined) {
         threescene.HIGHLIGHTED.material.emissive.setHex(
           threescene.HIGHLIGHTED.currentHex
         );
-
-      threescene.HIGHLIGHTED = intersects[0].object;
-      threescene.HIGHLIGHTED.currentHex = threescene.HIGHLIGHTED.material.emissive.getHex();
-      threescene.HIGHLIGHTED.material.emissive.setHex(0xffffff);
-      threescene.HIGHLIGHTED.material.emissiveIntensity = 0.25;
+      } else {
+        threescene.HIGHLIGHTED.material.color.setHex(
+          threescene.HIGHLIGHTED.currentHex
+        );
+      }
     }
-  } else {
-    if (threescene.HIGHLIGHTED)
-      threescene.HIGHLIGHTED.material.emissive.setHex(
-        threescene.HIGHLIGHTED.currentHex
-      );
 
     threescene.HIGHLIGHTED = null;
   }
 
   EventEmitter.dispatch("attObjectTitle", {
     title: intersects[0].object.name,
-    type: intersects[0].object.CityObjectClass
+    type: intersects[0].object.CityObjectClass,
   });
 
   var cityObjectType = intersects[0].object.CityObjectClass;
@@ -404,10 +486,10 @@ export async function intersectMeshes(event, threescene) {
     .get("http://localhost:3001/measur3d/getObjectAttributes", {
       params: {
         name: intersects[0].object.name,
-        CityObjectType: cityObjectType
-      }
+        CityObjectType: cityObjectType,
+      },
     })
-    .then(response => {
+    .then((response) => {
       EventEmitter.dispatch("attObject", response.data.attributes);
     });
 
