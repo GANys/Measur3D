@@ -27,7 +27,7 @@ var ALLCOLOURS = {
   PlantCover: 0x39ac39,
   Railway: 0x222222,
   Road: 0x999999,
-  SolitaryVegetationObject: 0x39ac39,
+  SolitaryVegetationObject: 0x197319,
   TINRelief: 0x3fd43f,
   TransportSquare: 0x999999,
   Tunnel: 0x999999,
@@ -214,19 +214,13 @@ async function parseObject(object, transform, cityObj, geoms) {
   var object_vertices = object.vertices;
   var face_vertices = [];
 
-  // eslint-disable-next-line
-  if (geomType == "Solid") {
-    // eslint-disable-next-line
+  if (geomType === "Solid") {
     boundaries = object.geometry[0].boundaries[0];
-    // eslint-disable-next-line
-  } else if (geomType == "MultiSurface" || geomType == "CompositeSurface") {
-    // eslint-disable-next-line
+  } else if (geomType === "MultiSurface" || geomType === "CompositeSurface") {
     boundaries = object.geometry[0].boundaries;
-    // eslint-disable-next-line
-  } else if (geomType == "MultiSolid" || geomType == "CompositeSolid") {
+  } else if (geomType === "MultiSolid" || geomType === "CompositeSolid") {
     boundaries = object.geometry[0].boundaries;
-    // eslint-disable-next-line
-  } else if (geomType == "MultiPoint") {
+  } else if (geomType === "MultiPoint") {
     //return object.children
     boundaries = object.geometry[0].boundaries;
 
@@ -235,28 +229,24 @@ async function parseObject(object, transform, cityObj, geoms) {
     const vertices = [];
 
     for (var vertex in boundaries) {
-      //positions[3 * vertex] = object_vertices[boundaries[vertex]][0]
-      //positions[3 * vertex + 1] = object_vertices[boundaries[vertex]][1]
-      //positions[3 * vertex + 2] = object_vertices[boundaries[vertex]][2]
-      vertices.push(
-        object_vertices[boundaries[vertex]][0],
-        object_vertices[boundaries[vertex]][1],
-        object_vertices[boundaries[vertex]][2]
-      );
+      if (object_vertices[boundaries[vertex]] !== undefined) {
+        vertices.push(
+          object_vertices[boundaries[vertex]][0],
+          object_vertices[boundaries[vertex]][1],
+          object_vertices[boundaries[vertex]][2]
+        );
+      }
     }
-
-    //ALLCOLOURS[object.type]
 
     dotGeometry.setAttribute(
       "position",
       new THREE.Float32BufferAttribute(vertices, 3)
     );
 
-    //dotGeometry.computeBoundingBox();
     dotGeometry.computeBoundingSphere();
 
     var dotMaterial = new THREE.PointsMaterial({
-      size: 2,
+      size: 4,
       sizeAttenuation: false,
       color: ALLCOLOURS[object.type],
     });
