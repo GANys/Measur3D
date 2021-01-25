@@ -18,7 +18,7 @@ var cacheMetadata = [];
 function push(key) {
   cacheMetadata.push({
     value: key,
-    time: Date.now()
+    time: Date.now(),
   });
 }
 
@@ -38,20 +38,22 @@ setInterval(function () {
 var midWareCaching = (req, res, next) => {
   const key = req.url;
   if (cache[key]) {
-
     for (var i = 0; i < cacheMetadata.length; i++) {
       if (cacheMetadata[i].value === key) {
         cacheMetadata[i].time = Date.now();
       }
     }
 
-    if (cache[key][0] == "{") { // JSON
+    if (cache[key][0] == "{") {
+      // JSON
       res.json(JSON.parse(cache[key]));
-    } else if (cache[key][0] == "<") { // HTML
-      res.send(cache[key])
-    } else { // Need to find a solution for YAML
+    } else if (cache[key][0] == "<") {
+      // HTML
+      res.send(cache[key]);
+    } else {
+      // Need to find a solution for YAML
       res.setHeader("Content-Type", "text/plain");
-      res.send(cache[key])
+      res.send(cache[key]);
     }
   } else {
     res.sendResponse = res.send;
@@ -73,7 +75,7 @@ const options = {
       title: "Measur3D : OGC API - Features",
       version: "0.2.2",
       description:
-        "A REST API to access CityJSON features compliing with OGC API - Features: Core (Part 1).",
+        "A RESTful API to access CityJSON features compliing with OGC API - Features: Core (Part 1).",
       license: {
         name: "Apache-2.0",
         url: "https://www.apache.org/licenses/LICENSE-2.0",
@@ -158,7 +160,7 @@ router.get("/", midWareCaching, function (req, res) {
     if ("json" == urlParts.query.f) contentType = "json";
     else if ("html" == urlParts.query.f) contentType = "html";
     else {
-      res.json(400, {
+      res.status(400).json({
         error: { code: "InvalidParameterValue", description: "Invalid format" },
       });
       return;
@@ -212,7 +214,7 @@ router.get("/conformance", midWareCaching, function (req, res) {
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
   );
 
-  res.json(200, conformance);
+  res.json(conformance);
 });
 
 /**
@@ -267,7 +269,7 @@ router.get("/api", midWareCaching, function (req, res) {
     res.setHeader("Content-Type", "application/json");
     return res.status(201).send(specs);
   } else
-    res.json(400, {
+    res.status(400).json({
       error: { code: "InvalidParameterValue", description: "Invalid format" },
     });
 });
@@ -350,7 +352,7 @@ router.get("/collections", midWareCaching, async function (req, res) {
 
   var collections = await mongoose
     .model("CityModel")
-    .find({}, "name metadata", async (err, data) => {
+    .find({}, "name metadata version extensions", async (err, data) => {
       if (err) {
         return res
           .status(404)
@@ -366,7 +368,7 @@ router.get("/collections", midWareCaching, async function (req, res) {
   } else if ("html" == urlParts.query.f)
     res.send(await negoc.collections("html", collections));
   else
-    res.json(400, {
+    res.status(400).json({
       error: { code: "InvalidParameterValue", description: "Invalid format" },
     });
 });
@@ -434,7 +436,7 @@ router.get("/collections/:collectionId", midWareCaching, async function (
     .model("CityModel")
     .findOne(
       { name: req.params.collectionId },
-      "name metadata",
+      "name metadata version extensions",
       async (err, data) => {
         if (err) {
           return res.status(404).send({
@@ -458,7 +460,7 @@ router.get("/collections/:collectionId", midWareCaching, async function (
   else if ("html" == urlParts.query.f)
     res.send(await negoc.collection("html", collection));
   else
-    res.json(400, {
+    res.status(400).json({
       error: { code: "InvalidParameterValue", description: "Invalid format" },
     });
 });
@@ -884,7 +886,26 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
     abstractCityObjects[object].geometry = [geometries[max_id]];
   }
 
-  var self = "", alternate = "" // Care of encoding
+  for (var object in abstractCityObjects) {
+    var vertices = abstractCityObjects[object].vertices;
+    var transform = abstractCityObjects[object].transform;
+
+    delete abstractCityObjects[object].transform;
+
+    for (var vertex in vertices) {
+      (vertices[vertex][0] =
+        vertices[vertex][0] * transform.scale[0] + transform.translate[0]),
+        (vertices[vertex][1] =
+          vertices[vertex][1] * transform.scale[1] + transform.translate[1]),
+        (vertices[vertex][2] =
+          vertices[vertex][2] * transform.scale[2] + transform.translate[2]);
+    }
+  }
+
+  console.log(abstractCityObjects[0].transform);
+
+  var self = "",
+    alternate = ""; // Care of encoding
 
   if (urlParts.search != undefined) {
     self = urlParts.search.replace("?", "");
@@ -929,7 +950,7 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
       )
     );
   } else {
-    res.json(400, {
+    res.status(400).json({
       error: { code: "InvalidParameterValue", description: "Invalid format" },
     });
   }
@@ -1012,6 +1033,31 @@ router.get(
       });
     }
 
+    var authorised_type = [
+      "Building",
+      "Bridge",
+      "CityObjectGroup",
+      "CityFurniture",
+      "GenericCityObject",
+      "LandUse",
+      "PlantCover",
+      "Railway",
+      "Road",
+      "SolitaryVegetationObject",
+      "TINRelief",
+      "TransportSquare",
+      "Tunnel",
+      "WaterBody",
+    ];
+
+    if (!authorised_type.includes(abstractCityObject.type)) {
+      res.status(400).json({
+        error:
+          "This object is not a 1st-level city objects and thus is not queriable.",
+      });
+      return;
+    }
+
     var geometries = [];
 
     for (var geom in abstractCityObject.geometry) {
@@ -1043,6 +1089,20 @@ router.get(
 
     abstractCityObject.geometry = [geometries[max_id]];
 
+    var vertices = abstractCityObject.vertices;
+    var transform = abstractCityObject.transform;
+
+    delete abstractCityObject.transform;
+
+    for (var vertex in vertices) {
+      (vertices[vertex][0] =
+        vertices[vertex][0] * transform.scale[0] + transform.translate[0]),
+        (vertices[vertex][1] =
+          vertices[vertex][1] * transform.scale[1] + transform.translate[1]),
+        (vertices[vertex][2] =
+          vertices[vertex][2] * transform.scale[2] + transform.translate[2]);
+    }
+
     if (null == urlParts.query.f)
       res.send(
         await negoc.item("html", req.params.collectionId, abstractCityObject)
@@ -1056,7 +1116,7 @@ router.get(
         await negoc.item("html", req.params.collectionId, abstractCityObject)
       );
     else
-      res.json(400, {
+      res.status(400).json({
         error: { code: "InvalidParameterValue", description: "Invalid format" },
       });
   }

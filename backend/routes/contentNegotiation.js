@@ -126,6 +126,11 @@ async function collectionsJSON(collections) {
       "CityModel object - " + collections[collection].name
     );
 
+    item.version = collections[collection].version;
+    if (collections[collection].extensions != undefined) {
+      item.extensions = collections[collection].extensions;
+    }
+
     if (collections[collection].metadata != undefined) {
       item.extent = {};
       if (collections[collection].metadata.geographicalExtent != undefined) {
@@ -215,6 +220,11 @@ async function collectionJSON(collection) {
     "CityModel object - " + collection.name
   );
 
+  json.version = collection.version;
+  if (collection.extensions != undefined) {
+    json.extensions = collection.extensions;
+  }
+
   if (collection.metadata != undefined) {
     json.extent = {};
     if (collection.metadata.geographicalExtent != undefined) {
@@ -303,12 +313,12 @@ async function collection(t, collectionId) {
 function itemsJSON(self, alternate, collectionId, geojson) {
   var json = {};
 
-  item.numberReturned = geojson.length
-  item.numberMatched = geojson.length
+  item.numberReturned = geojson.length;
+  item.numberMatched = geojson.length;
 
   var json = header(collection.name, "CityObjects from " + collectionId);
 
-  json.items = JSON.parse(JSON.stringify(geojson))
+  json.items = JSON.parse(JSON.stringify(geojson));
 
   json.links = [];
 
@@ -339,8 +349,8 @@ function itemsHTML(self, alternate, collectionId, geojson) {
   item.geojson = JSON.stringify(geojson);
   item.self = self;
   item.alternate = alternate;
-  item.numberReturned = geojson.length
-  item.numberMatched = geojson.length
+  item.numberReturned = geojson.length;
+  item.numberMatched = geojson.length;
 
   var tmpl = swig.compileFile(__dirname + "/template/items.template"),
     renderedHtml = tmpl({
@@ -415,12 +425,17 @@ async function itemJSON(collectionId, geojson) {
     "Information on the object " + geojson.name
   );
 
-  json.feature = geojson
+  json.feature = geojson;
 
   json.links = [];
   json.links.push(
     link(
-      serviceUrl + "/collections/" + collectionId + "/items/" + geojson.name + "?f=json",
+      serviceUrl +
+        "/collections/" +
+        collectionId +
+        "/items/" +
+        geojson.name +
+        "?f=json",
       "self",
       "application/geo+json",
       "this document"
@@ -428,7 +443,12 @@ async function itemJSON(collectionId, geojson) {
   );
   json.links.push(
     link(
-      serviceUrl + "/collections/" + collectionId + "/items/" + geojson.name + "?f=html",
+      serviceUrl +
+        "/collections/" +
+        collectionId +
+        "/items/" +
+        geojson.name +
+        "?f=html",
       "alternate",
       "text/html",
       "this document as HTML"
@@ -455,10 +475,9 @@ async function itemJSON(collectionId, geojson) {
 }
 
 function itemHTML(collectionId, geojson) {
-
   var item = {};
   item.url = serviceUrl;
-  item.collectionId = collectionId
+  item.collectionId = collectionId;
   item.geojson = JSON.stringify(geojson);
   item.title = geojson.name;
 

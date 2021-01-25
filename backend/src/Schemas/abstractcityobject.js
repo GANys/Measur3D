@@ -146,7 +146,7 @@ let CityObjectSchema = new mongoose.Schema({
   vertices: [[Number]]
 });
 
-//CityObjectSchema.index({ location: '2dsphere' })
+CityObjectSchema.index({ location: '2dsphere' })
 
 CityObject = mongoose.model("CityObject", CityObjectSchema);
 
