@@ -417,12 +417,12 @@ function item(t, self, alternate, collectionId, geojson) {
 
 //-------------------------------------------------------------------------------------
 
-async function itemJSON(collectionId, geojson) {
+async function itemJSON(collectionId, item_name, geojson) {
   var json = {};
 
   var json = header(
-    "Feature object " + geojson.name,
-    "Information on the object " + geojson.name
+    "Feature object " + item_name,
+    "Information on the object " + item_name
   );
 
   json.feature = geojson;
@@ -434,7 +434,7 @@ async function itemJSON(collectionId, geojson) {
         "/collections/" +
         collectionId +
         "/items/" +
-        geojson.name +
+        item_name +
         "?f=json",
       "self",
       "application/geo+json",
@@ -447,7 +447,7 @@ async function itemJSON(collectionId, geojson) {
         "/collections/" +
         collectionId +
         "/items/" +
-        geojson.name +
+        item_name +
         "?f=html",
       "alternate",
       "text/html",
@@ -474,12 +474,12 @@ async function itemJSON(collectionId, geojson) {
   return json;
 }
 
-function itemHTML(collectionId, geojson) {
+function itemHTML(collectionId, item_name, geojson) {
   var item = {};
   item.url = serviceUrl;
   item.collectionId = collectionId;
   item.geojson = JSON.stringify(geojson);
-  item.title = geojson.name;
+  item.title = item_name;
 
   var tmpl = swig.compileFile(__dirname + "/template/item.template"),
     renderedHtml = tmpl({
@@ -489,9 +489,9 @@ function itemHTML(collectionId, geojson) {
   return renderedHtml;
 }
 
-async function item(t, collectionId, geojson) {
-  if (t == "json") return await itemJSON(collectionId, geojson);
-  return await itemHTML(collectionId, geojson);
+async function item(t, collectionId, item_name, geojson) {
+  if (t == "json") return await itemJSON(collectionId, item_name, geojson);
+  return await itemHTML(collectionId, item_name, geojson);
 }
 
 //-------------------------------------------------------------------------------------

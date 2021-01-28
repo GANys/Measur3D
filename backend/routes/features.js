@@ -1103,17 +1103,134 @@ router.get(
           vertices[vertex][2] * transform.scale[2] + transform.translate[2]);
     }
 
+    // Creating the CityJSONFeature
+
+    var cityJSONFeature = {};
+
+    cityJSONFeature.type = "CityJSONFeature";
+    cityJSONFeature.id = abstractCityObject.name;
+
+    cityJSONFeature.CityObjects = {};
+
+    cityJSONFeature.vertices = abstractCityObject.vertices;
+    cityJSONFeature.appearance = abstractCityObject.appearance;
+
+    delete abstractCityObject.vertices;
+    delete abstractCityObject.appearance;
+
+    cityJSONFeature.CityObjects[abstractCityObject.name] = abstractCityObject;
+
+    if (abstractCityObject.children != undefined) {
+      for (var child in abstractCityObject.children) {
+        var child_object = await mongoose // Get geometries for the CityObject
+          .model("CityObject")
+          .findOne(
+            { name: abstractCityObject.children[child] },
+            async (err, res_geom) => {
+              if (err) return res.status(500).send(err);
+
+              return res_geom;
+            }
+          )
+          .lean();
+
+        var geometries = [];
+
+        for (var geom in child_object.geometry) {
+          geometries.push(
+            await mongoose // Get geometries for the CityObject
+              .model("Geometry")
+              .findOne(
+                { _id: child_object.geometry[geom] },
+                async (err, res_geom) => {
+                  if (err) return res.status(500).send(err);
+
+                  return res_geom;
+                }
+              )
+              .lean()
+          );
+        }
+
+        var max_lod = 0;
+        var max_id = -1;
+
+        for (var geom in geometries) {
+          // Extract the highest LoD only
+          if (geometries[geom].lod > Number(max_lod)) {
+            max_lod = Number(geometries[geom].lod);
+            max_id = geom;
+          }
+        }
+
+        var child_vertices = child_object.vertices;
+        transform = child_object.transform;
+
+        delete child_object.transform;
+
+        for (var vertex in child_vertices) {
+          (child_vertices[vertex][0] =
+            child_vertices[vertex][0] * transform.scale[0] +
+            transform.translate[0]),
+            (child_vertices[vertex][1] =
+              child_vertices[vertex][1] * transform.scale[1] +
+              transform.translate[1]),
+            (child_vertices[vertex][2] =
+              child_vertices[vertex][2] * transform.scale[2] +
+              transform.translate[2]);
+        }
+
+        var vertices_length = cityJSONFeature.vertices.length;
+
+        var new_boundaries = await switchGeometries(
+          geometries[max_id].boundaries,
+          vertices_length
+        );
+
+        child_object.geometry = [new_boundaries];
+
+        cityJSONFeature.vertices.concat(child_vertices);
+        // Appearrances ?! Dont have so cant try.
+
+        delete child_object.vertices;
+
+        cityJSONFeature.CityObjects[child_object.name] = child_object;
+      }
+    }
+
+    // might be unused but still guarantes it
+    delete cityJSONFeature.transform
+    delete cityJSONFeature.version
+    delete cityJSONFeature.metadata
+    delete cityJSONFeature["geometry-templates"]
+    delete cityJSONFeature.extensions
+
     if (null == urlParts.query.f)
       res.send(
-        await negoc.item("html", req.params.collectionId, abstractCityObject)
+        await negoc.item(
+          "html",
+          req.params.collectionId,
+          abstractCityObject.name,
+          cityJSONFeature
+        )
       );
     else if ("json" == urlParts.query.f)
       res.json(
-        await negoc.item("json", req.params.collectionId, abstractCityObject)
+        await negoc.item(
+          "json",
+          req.params.collectionId,
+          abstractCityObject.name,
+          cityJSONFeature
+        )
       );
     else if ("html" == urlParts.query.f)
       res.send(
-        await negoc.item("html", req.params.collectionId, abstractCityObject)
+        await negoc.item(
+          "html",
+          req.params.collectionId,
+          abstractCityObject.name,
+          cityJSONFeature
+        )
       );
     else
       res.status(400).json({
@@ -1123,3 +1240,15 @@ router.get(
 );
 
 module.exports = router;
+
+async function switchGeometries(array, index) {
+  for (var el in array) {
+    if (array[el].constructor === Array) {
+      array[el] = await switchGeometries(array[el], index);
+    } else {
+      array[el] = array[el] + index;
+    }
+  }
+
+  return array;
+}
