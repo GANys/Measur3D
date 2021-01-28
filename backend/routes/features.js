@@ -100,6 +100,63 @@ const specs = swaggerJsdoc(options);
 
 //-------------------------------------------------------------------------------------
 
+/**
+ *  @swagger
+ *   components:
+ *     tags: [Measur3D]
+ *     schemas:
+ *       CityJSONFeature:
+ *         type: object
+ *         required:
+ *           - type
+ *           - id
+ *           - CityObjects
+ *           - vertices
+ *         properties:
+ *           type:
+ *             type: string
+ *             default: "CityJSONFeature"
+ *           id:
+ *             type: string
+ *             description: Reference to the 1st-level CityObject (not its UUID).
+ *           CityObjects:
+ *             type: object
+ *             schema:
+ *               $ref: '#/components/schemas/AbstractCityObject'
+ *             description: An object in which a CityJSONFeature and all its related 2-nd level objects are stored.
+ *           vertices:
+ *             type: array
+ *             items:
+ *               type: array
+ *               items:
+ *                type: number
+ *             description: An array of coordinates of each vertex of the city object. Their position in this array (0-based) is used as an index to be referenced by the Geometric Objects. The indexing mechanism of the format Wavefront OBJ is basically reused. Vertices are stored as integer (refer to #/transform).
+ *           appearance:
+ *             type: object
+ *             properties:
+ *               default-theme-texture:
+ *                 type: string
+ *               default-theme-material:
+ *                 type: string
+ *               materials:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#components/schemas/Material'
+ *               textures:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#components/schemas/Texture'
+ *               vertices-texture:
+ *                 type: array
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: number
+ *             description: JSON objects representing the textures and/or materials of surfaces.
+ */
+
+ //-------------------------------------------------------------------------------------
+
 router.post("*", function (req, res) {
   res.status(405).send({ error: "POST requests are not supported." });
 });
@@ -902,8 +959,6 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
     }
   }
 
-  console.log(abstractCityObjects[0].transform);
-
   var self = "",
     alternate = ""; // Care of encoding
 
@@ -960,8 +1015,8 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
  * @swagger
  * /collections/:collectionId/items/:item:
  *     get:
- *       summary: Get a specific CityObject.
- *       description: This function allows getting a specific CityObject. It gathers all information related to the object in the different collections from the database.
+ *       summary: Get a specific CityJSONFeature.
+ *       description: This function allows getting a specific CityJSONFeature. It gathers all information related to the object in the different collections from the database.
  *       tags: [Features]
  *       parameters:
  *         - in: query
@@ -980,11 +1035,11 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
  *             type: string
  *       responses:
  *         200:
- *           description: OK - returns a '#/AbstractCityObject'.
+ *           description: OK - returns a CityJSONFeature.
  *           content:
  *             application/json:
  *               schema:
- *                 $ref: '#/components/schemas/AbstractCityObject'
+ *                 $ref: '#/components/schemas/CityJSONFeature'
  *         404:
  *           description: This item does not exist in this collection.
  *           content:
