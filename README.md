@@ -40,7 +40,7 @@ By default, the application is deployed on ```localhost:3000``` .
 
 ## Documentation
 
-Documentation of the server API can be found in the [backend folder](https://github.com/GANys/Measur3D/tree/dev/backend/README.md).
+Documentations of the Measur3D API and the OGCAPIF can be found in the [API-DOCS file (Open API 3.0)](https://github.com/GANys/Measur3D/blob/master/api-docs.yaml).
 
 ## Built With
 
@@ -50,6 +50,21 @@ Documentation of the server API can be found in the [backend folder](https://git
 * [Node.js](https://nodejs.org/en/) - An open-source, cross-platform, JavaScript runtime environment
 * [Three.js](https://threejs.org/) - A cross-browser JavaScript library to display 3D objects in web browser
 * [Mongoose](https://mongoosejs.com/) - An elegant mongodb object modeling for node.js
+
+## News in v0.3.0
+
+The v0.3.0 of Measur3D came with several improvements :
+
+* Delete Object/Model from database and client
+* Visualisation: improved UI, highlight of selected object and support of holes in geometries
+* OGC API - Features compliant-ish (Thank to Hugo Ledoux for its insight and the CityJSONFeature object - [cityjson_ogcapi](https://github.com/hugoledoux/cityjson_ogcapi))
+* GeometryInstance and GeometryTemplates support
+* Security layers: rateLimiter, cache, DDOS, ...
+* Swagger documentation (OpenAPI 3.0)
+
+## News in v0.2.0
+
+Public release
 
 ## Acknowledgments
 

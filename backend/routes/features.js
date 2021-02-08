@@ -73,7 +73,7 @@ const options = {
     openapi: "3.0.0",
     info: {
       title: "Measur3D : OGC API - Features",
-      version: "0.2.2",
+      version: "0.3.0",
       description:
         "A RESTful API to access CityJSON features compliing with OGC API - Features: Core (Part 1).",
       license: {

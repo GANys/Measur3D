@@ -69,7 +69,7 @@ const options = {
     openapi: "3.0.0",
     info: {
       title: "Measur3D",
-      version: "0.2.2",
+      version: "0.3.0",
       description: "A light and compact CityJSON management tool",
       license: {
         name: "Apache-2.0",

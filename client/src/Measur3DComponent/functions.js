@@ -200,8 +200,10 @@ function to_2d(p, n) {
 
 //convert json file to viewer-object
 async function parseObject(object, transform, cityObj, geoms) {
-  // CityObject, CityObject.name, threeScene.Geoms
+  // CityObject JSON, transform, CityObject name, threeScene.Geoms
   var boundaries;
+
+  if (object["pointcloud-file"] !== undefined) console.log(object["pointcloud-file"])
 
   //create geometry and empty list for the vertices
   var geom = new THREE.Geometry();
