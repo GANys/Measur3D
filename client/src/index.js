@@ -1,13 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import App from "./App";
-import * as serviceWorker from "./serviceWorker";
+import AppRoute from "./PagesComponent/AppRoute";
+import * as serviceWorker from "./PagesComponent/serviceWorker";
 
 // eslint-disable-next-line
 import styles from "./index.css"
 
 ReactDOM.render(
-  <App />,
+  <AppRoute />,
   document.getElementById("root")
 );
 

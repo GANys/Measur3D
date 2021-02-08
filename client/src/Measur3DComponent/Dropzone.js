@@ -1,4 +1,5 @@
 import React from "react";
+import axios from "axios";
 import Dropzone from "react-dropzone";
 
 import GetAppRoundedIcon from '@material-ui/icons/GetAppRounded';
@@ -24,6 +25,18 @@ class BasicDropzone extends React.Component {
     ) {
       EventEmitter.dispatch("error", "An error occured while loading file !");
     } else {
+
+      var result = await axios.get("http://localhost:3001/measur3d/getCityModelsList");
+
+      // If model already exist in DB -> Stop
+      for(var models in result.data) {
+        // eslint-disable-next-line
+        if (result.data[models].name == acceptedFile[0].name.split(".")[0]) {
+          EventEmitter.dispatch("error", "This model already exist in the database.");
+          return;
+        }
+      }
+
       EventEmitter.dispatch("info", "Loading JSON file ...");
 
       let reader = new FileReader();
@@ -48,11 +61,8 @@ class BasicDropzone extends React.Component {
             return (
               <div {...getRootProps()}>
                 <input {...getInputProps()} />
-                <div>
+                IMPORT NEW FILE
                 <GetAppRoundedIcon />
-                </div>
-                {!isDragActive && "Drop CityJSON file or click to browse."}
-                {isDragActive && "Drop JSON file here."}
               </div>
             );
           }}
@@ -63,3 +73,8 @@ class BasicDropzone extends React.Component {
 }
 
 export default BasicDropzone;
+
+/*
+{!isDragActive && "IMPORT FILE"}
+{isDragActive && "DROP FILE"}
+*/

@@ -63,7 +63,7 @@ module.exports = {
     var temp_geometries = [];
 
     for (var geometry in object.geometry) {
-      var authorised_type = ["Solid", "CompositeSolid", "MultiSurface"];
+      var authorised_type = ["Solid", "CompositeSolid", "MultiSurface", "MultiPoint"];
       if (!authorised_type.includes(object.geometry[geometry].type)) {
         throw new Error(object.type + " is not a valid geometry type.");
         return;

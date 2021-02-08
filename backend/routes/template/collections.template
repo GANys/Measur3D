@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Measur3D - OGC API Features{% endblock %}</title>
+</head>
+
+<body>
+
+    <h2>Collections in this service</h2>
+    <table class="striped">
+      <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+      </thead>
+      <tbody>
+
+        {% for collection in collections %}
+        <tr itemprop="dataset" itemscope="" itemtype="https://schema.org/Dataset">
+          <td data-label="name">
+            <meta itemprop="url" content="{{ collection.url }}/collections/{{ collection.title }}">
+            <a title="About page" href="{{ collection.url }}/collections/{{ collection.title }}">
+              <span itemprop="name">{{ collection.title }}</span></a>
+          </td>
+          <td itemprop="description" data-label="description">
+            {{ collection.title }}
+          </td>
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+
+</body>
+</html>

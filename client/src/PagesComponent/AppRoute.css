@@ -1,0 +1,82 @@
+
+:root {
+  --background-color: rgba(54, 54, 54, 1);
+  --background-color-hover: rgba(62, 62, 62, 0.75);
+  --border-color: rgba(18, 18, 18, 0.75);
+  --font-color: rgba(255, 255, 255, 1);
+  --font-color-highlight: rgba(255, 255, 255, 0.75);
+  --icon-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Adjust the app to window */
+html,
+body {
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  background: var(--background-color);
+  color: var(--font-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
+}
+
+/* -------------------------
+  Grid formatting of the app
+ ------------------------- */
+
+#NavBar,
+#NavBar > header {
+  width: 100vw;
+  color: var(--font-color);
+  background-color: var(--background-color);
+}
+
+#NavBar > header > div > div > div > svg {
+  padding-left: 10px;
+}
+
+#MPA {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background-color: white;
+}
+
+#MPA > div.swagger-ui {
+  height: 100%; /* Not the best solution imo */
+  overflow-y: scroll;
+  position: absolute;
+}
+
+/* Dropzone dimension */
+#NavBar > header > div > div.dropzone {
+  padding: 6px 8px;
+  font-size: 0.875rem;
+  min-width: 64px;
+  box-sizing: border-box;
+  transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+    box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+    border 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  line-height: 1.75;
+  border-radius: 4px;
+  letter-spacing: 0.02857em;
+  text-transform: uppercase;
+}
+
+#NavBar > header > div > div.dropzone > div {
+  display: flex;
+  align-items: center;
+  outline: none
+}
+
+#NavBar > header > div > div.dropzone:hover {
+  background: var(--background-color-hover);
+  cursor: pointer;
+}
+
+#simple-menu
+  > div.MuiPaper-root.MuiMenu-paper.MuiPopover-paper.MuiPaper-elevation8.MuiPaper-rounded {
+  background-color: var(--background-color);
+  color: var(--font-color);
+}

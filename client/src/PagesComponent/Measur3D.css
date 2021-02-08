@@ -1,0 +1,206 @@
+/*
+  General variable and app style
+*/
+
+
+/* No blue line around the component on focus */
+canvas:focus {
+  outline: none !important;
+}
+
+/* General links - React Links also */
+a {
+  color: var(--font-color-highlight);
+  text-decoration: none;
+}
+
+/* -------------------------
+  Grid formatting of the app
+ ------------------------- */
+
+#root > div > div.MuiCollapse-container.MuiCollapse-entered {
+  z-index: 3 !important;
+}
+
+#root > div > div {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0;
+  margin: 0;
+}
+
+#ThreeScene {
+  height: 66vh;
+  width: 100%;
+  position: relative;
+}
+
+#ThreeScene > div {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+#bottomPane {
+  height: 34vh;
+  width: 100%;
+}
+
+#AttributesManager,
+#AttributesManager > div {
+  height: 100%;
+}
+
+.COClassIcon {
+  padding-right: 10px;
+}
+
+#logo_app {
+  height: 120px;
+  width: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#ThreeScene > a {
+  top: 58px;
+  right: 10px;
+  height: 48px;
+  position: absolute;
+}
+
+#ThreeScene > a > img {
+  height: 100%;
+  width: auto;
+}
+
+/* -------------------------
+  Elements color
+ ------------------------- */
+
+/* AttributesManager colors */
+#AttributesManager > div {
+  background: var(--background-color);
+  color: var(--font-color);
+  box-shadow: none;
+  border-radius: 0;
+  border: none;
+}
+
+#bottomPane > div > div.Pane.vertical.Pane2 {
+  background: var(--background-color);
+}
+
+.MuiButton-root {
+  font-weight: normal !important;
+}
+
+.MuiButtonBase-root {
+  color: var(--font-color) !important;
+}
+
+/* Highlight buttons on hover */
+.MuiButtonBase-root:hover {
+  background: var(--background-color-hover) !important;
+}
+
+/* Scrollbars colors*/
+*::-webkit-scrollbar-thumb {
+  background: var(--icon-color) !important;
+}
+
+/* -------------------------
+  Logo & Icon style
+ ------------------------- */
+
+/* Measur3D logo */
+.logo_app {
+  height: 50vh;
+  width: auto;
+  margin: auto;
+}
+
+/* Material-UI icons style */
+.COClassIcon,
+.CityPickerIcon,
+.MuiSvgIcon-root.sidebar-item-icon,
+span.MuiIconButton-label > svg,
+.MuiSvgIcon-root {
+  color: var(--icon-color);
+}
+
+.MuiCircularProgress-colorPrimary {
+    color: var(--icon-color) !important;
+}
+
+#ThreeScene > div.MuiCircularProgress-root {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+/* -------------------------
+  Attribute Manager style
+ ------------------------- */
+
+/* No red border on edit */
+.MuiTable-root {
+  border-collapse: 0 !important;
+}
+
+/* Hide edit buttons on AttributesManager at start - Care with this, might have undesired consequences*/
+/* div > div > span {
+  visibility: hidden;
+} */
+div > div > span > button {
+  visibility: hidden;
+}
+
+/* Input style */
+.MuiInputBase-input {
+  color: var(--font-color) !important;
+  border-bottom: 1px solid var(--icon-color) !important;
+}
+
+/* Font color of table */
+.MuiTableBody-root {
+  color: var(--icon-color) !important;
+  overflow-y: scroll
+}
+
+/* Cell style */
+.MuiTableCell-root {
+  background: var(--background-color) !important;
+  color: var(--font-color) !important;
+  border: none !important;
+}
+
+.MuiTableRow-root {
+  border: none !important
+}
+
+/* Attribute Manager List items */
+tbody.MuiTableBody-root > tr:hover {
+  background-color: var(--background-color-hover);
+}
+
+/* Attribute Manager title + CityPicker title */
+.MTableToolbar-title-84 > h6 {
+  font-size: 1rem
+}
+
+/* Scroll handle style */
+*::-webkit-scrollbar-thumb {
+  border: 0px !important;
+  border-radius: 0px !important;
+}
+
+*::-webkit-scrollbar {
+  width: 8px !important
+}
+
+/* Delete statement in table */
+td:nth-child(2) > h6 {
+  font-size: 0.8rem;
+}

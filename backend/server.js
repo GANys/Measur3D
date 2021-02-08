@@ -1,42 +1,121 @@
 const mongoose = require("mongoose");
 const express = require("express");
 const compression = require("compression");
+const url = require("url");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const logger = require("morgan");
-const Data = require("./data");
+const helmet = require("helmet");
+const path = require("path");
+const swaggerJsdoc = require("swagger-jsdoc");
+const yaml = require("js-yaml");
+var rfs = require("rotating-file-stream"); // version 2.x
 
-const rateLimiterUsingThirdParty = require("./rateLimiter");
+const {auth, rateLimiterUsingThirdParty} = require("./middleware");
 
 let Cities = require("./src/Schemas/citymodel.js");
-let Functions = require("./functions");
+let Functions = require("./util/functions");
 
 const server = "127.0.0.1:27017"; // REPLACE WITH YOUR DB SERVER
 const database = "citymodel"; // REPLACE WITH YOUR DB NAME
 
 const API_PORT = 3001;
 
-const app = express();
-app.use(cors());
+const app = express(); // Middleware order is important
+// Security Middleware - low stack - Counters many small attacks type
+app.use(helmet());
+// Authentication layer
+//app.use(auth);
+// Limit the connection - Counters DDOS
+app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
+// Allows server to fecth information from different origins but different ports/API aswell.
+app.use(cors()); // Cross-Origin Resource Sharing
+// Basic compression
 app.use(compression());
-app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 25 calls/24Hours.
-const router = express.Router();
 
 // Limit of file exchanges set to 100 Mb.
 app.use(bodyParser.json({ limit: "100mb" }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
-app.use(logger("dev"));
+
+//-------------------------------------------------------------------------------------
+// Logging Middleware
+
+// create a rotating write stream
+var logStream = rfs.createStream("file.log", {
+  interval: "3d", // rotate every 3 days
+  path: path.join(__dirname, "log"),
+});
+
+// log only 4xx and 5xx responses to console
+app.use(
+  logger("tiny", { // Can be "short" for more information
+    skip: function (req, res) {
+      return res.statusCode < 400;
+    },
+  })
+);
+
+// log all requests to access.log
+app.use(
+  logger("short", {
+    stream: logStream,
+  })
+);
+
+//-------------------------------------------------------------------------------------
+
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Measur3D",
+      version: "0.3.0",
+      description: "A light and compact CityJSON management tool",
+      license: {
+        name: "Apache-2.0",
+        url: "https://www.apache.org/licenses/LICENSE-2.0",
+      },
+      contact: {
+        name: "Gilles-Antoine Nys",
+        email: "ganys@uliege.be",
+      },
+    },
+    servers: [
+      {
+        url: "http://localhost:3001/measur3d",
+        description: "Measur3D RESTful API",
+      },
+      {
+        url: "http://localhost:3001/features",
+        description: "OGC API - Features",
+      },
+    ],
+    tags: ["Measur3D", "Features"],
+  },
+  apis: [
+    "./server.js",
+    "./routes/measur3d.js",
+    "./routes/features.js",
+    "./src/Schemas/citymodel.js",
+    "./src/Schemas/abstractcityobject.js",
+    "./src/Schemas/geometry.js",
+    "./src/Schemas/appearance.js",
+  ],
+};
+
+const specs = swaggerJsdoc(options);
 
 mongoose
   .connect(`mongodb://${server}/${database}`, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
-    useCreateIndex: true
+    useCreateIndex: true,
+    useFindAndModify: false,
   })
   .then(() => {
     console.log(`Connected to server ${server}/${database} with success.`);
   })
-  .catch(err => {
+  .catch((err) => {
     console.error(
       `TIMEOUT - Connection to server ${server}/${database} failed.`
     );
@@ -47,242 +126,43 @@ let db = mongoose.connection; // Instantiate the connection
 // checks if connection with the database is successful
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
 
-router.post("/uploadCityModel", (req, res) => {
-  Cities.insertCity(req.body).then(function() {
-    return res
-      .status(201)
-      .send({ success: "City model imported with success !" });
-  });
-});
+/**
+ * @swagger
+ * /api-docs:
+ *     get:
+ *       summary: Get the full API documentation.
+ *       description: The documentation can be queried in YAML or JSON format.
+ *       tags: [Measur3D]
+ *       parameters:
+ *         - in: query
+ *           name: f
+ *           schema:
+ *             type: string
+ *             enum: [YAML, json]
+ *             default: json
+ *       responses:
+ *         201:
+ *           description: Full documentation of the APIs Measur3D and Features.
+ */
+app.get("/api-docs", (req, res) => {
+  var urlParts = url.parse(req.url, true);
 
-router.get("/getCityModelsList", (req, res) => {
-  mongoose.model("CityModel").find({}, async (err, data) => {
-    if (err) {
-      return res
-        .status(404)
-        .send({ error: "There is no CityModels in the DB." });
-    }
-
-    var responseCities = [];
-
-    for (var i = 0; i < data.length; ++i) {
-      var filesize = Functions.lengthInUtf8Bytes(JSON.stringify(data[i])); // Only the city model document, not CityObjects neither geometries...... To be improved
-      responseCities.push({
-        name: data[i].name,
-        nbr_el: Object.keys(data[i].CityObjects).length,
-        filesize: Functions.formatBytes(filesize)
-      });
-    }
-
-    res.status(200);
-    return res.json(responseCities);
-  }).lean();
-});
-
-router.get("/getNamedCityModel", (req, res) => {
-  mongoose
-    .model("CityModel")
-    .find({ name: req.query.name }, async (err, data) => {
-      if (err) {
-        return res
-          .status(500)
-          .send({ error: "There is no CityModel with this name in the DB." });
-      }
-
-      for (var cityobject in data[0].CityObjects) {
-        var cityObjectType = data[0].CityObjects[cityobject].type;
-        var cityObjectName = cityobject;
-
-        switch (cityObjectType) {
-          case "BuildingPart":
-            cityObjectType = "Building";
-            break;
-          case "Road":
-          case "Railway":
-          case "TransportSquare":
-            cityObjectType = "Transportation";
-            break;
-          case "TunnelPart":
-            cityObjectType = "Tunnel";
-            break;
-          case "BridgePart":
-            cityObjectType = "Bridge";
-            break;
-          case "BridgeConstructionElement":
-            cityObjectType = "BridgeInstallation";
-            break;
-          default:
-        }
-
-        data[0].CityObjects[cityObjectName] = await mongoose // Get CityObjects
-          .model(cityObjectType)
-          .findById(
-            data[0].CityObjects[cityObjectName].id,
-            async (err, data_object) => {
-              if (err) return res.status(500).send(err);
-
-              return data_object;
-            }
-          ).lean();
-
-        var geometries = [];
-
-        for (var geom in data[0].CityObjects[cityObjectName].geometry) {
-          geometries.push(
-            await mongoose // Get geometries for the CityObject
-              .model("Geometry")
-              .findOne(
-                { _id: data[0].CityObjects[cityObjectName].geometry[geom] },
-                async (err, res_geom) => {
-                  if (err) return res.status(500).send(err);
-
-                  return res_geom;
-                }
-              ).lean()
-          );
-        }
-
-        var max_lod = 0;
-        var max_id = -1;
-
-        for (var geom in geometries) {
-          // Extract the highest LoD only
-          if (geometries[geom].lod > Number(max_lod)) {
-            max_lod = Number(geometries[geom].lod);
-            max_id = geom;
-          }
-        }
-
-        data[0].CityObjects[cityObjectName].geometry = [geometries[max_id]];
-      }
-
-      res.status(200);
-      return res.json(data[0]);
-    }).lean();
-});
-
-router.delete("/deleteNamedCityModel", (req, res) => {
-  mongoose.model("CityModel").deleteOne({ name: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
-  });
-
-  mongoose.model("CityObject").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
-  });
-
-  mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
-  });
-
-  mongoose
-    .model("GeometryInstance")
-    .deleteMany({ CityModel: req.body.name }, err => {
-      if (err) return res.status(500).send(err);
-    });
-
-  mongoose.model("Material").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
-  });
-
-  mongoose.model("Texture").deleteMany({ CityModel: req.body.name }, err => {
-    if (err) return res.status(500).send(err);
-  });
-
-  return res.json({ success: "City model deleted with success !" });
-});
-
-router.get("/getObject", (req, res) => {
-  if (typeof req.query.name != "undefined") {
-    mongoose
-      .model(req.query.CityObjectClass)
-      .find({ name: req.query.name }, (err, data) => {
-        if (err) return res.status(500).send(err);
-        return res.json(data);
-      }).lean();
-  } else if (typeof req.query.id != "undefined") {
-    mongoose
-      .model(req.query.CityObjectClass)
-      .findById(req.query.id, (err, data) => {
-        if (err) return res.status(500).send(err);
-        return res.json(data);
-      }).lean();
-  } else {
-    return res.status(400).send({
-      error:
-        "Params are not valid - getObject could not find Object in Collection."
-    });
-  }
-});
-
-router.get("/getObjectAttributes", (req, res) => {
-  if (typeof req.query.name != "undefined") {
-    mongoose
-      .model(req.query.CityObjectClass)
-      .findOne({ name: req.query.name }, "attributes", (err, data) => {
-        if (err) return res.status(500).send(err);
-        return res.json(data);
-      }).lean();
-  } else if (typeof req.query.id != "undefined") {
-    mongoose
-      .model(req.query.CityObjectClass)
-      .findById(req.query.id, "attributes", (err, data) => {
-        if (err) return res.status(500).send(err);
-        return res.json(data);
-      }).lean();
-  } else {
-    return res.status(400).send({
-      error:
-        "Params are not valid - getObjectAttributes could not find Object in Collection."
-    });
-  }
-});
-
-router.put("/updateObjectAttribute", async (req, res) => {
-  mongoose
-    .model(req.body.CityObjectClass)
-    .findOne({ name: req.body.jsonName }, (err, data) => {
-      if (err) return res.status(500).send(err);
-
-      //var attributes = data.attributes;
-      var attributes = Object.assign({}, data.attributes); // Copy the CityObject attributes from Schema -> Undefined value if key is empty.
-
-      for (var key in attributes) {
-        // Clear the undefined key
-        if (attributes[key] == undefined) {
-          delete attributes[key];
-        }
-      }
-
-      if (attributes == null) {
-        // If attributes empty, create it
-        attributes = {};
-      }
-
-      if (req.body.value == "") {
-        // delete
-        delete attributes[req.body.key];
-      } else if (req.body.old_key) {
-        //update
-        delete attributes[req.body.old_key];
-        attributes[req.body.key] = req.body.value;
-      } else {
-        // add
-        attributes[req.body.key] = req.body.value;
-      }
-
-      mongoose
-        .model(req.body.CityObjectClass)
-        .updateOne({ name: req.body.jsonName }, { attributes }, (err, data) => {
-          // Be carefull that object might change has it is not loaded by updateOne
-          if (err) return res.status(500).send(err);
-
-          return res.status(200).send({ success: "Object updated." });
-        });
-    }).lean();
+  if (null == urlParts.query.f) {
+    res.setHeader("Content-Type", "application/json");
+    return res.status(201).send(specs);
+  } else if ("yaml" == urlParts.query.f) {
+    const swaggerSpecYaml = yaml.dump(specs);
+    res.setHeader("Content-Type", "text/plain");
+    res.status(201).send(swaggerSpecYaml);
+  } else if ("json" == urlParts.query.f) {
+    res.setHeader("Content-Type", "application/json");
+    return res.status(201).send(specs);
+  } else res.json(400, { error: "InvalidParameterValue" });
 });
 
 // append /api for our http requests
-app.use("/measur3d", router);
+app.use("/measur3d", require("./routes/measur3d"));
+app.use("/features", require("./routes/features"));
 
 // launch our backend into a port
 app.listen(API_PORT, () => console.log(`LISTENING ON PORT ${API_PORT}`));

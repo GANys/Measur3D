@@ -1,0 +1,1395 @@
+openapi: 3.0.0
+info:
+  title: Measur3D
+  version: 0.3.0
+  description: A light and compact CityJSON management tool
+  license:
+    name: Apache-2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+  contact:
+    name: Gilles-Antoine Nys
+    email: ganys@uliege.be
+servers:
+  - url: 'http://localhost:3001/measur3d'
+    description: Measur3D RESTful API
+  - url: 'http://localhost:3001/features'
+    description: OGC API - Features
+tags:
+  - Measur3D
+  - Features
+paths:
+  /api-docs:
+    get:
+      summary: Get the full API documentation.
+      description: The documentation can be queried in YAML or JSON format.
+      tags:
+        - Measur3D
+      parameters:
+        - in: query
+          name: f
+          schema:
+            type: string
+            enum:
+              - YAML
+              - json
+            default: json
+      responses:
+        '201':
+          description: Full documentation of the APIs Measur3D and Features.
+  /uploadCityModel:
+    post:
+      summary: Uploads a CityModel.
+      description: >-
+        This function allows to upload a CityJSON file (v 1.0.x). The file will
+        be processed in order to distribute the information in the different
+        documents in the database following the CityModel, AbstractCityObject
+        and Geometry schemas (other schemas will be supported in further
+        developments).
+      tags:
+        - Measur3D
+      parameters:
+        - name: jsonName
+          description: >-
+            Name of the CityModel - name of the file in the Measur3D
+            application.
+          in: body
+          required: true
+          type: string
+        - name: content
+          description: The content of the JSON file as a JSON object.
+          in: body
+          required: true
+          type: object
+          schema:
+            $ref: '#/components/schemas/CityModel'
+      responses:
+        '201':
+          description: Created - upload of the CityJSON file successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                    default: File uploaded
+              example:
+                success: File uploaded
+        '408':
+          description: >-
+            Request timeout - took over 10 minutes (Uploading a CityModel can be
+            very long).
+  /getCityModelsList:
+    get:
+      summary: Get list of available CityModels.
+      description: >-
+        Concurrent models can be stored in the database. This function allows
+        describing these models providing summary information.
+      tags:
+        - Measur3D
+      responses:
+        '200':
+          description: OK - returns.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    nbr_el:
+                      type: number
+                    filesize:
+                      type: string
+              example:
+                - name: model_1
+                  nbr_el: 845
+                  filesize: 1.24Mb
+                - name: model_2
+                  nbr_el: 642
+                  filesize: 835.1Kb
+        '404':
+          description: Not found - There is no CityModel in the database.
+  /getNamedCityModel:
+    get:
+      summary: Get a specific CityModel.
+      description: >-
+        This function allows getting a specific CityModel. It gathers all
+        information related to the model in the different collections from the
+        database.
+      tags:
+        - Measur3D
+      parameters:
+        - name: name
+          description: >-
+            Name of the CityModel - name of the file in the Measur3D
+            application.
+          in: body
+          required: true
+          type: string
+      responses:
+        '200':
+          description: OK - returns a '#/CityModel'.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CityModel'
+        '500':
+          description: Not found - There is no CityModel in the database.
+  /deleteNamedCityModel:
+    delete:
+      summary: Delete a specific CityModel.
+      description: >-
+        This function allows deleting a specific CityModel. It deletes all
+        information related to the model in the different collections from the
+        database.
+      tags:
+        - Measur3D
+      responses:
+        '200':
+          description: OK - returns a JSON success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                    default: City model deleted with success !
+              example:
+                success: City model deleted with success !
+        '404':
+          description: Not found - There is no document with that name.
+  /getObject:
+    get:
+      summary: Get a specific CityObject.
+      description: >-
+        This function allows getting a specific CityObject. It gathers the
+        object and its highest lod geometry.
+      tags:
+        - Measur3D
+      parameters:
+        - name: name
+          description: Name of the object.
+          in: body
+          type: string
+        - name: id
+          description: Id of the object.
+          in: body
+          type: string
+        - name: CityObjectType
+          description: Type of the object.
+          in: body
+          required: true
+          type: string
+      responses:
+        '200':
+          description: OK - returns a '#/AbstractCityObject'.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbstractCityObject'
+        '400':
+          description: Bad request - Params are not valid.
+          type: object
+          properties:
+            error:
+              type: string
+              default: Params are not valid.
+        '500':
+          description: >-
+            Internal error - getObject could not find Object in Collection.
+            Error is sent by database.
+  /deleteObject:
+    delete:
+      summary: Delete a specific CityObject.
+      description: >-
+        This function allows deleting a specific CityObject. It deletes an
+        object and all its related geometries.
+      tags:
+        - Measur3D
+      responses:
+        '200':
+          description: OK - returns a JSON success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                    default: City model deleted with success !
+              example:
+                success: Object and children deleted !
+        '500':
+          description: Something went bad - error generated by the database.
+  /getObjectAttributes:
+    get:
+      summary: Get the attributes of a specific CityObject.
+      description: >-
+        This function allows getting the attributes of a specific CityObject. It
+        gathers the object attributes in order to render in the
+        AttributesManager Component.
+      tags:
+        - Measur3D
+      parameters:
+        - name: name
+          description: Name of the object.
+          in: body
+          type: string
+        - name: id
+          description: Id of the object.
+          in: body
+          type: string
+        - name: CityObjectType
+          description: Type of the object.
+          in: body
+          required: true
+          type: string
+      responses:
+        '200':
+          description: OK - returns an array of all the '#/AbstractCityObject.attributes'.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              example: Key/Value pairs
+        '400':
+          description: Bad request - Params are not valid.
+          type: object
+          properties:
+            error:
+              type: string
+              default: Params are not valid.
+        '500':
+          description: >-
+            Internal error - getObjectAttributes could not find Object in
+            Collection. Error is sent by database.
+  /updateObjectAttribute:
+    put:
+      summary: Update/delete an attribute of a specific CityObject.
+      description: >-
+        This function allows updating or deleting a key/value pair in the
+        attributes of a specific CityObject. It corresponds to a modification of
+        a line in the AttributesManager Component. If a new key or value is
+        given, the pair is updated. If a value is not given, the old key is
+        deleted from the document. If a new key is given, the key/value pair is
+        created within the document.
+      tags:
+        - Measur3D
+      parameters:
+        - name: jsonName
+          description: Name of the object.
+          in: body
+          type: string
+        - name: CityObjectType
+          description: Type of the object.
+          in: body
+          required: true
+          type: string
+        - name: key
+          description: The new key.
+          in: body
+          required: true
+          type: string
+        - name: old_key
+          description: The old key.
+          in: body
+          type: string
+        - name: value
+          description: The value (can be empty).
+          in: body
+          required: true
+          type: string
+      responses:
+        '200':
+          description: OK - returns a success message in a JSON object.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                    default: Object updated.
+              example: Key/Value pairs
+        '400':
+          description: Bad request - Params are not valid.
+          type: object
+          properties:
+            error:
+              type: string
+              default: Params are not valid.
+        '500':
+          description: >-
+            Internal error - updateObjectAttribute could not find Object in
+            Collection. Error is sent by database.
+  /:
+    get:
+      summary: Access to the landing page.
+      description: Information can be accessed in HTML or JSON formats.
+      tags:
+        - Features
+      responses:
+        '200':
+          description: Returns the landing page of the API.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - links
+                properties:
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  links:
+                    type: array
+                    items:
+                      $ref: >-
+                        http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml
+        '400':
+          description: Returns an error due to format.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: InvalidParameterValue
+                      description:
+                        type: string
+                        example: Invalid format
+  /conformance:
+    get:
+      summary: Access to the conformance page.
+      description: >-
+        To support "generic" clients that want to access multiple OGC API
+        Features implementations - and not "just" a specific API / server, the
+        server has to declare the conformance classes it implements and conforms
+        to.
+      tags:
+        - Features
+      responses:
+        '200':
+          description: Returns the conformance array.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conformsTo
+                properties:
+                  conformsTo:
+                    type: array
+                    items:
+                      type: string
+  /api:
+    get:
+      summary: Get the full API documentation.
+      description: The documentation can be queried in YAML or JSON format.
+      tags:
+        - Features
+      parameters:
+        - in: query
+          name: f
+          schema:
+            type: string
+            enum:
+              - YAML
+              - json
+            default: json
+      responses:
+        '201':
+          description: Full documentation of the APIs Measur3D and Features.
+        '308':
+          description: Redirect to .html.
+        '400':
+          description: Returns an error due to format.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: InvalidParameterValue
+                      description:
+                        type: string
+                        example: Invalid format
+  /api.html:
+    get:
+      summary: Get the API documentation as HTML.
+      description: >-
+        NOT AVAILABLE - This function allows getting a specific CityModel. It
+        gathers all information related to the model in the different
+        collections from the database.
+      tags:
+        - Features
+  /collections:
+    get:
+      summary: Access to the collections page - About page.
+      description: Information can be accessed in HTML or JSON formats.
+      tags:
+        - Features
+      parameters:
+        - in: query
+          name: f
+          schema:
+            type: string
+            enum:
+              - HTML
+              - json
+            default: HTML
+      responses:
+        '200':
+          description: Returns an about page on collections.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - links
+                  - collections
+                properties:
+                  links:
+                    type: array
+                    items:
+                      $ref: >-
+                        http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml
+                  collections:
+                    type: array
+                    items:
+                      $ref: >-
+                        http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/collection.yaml
+        '400':
+          description: Returns an error due to format.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: InvalidParameterValue
+                      description:
+                        type: string
+                        example: Invalid format
+        '404':
+          description: There is no collections in the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: There is no collection in the database.
+  '/collections/:collectionId':
+    get:
+      summary: Get a specific collection.
+      description: >-
+        This function allows getting a specific CityModel. It gathers all
+        information related to the model in the different collections from the
+        database.
+      tags:
+        - Features
+      parameters:
+        - in: query
+          name: f
+          schema:
+            type: string
+            enum:
+              - HTML
+              - json
+            default: HTML
+        - in: path
+          name: collectionId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns a collection of features and its metadata.
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: >-
+                  http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/collection.yaml
+        '400':
+          description: Returns an error due to format.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: InvalidParameterValue
+                      description:
+                        type: string
+                        example: Invalid format
+        '404':
+          description: There is no collections in the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: There is no collection in the database.
+  '/collections/:collectionId/items':
+    get:
+      summary: Get items of a specific collection.
+      description: >-
+        This function allows getting all the items of a specific collection
+        (limited to 10 items by default).
+      tags:
+        - Features
+      parameters:
+        - in: query
+          name: f
+          schema:
+            type: string
+            enum:
+              - HTML
+              - json
+            default: HTML
+          style: form
+          explode: false
+          required: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 10
+          style: form
+          explode: false
+          required: false
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          style: form
+          explode: false
+          required: false
+        - in: query
+          name: bbox
+          schema:
+            type: array
+            minItems: 4
+            maxItems: 6
+            items:
+              type: number
+          style: form
+          explode: false
+          required: false
+        - in: query
+          name: datetime
+          schema:
+            type: string
+          style: form
+          explode: false
+          required: false
+        - in: query
+          name: any
+          description: >-
+            a feature property that has a simple value (for example, a string or
+            integer) that is expected to be useful for applications using the
+            service to filter the features of the collection based on this
+            property, a parameter with the name of the feature property.
+          schema:
+            type: string
+          style: form
+          explode: false
+          required: false
+        - in: path
+          name: collectionId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: >-
+            Returns a CityModel formalised following the OGC API Features - Part
+            1.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - links
+                properties:
+                  id:
+                    description: 'identifier of the collection used, for example, in URIs'
+                    type: string
+                  title:
+                    description: human readable title of the collection
+                    type: string
+                  description:
+                    description: a description of the features in the collection
+                    type: string
+                  links:
+                    type: array
+                    items:
+                      $ref: >-
+                        http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml
+                  extent:
+                    description: >-
+                      The extent of the features in the collection. In the Core
+                      only spatial and temporal extents are specified.
+                      Extensions may add additional members to represent other
+                      extents, for example, thermal or pressure ranges.
+                    type: object
+                    properties:
+                      spatial:
+                        description: The spatial extent of the features in the collection.
+                        type: object
+                        properties:
+                          bbox:
+                            description: >-
+                              One or more bounding boxes that describe the
+                              spatial extent of the dataset. In the Core only a
+                              single bounding box is supported. Extensions may
+                              support additional areas. If multiple areas are
+                              provided, the union of the bounding boxes
+                              describes the spatial extent.
+                            type: array
+                            minItems: 1
+                            items:
+                              description: >-
+                                Each bounding box is provided as four or six
+                                numbers, depending on whether the coordinate
+                                reference system includes a vertical axis
+                                (height or depth).
+
+                                * Lower left corner, coordinate axis 1 * Lower
+                                left corner, coordinate axis 2 * Minimum value,
+                                coordinate axis 3 (optional) * Upper right
+                                corner, coordinate axis 1 * Upper right corner,
+                                coordinate axis 2 * Maximum value, coordinate
+                                axis 3 (optional)
+
+                                The coordinate reference system of the values is
+                                WGS 84 longitude/latitude
+                                (http://www.opengis.net/def/crs/OGC/1.3/CRS84)
+                                unless a different coordinate reference system
+                                is specified in `crs`. For WGS 84
+                                longitude/latitude the values are in most cases
+                                the sequence of minimum longitude, minimum
+                                latitude, maximum longitude and maximum
+                                latitude. However, in cases where the box spans
+                                the antimeridian the first value (west-most box
+                                edge) is larger than the third value (east-most
+                                box edge). If the vertical axis is included, the
+                                third and the sixth number are the bottom and
+                                the top of the 3-dimensional bounding box. If a
+                                feature has multiple spatial geometry
+                                properties, it is the decision of the server
+                                whether only a single spatial geometry property
+                                is used to determine the extent or all relevant
+                                geometries.
+                              type: array
+                              minItems: 4
+                              maxItems: 6
+                              items:
+                                type: number
+                          crs:
+                            description: >-
+                              Coordinate reference system of the coordinates in
+                              the spatial extent (property `bbox`). The default
+                              reference system is WGS 84 longitude/latitude. In
+                              the Core this is the only supported coordinate
+                              reference system. Extensions may support
+                              additional coordinate reference systems and add
+                              additional enum values.
+                            type: string
+                            enum:
+                              - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+                            default: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+                      temporal:
+                        description: The temporal extent of the features in the collection.
+                        type: object
+                        properties:
+                          interval:
+                            description: >-
+                              One or more time intervals that describe the
+                              temporal extent of the dataset. The value `null`
+                              is supported and indicates an open time intervall.
+                              In the Core only a single time interval is
+                              supported. Extensions may support multiple
+                              intervals. If multiple intervals are provided, the
+                              union of the intervals describes the temporal
+                              extent.
+                            type: array
+                            minItems: 1
+                            items:
+                              description: >-
+                                Begin and end times of the time interval. The
+                                timestamps are in the coordinate reference
+                                system specified in `trs`. By default this is
+                                the Gregorian calendar.
+                              type: array
+                              minItems: 2
+                              maxItems: 2
+                              items:
+                                type: string
+                                format: date-time
+                                nullable: true
+                          trs:
+                            description: >-
+                              Coordinate reference system of the coordinates in
+                              the temporal extent (property `interval`). The
+                              default reference system is the Gregorian
+                              calendar. In the Core this is the only supported
+                              temporal reference system. Extensions may support
+                              additional temporal reference systems and add
+                              additional enum values.
+                            type: string
+                            enum:
+                              - >-
+                                http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
+                            default: >-
+                              http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
+                  itemType:
+                    description: >-
+                      indicator about the type of the items in the collection
+                      (the default value is 'feature').
+                    type: string
+                    default: feature
+                  crs:
+                    description: >-
+                      the list of coordinate reference systems supported by the
+                      service
+                    type: array
+                    items:
+                      type: string
+                      default:
+                        - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+        '400':
+          description: Returns an error due to format. Refer the erroneous parameter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: InvalidParameterValue
+                      description:
+                        type: string
+                        example: 'Invalid # format'
+        '404':
+          description: There is no item in the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: There is no item in this collection.
+        '500':
+          description: There is no item in the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: There is no item in the database.
+  '/collections/:collectionId/items/:item':
+    get:
+      summary: Get a specific CityObject.
+      description: >-
+        This function allows getting a specific CityObject. It gathers all
+        information related to the object in the different collections from the
+        database.
+      tags:
+        - Features
+      parameters:
+        - in: query
+          name: f
+          schema:
+            type: string
+            enum:
+              - HTML
+              - json
+            default: HTML
+        - in: path
+          name: collectionId
+          schema:
+            type: string
+        - in: path
+          name: item
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK - returns a '#/AbstractCityObject'.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbstractCityObject'
+        '400':
+          description: Returns an error due to format.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: InvalidParameterValue
+                      description:
+                        type: string
+                        example: Invalid format
+        '404':
+          description: This item does not exist in this collection.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: This item does not exist in this collection.
+components:
+  schemas:
+    CityModel:
+      type: object
+      required:
+        - name
+        - type
+        - version
+        - CityObjects
+        - vertices
+      properties:
+        name:
+          type: string
+          description: >-
+            Unique name of the CityModel (not its UUID) - created by the method
+            '#/Measur3D/uploadCityModel'. Basically the name of the uploaded
+            file.
+        type:
+          type: string
+          default: CityJSON
+          description: Imposed.
+        version:
+          type: string
+          description: >-
+            A string with the version (X.Y) of CityJSON used. Minor versions are
+            not considered.
+        CityObjects:
+          type: object
+          properties:
+            '#/AbstractCityObject/name':
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: UUID id of the document in the database.
+                type:
+                  type: string
+                  description: Type of the CityObject.
+          description: >-
+            A collection of key-value pairs, where the key is the name of the
+            CityObject, and the value is couple of key giving the object id and
+            its type.
+        vertices:
+          type: array
+          items:
+            type: string
+          description: >-
+            Remains of the initial CityJSON specs. Vertices are now stored in
+            '#/AbstractCityObject'. Should be empty.
+        extension:
+          type: object
+          properties:
+            url:
+              type: string
+              format: URL
+              description: External link to the ressource.
+            version:
+              type: string
+              description: Version of the extension.
+          description: >-
+            A JSON file that allows us to document how the core data model of
+            CityJSON may be extended, and to validate CityJSON files.
+        metadata:
+          type: object
+          properties:
+            filesize:
+              type: number
+              description: >-
+                Size of the CityJSON file in bits - created by the method
+                '#/Measur3D/uploadCityModel'.
+            nbr_el:
+              type: number
+              descrption: Number of AbstractCityObject in the CityModel.
+            geographicalExtent:
+              type: array
+              items:
+                type: number
+              description: 'An array with 6 values - [minx, miny, minz, maxx, maxy, maxz].'
+            spatialIndex:
+              type: boolean
+              description: A boolean specifiying if the object is spatially indexed or not.
+            location:
+              type: object
+              properties:
+                type:
+                  type: string
+                  default:
+                    - Polygon
+                coordinates:
+                  type: string
+                  format: ISO19107
+              description: >-
+                A hierarchy of arrays following the ISO19107 standard. Duplicate
+                information of the '#/geographicalExtent'. Useful in order to
+                index objects spatialy.
+            referenceSystem:
+              type: string
+              format: OGC CRS URN
+              description: >-
+                A string that defines a coordinate reference system. Note that
+                all CityObjects need to have the same CRS.
+            contactDetails:
+              type: object
+              properties:
+                contactName:
+                  type: string
+                phone:
+                  type: string
+                address:
+                  type: string
+                emailAddress:
+                  type: string
+                contactType:
+                  type: string
+                  enums:
+                    - individual
+                    - organization
+          description: >-
+            A JSON object that may have different members giving information on
+            the CityModel.
+        transform:
+          type: object
+          required:
+            - scale
+            - translate
+          properties:
+            scale:
+              type: array
+              items:
+                type: number
+            translate:
+              type: array
+              items:
+                type: number
+          description: >-
+            Scale factor and the translation needed to obtain the original
+            coordinates from the integer vertices (stored with floats/doubles).
+        appearance:
+          type: object
+          properties:
+            default-theme-texture:
+              type: string
+            default-theme-material:
+              type: string
+            materials:
+              type: array
+              items:
+                $ref: '#components/schemas/Material'
+            textures:
+              type: array
+              items:
+                $ref: '#components/schemas/Texture'
+            vertices-texture:
+              type: array
+              items:
+                type: array
+                items:
+                  type: number
+          description: JSON objects representing the textures and/or materials of surfaces.
+        geometry-templates:
+          type: object
+          properties:
+            templates:
+              type: object
+              description: Need to rework the GeometryInstance.
+            vertices-template:
+              type: array
+              items:
+                type: array
+                items:
+                  type: number
+          description: The date of the record creation.
+    AbstractCityObject:
+      type: object
+      required:
+        - name
+        - CityModel
+      properties:
+        name:
+          type: string
+          description: >-
+            Unique name of the CityObject (not its UUID) - created by the method
+            '#/Measur3D/uploadCityModel'.
+        CityModel:
+          type: string
+          description: >-
+            Reference to the parent CityModel - created by the method
+            '#/Measur3D/uploadCityModel'.
+        attributes:
+          type: object
+          properties:
+            class:
+              type: string
+            function:
+              type: string
+            usage:
+              type: string
+          description: >-
+            Besides the standard attributes
+            (https://www.sig3d.de/codelists/standard/), any other attributes not
+            prescribed by the CityGML data model can be added with a JSON
+            key-value pair.
+        parents:
+          type: array
+          items:
+            type: string
+          description: >-
+            An array of the IDs (of type string) of the City Objects that are
+            its parents.
+        children:
+          type: array
+          items:
+            type: string
+          description: >-
+            An array of the IDs (of type string) of the 2nd-level City Objects
+            that are part of the City Object.
+        geographicalExtent:
+          type: array
+          items:
+            type: number
+          description: 'An array with 6 values - [minx, miny, minz, maxx, maxy, maxz].'
+        spatialIndex:
+          type: boolean
+          description: A boolean specifiying if the object is spatially indexed or not.
+        location:
+          type: object
+          properties:
+            type:
+              type: string
+              default:
+                - Polygon
+            coordinates:
+              type: string
+              format: ISO19107
+          description: >-
+            A hierarchy of arrays following the ISO19107 standard. Duplicate
+            information of the '#/geographicalExtent'. Useful in order to index
+            objects spatialy.
+        geometry:
+          type: array
+          items:
+            $ref: '#/components/schemas/Geometry'
+          description: The date of the record creation.
+        transform:
+          type: object
+          required:
+            - scale
+            - translate
+          properties:
+            scale:
+              type: array
+              items:
+                type: number
+            translate:
+              type: array
+              items:
+                type: number
+          description: >-
+            Scale factor and the translation needed to obtain the original
+            coordinates from the integer vertices (stored with floats/doubles)
+        vertices:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+          description: >-
+            An array of coordinates of each vertex of the city object. Their
+            position in this array (0-based) is used as an index to be
+            referenced by the Geometric Objects. The indexing mechanism of the
+            format Wavefront OBJ is basically reused. Vertices are stored as
+            integer (refer to
+      example:
+        name: Liège-4000-1337
+        type: Building
+        geographicalExtent:
+          - 45789.1
+          - 123849
+          - 2.4
+          - 45789.7
+          - 123873.4
+          - 35.2
+        attributes:
+          creationDate: 1980
+          price: 415.000€
+          owner: Adrien Nougaret
+        children:
+          - Liège-4000-1234
+        geometry:
+          - ...
+    Geometry:
+      type: object
+      required:
+        - type
+        - CityModel
+        - CityObject
+        - lod
+        - boundaries
+      properties:
+        type:
+          type: string
+          format: ISO 19107
+          description: >-
+            Geometric primitives that are non-decomposed objects presenting
+            information about geometric configuration.
+        CityModel:
+          type: string
+          description: >-
+            Reference to the parent CityModel - created by the method
+            '#/Measur3D/uploadCityModel'.
+        CityObject:
+          type: string
+          description: >-
+            Reference to the parent CityObject - created by the method
+            '#/Measur3D/uploadCityModel'.
+        lod:
+          type: number
+          description: A number identifying the level-of-detail.
+        boundaries:
+          description: >-
+            A hierarchy of arrays (the depth depends on the Geometry object)
+            with integers. An integer refers to the index in the "vertices"
+            array of the referenced CityObject (0-based).
+          type: array
+          items:
+            type: number
+        semantics:
+          description: >-
+            A JSON object representing the semantics of a surface, and may also
+            represent other attributes of the surface.
+          type: object
+          properties:
+            surfaces:
+              description: An array of Semantic Surface Objects
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: Type of the object.
+                  parent:
+                    type: number
+                    description: >-
+                      An integer pointing to another Semantic Object of the same
+                      geometry (index of it, 0-based).
+                  children:
+                    type: array
+                    items:
+                      type: number
+                    description: >-
+                      An array of integers pointing to other Semantic Objects of
+                      the same geometry (index of it, 0-based).
+            values:
+              type: array
+              items:
+                type: number
+              description: >-
+                A hierarchy of arrays with integers that refer to the index in
+                the "surfaces" array of the same geometry (0-based).
+        material:
+          type: object
+          $ref: '#/components/schemas/Material'
+        texture:
+          type: object
+          $ref: '#/components/schemas/Texture'
+      example:
+        type: MultiSurface
+        lod: '2,'
+        boundaries:
+          - - - 0
+              - 3
+              - 2
+              - 1
+          - - - 4
+              - 5
+              - 6
+              - 7
+          - - - 0
+              - 1
+              - 5
+              - 4
+          - - - 0
+              - 2
+              - 3
+              - 8
+          - - - 10
+              - 12
+              - 23
+              - 48
+        semantics:
+          surfaces:
+            - type: WallSurface
+              slope: 33.4
+              children:
+                - 2
+            - type: RoofSurface
+              slope: 66.6
+            - type: Door
+              parent: 0
+              colour: blue
+          values:
+            - 0
+            - 0
+            - null
+            - 1
+            - 2
+    Material:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: A string identifying the material.
+        ambientIntensity:
+          type: number
+          description: Value is a number between 0.0 and 1.0.
+        diffuseColor:
+          type: array
+          items:
+            type: number
+          description: Value is a number between 0.0 and 1.0 (RGB colour).
+        emissiveColor:
+          type: array
+          items:
+            type: number
+          description: Value is a number between 0.0 and 1.0 (RGB colour).
+        specularColor:
+          type: array
+          items:
+            type: number
+          description: Value is a number between 0.0 and 1.0 (RGB colour).
+        shininess:
+          type: number
+          description: Value is a number between 0.0 and 1.0.
+        transparency:
+          type: number
+          description: >-
+            Value is a number between 0.0 and 1.0 (1.0 being completely
+            transparent).
+        isSmooth:
+          type: boolean
+          description: >-
+            If this boolean flag is set to true, vertex normals should be used
+            for shading (Gouraud shading). Otherwise, normals should be constant
+            for a surface patch (flat shading).
+      example:
+        name: roofandground
+        ambientIntensity: 0.48
+        diffuseColor:
+          - 0.8
+          - 0.2
+          - 0.75
+        emissiveColor:
+          - 0.8
+          - 0.2
+          - 0.75
+        specularColor:
+          - 0.8
+          - 0.2
+          - 0.75
+        shininess: 0.5
+        transparency: 0.5
+        isSmooth: true
+    Texture:
+      type: object
+      required:
+        - type
+        - image
+      properties:
+        type:
+          type: string
+          description: A string with either "PNG" or "JPG" as value.
+        image:
+          type: string
+          description: >-
+            A string with the name of the file. This file can be a URL, a
+            relative path or an absolute path.
+        wrapMode:
+          type: string
+          enums:
+            - none
+            - wrap
+            - mirror
+            - clamp
+            - border
+        textureType:
+          type: string
+          enums:
+            - unknown
+            - specific
+            - typical
+        borderColor:
+          type: array
+          items:
+            type: number
+          description: Numbers between 0.0 and 1.0 (RGBA colour).
+      example:
+        type: PNG
+        image: src/images/wall.png
+        wrapMode: wrap
+        textureType: unknown
+        borderColor:
+          - 0
+          - 0
+          - 0
+          - 1
+  tags:
+    '0': Measur3D

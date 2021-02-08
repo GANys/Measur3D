@@ -30,6 +30,9 @@ class ThreeScene extends Component {
     EventEmitter.subscribe("loadScene", event => this.loadScene(event));
     this.loadScene = this.loadScene.bind(this);
 
+    EventEmitter.subscribe("deleteObject", event => this.deleteObject(event));
+    this.deleteObject = this.deleteObject.bind(this);
+
     this.clearScene = this.clearScene.bind(this);
 
     this.handleClick = this.handleClick.bind(this);
@@ -87,16 +90,13 @@ class ThreeScene extends Component {
     this.am_light = new THREE.AmbientLight(0xffffff, 0.7); // soft white light
     this.scene.add(this.am_light);
 
-    //this.hemiLight = new THREE.HemisphereLight( 0x0000ff, 0x00ff00, 0.6 );
-    //this.scene.add(this.hemilight);
-
     // Add directional light
     this.spot_light = new THREE.SpotLight(0xdddddd);
-    this.spot_light.position.set(84616, -1, 447422);
+    this.spot_light.position.set(84616, -1, 447422); // Can be problematic because scene is not normalised
     this.spot_light.target = this.scene;
     this.spot_light.castShadow = true;
     this.spot_light.intensity = 0.4;
-    this.spot_light.position.normalize();
+    //this.spot_light.position.normalize();
     this.scene.add(this.spot_light);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -181,54 +181,55 @@ class ThreeScene extends Component {
     };
   };
 
-  handleFile = async file => {
+  handleFile = file => {
     this.setState({
       boolJSONload: true
     });
 
-    await axios.post("http://localhost:3001/measur3d/uploadCityModel", {
-      json: file.content,
-      jsonName: file.jsonName
-    });
+    axios
+      .post("http://localhost:3001/measur3d/uploadCityModel", {
+        json: file.content,
+        jsonName: file.jsonName
+      })
+      .then(res => {
+        EventEmitter.dispatch("success", res.data.success);
+        EventEmitter.dispatch("info", "Now loading it into the scene.");
 
-    EventEmitter.dispatch("success", "CityJSONfile loaded.");
+        this.setState({
+          boolJSONload: false,
+          cityModel: true
+        });
 
-    this.setState({
-      boolJSONload: false,
-      cityModel: true
-    });
-
-    //load the cityObjects into the viewer
-    this.loadScene(file.jsonName);
-
-    // Reload the ThreeScene in order to render the uploaded model
-    EventEmitter.dispatch("reloadScene", {});
+        //load the cityObjects into the viewer
+        this.loadScene(file.jsonName);
+      });
   };
 
-  loadScene = async cm_name => {
+  loadScene = cm_name => {
     this.clearScene();
 
     this.setState({
       boolJSONload: true
     });
 
-    await Functions.loadCityObjects(this, cm_name);
+    Functions.loadCityObjects(this, cm_name);
+
+    EventEmitter.dispatch("cityModelLoaded", cm_name);
   };
 
   clearScene = () => {
+    // Not be enough for collisions -> array.splice doesnt change anything
     // Be careful to not delete the light ... Speaking from experience
     var mesh = new THREE.Mesh();
 
     this.scene.children = this.scene.children.filter(
       value => value.type !== mesh.type
     );
-
-    this.renderer.render(this.scene, this.camera);
   };
 
   handleClick = evt => {
-    var add_attribute_button = document.querySelector(
-      "#root > div > div.SplitPane.vertical > div.Pane.vertical.Pane1 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div.Pane.horizontal.Pane2 > div > div > div.MuiToolbar-root.MuiToolbar-regular.MTableToolbar-root-75.MuiToolbar-gutters > div.MTableToolbar-actions-78"
+    var action_button = document.querySelectorAll(
+      "div > div > span > button"
     );
     // eslint-disable-next-line
     if (evt != undefined) {
@@ -241,8 +242,54 @@ class ThreeScene extends Component {
 
     if (!this.state.cityModel) return;
 
-    add_attribute_button.style.visibility = "visible";
+    action_button.forEach(function(button) {
+      button.style.visibility = "visible";
+    });
     Functions.intersectMeshes(evt, this);
+  };
+
+  deleteObject = name => {
+    // Cleaning both Scene and ThreeScene objects -> Collisions seem to work oddly after it.
+
+    this.setState({
+      boolJSONload: true
+    });
+
+    delete this.geoms[name];
+
+    this.scene.children = this.scene.children.filter(
+      value => value.name !== name
+    );
+
+    var index_mesh;
+
+    for (var el in this.meshes) {
+      // eslint-disable-next-line
+      if (this.meshes[el].name == name) {
+        index_mesh = el;
+      }
+    }
+
+    for (var child in this.meshes[index_mesh].childrenMeshes) {
+      for (el in this.meshes) {
+        // eslint-disable-next-line
+        if (this.meshes[el].name == name) {
+          index_mesh = el;
+        }
+      }
+
+      if (this.meshes[index_mesh].childrenMeshes[child] !== undefined) {
+        this.deleteObject(this.meshes[index_mesh].childrenMeshes[child]);
+      }
+    }
+
+    this.meshes.splice(index_mesh, 1);
+
+    this.renderer.render(this.scene, this.camera); // Cleaning for collisions.
+
+    this.setState({
+      boolJSONload: false
+    });
   };
 
   render() {

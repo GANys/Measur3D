@@ -55,9 +55,11 @@ class BasicMaterialTable extends React.Component {
 
     this.updateTable = this.updateTable.bind(this);
     this.updateTitle = this.updateTitle.bind(this);
+    this.updateCityModel = this.updateCityModel.bind(this);
 
     EventEmitter.subscribe("attObject", event => this.updateTable(event));
     EventEmitter.subscribe("attObjectTitle", event => this.updateTitle(event));
+    EventEmitter.subscribe("cityModelLoaded", event => this.updateCityModel(event));
   }
 
   state = {
@@ -67,7 +69,8 @@ class BasicMaterialTable extends React.Component {
     ],
     data: [],
     tableTitle: "Object attributes",
-    CityObjectClass: null
+    CityObjectType: null,
+    CityModel: null
   };
 
   deleteRows = () => {
@@ -103,15 +106,19 @@ class BasicMaterialTable extends React.Component {
     if (data == null) {
       this.setState({
         tableTitle: "Object attributes",
-        CityObjectClass: null
+        CityObjectType: null
       });
       return;
     }
 
     this.setState({
       tableTitle: data.title,
-      CityObjectClass: data.type
+      CityObjectType: data.type
     });
+  };
+
+  updateCityModel = data => {
+    this.setState({ CityModel: data });
   };
 
   addAttribute = async newData => {
@@ -119,7 +126,7 @@ class BasicMaterialTable extends React.Component {
       key: newData.key,
       value: newData.value,
       jsonName: this.state.tableTitle,
-      CityObjectClass: this.state.CityObjectClass
+      CityObjectType: this.state.CityObjectType
     });
   };
 
@@ -129,7 +136,7 @@ class BasicMaterialTable extends React.Component {
       key: newData.key,
       value: newData.value,
       jsonName: this.state.tableTitle,
-      CityObjectClass: this.state.CityObjectClass
+      CityObjectType: this.state.CityObjectType
     });
   };
 
@@ -138,7 +145,7 @@ class BasicMaterialTable extends React.Component {
       key: oldData.key,
       value: "",
       jsonName: this.state.tableTitle,
-      CityObjectClass: this.state.CityObjectClass
+      CityObjectType: this.state.CityObjectType
     });
   };
 
@@ -152,9 +159,47 @@ class BasicMaterialTable extends React.Component {
           sorting: false
           //maxBodyHeight: 200 As a reminder
         }}
+        actions={[
+          {
+            icon: tableIcons.Delete,
+            tooltip: "Delete object",
+            position: "toolbar",
+            onClick: async data => {
+              let confirmDelete = window.confirm("Delete this object?");
+
+              if (!confirmDelete) return;
+
+              EventEmitter.dispatch("deleteObject", this.state.tableTitle);
+
+              await axios.delete(
+                "http://localhost:3001/measur3d/deleteObject",
+                {
+                  data: {
+                    name: this.state.tableTitle,
+                    CityModel: this.state.CityModel
+                  }
+                }
+              );
+
+              var action_button = document.querySelectorAll(
+                "div > div > span > button"
+              );
+
+              action_button.forEach(function(button) {
+                button.style.visibility = "hidden";
+              });
+
+              EventEmitter.dispatch(
+                "attObjectTitle",
+                ("Object attributes", null)
+              );
+              EventEmitter.dispatch("attObject", {});
+            }
+          }
+        ]}
         title={
           <div style={{ display: "flex", alignItems: "center" }}>
-            <div className="COClassIcon">{map[this.state.CityObjectClass]}</div>
+            <div className="COClassIcon">{map[this.state.CityObjectType]}</div>
             {this.state.tableTitle}
           </div>
         }
