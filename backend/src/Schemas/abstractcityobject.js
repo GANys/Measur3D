@@ -75,6 +75,18 @@ let mongoose = require("mongoose");
  *                 items:
  *                   type: number
  *             description: Scale factor and the translation needed to obtain the original coordinates from the integer vertices (stored with floats/doubles)
+ *           pointcloud-file:
+ *             type: object
+ *             properties:
+ *               mimeType:
+ *                 type: string
+ *                 enum: ["application/vnd.las"]
+ *               pointFile:
+ *                 type: string
+ *                 format: URL
+ *               pointFileSrsName:
+ *                 type: string
+ *                 default: "EPSG:4326"
  *           vertices:
  *             type: array
  *             items:
@@ -101,28 +113,28 @@ let CityObjectSchema = new mongoose.Schema({
   attributes: {
     creationDate: {
       type: String,
-      validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/
+      validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
     },
     terminationDate: {
       type: String,
-      validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/
+      validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
     },
     class: String,
     function: String,
-    usage: String
+    usage: String,
   },
   parents: { type: [String], default: undefined },
   children: { type: [String], default: undefined },
   geographicalExtent: {
     type: [Number],
     default: undefined,
-    validate: function() {
+    validate: function () {
       return this["geographicalExtent"].length % 6 == 0;
-    }
+    },
   },
   location: {
     type: { type: String, enum: ["Polygon"] },
-    coordinates: { type: [[[Number]]] }
+    coordinates: { type: [[[Number]]] },
   },
   spatialIndex: { type: Boolean, default: false },
   geometry: [mongoose.Schema.Types.Mixed],
@@ -131,26 +143,52 @@ let CityObjectSchema = new mongoose.Schema({
     scale: {
       type: [Number],
       default: undefined,
-      validate: function() {
+      validate: function () {
         return this.transform["scale"].length == 3;
-      }
+      },
     },
     translate: {
       type: [Number],
       default: undefined,
-      validate: function() {
+      validate: function () {
         return this.transform["translate"].length == 3;
-      }
-    }
+      },
+    },
   },
-  vertices: [[Number]]
+  "pointcloud-file": {
+    mimeType: {
+      type: String,
+      enum: ["application/vnd.las"],
+    },
+    pointFile: {
+      type: String,
+      required: function () {
+        return this.hasOwnProperty("pointcloud-file") && validURL(this.pointFile);
+      },
+    },
+    pointFileSrsName: String,
+  },
+  vertices: [[Number]],
 });
 
-CityObjectSchema.index({ location: '2dsphere' })
+CityObjectSchema.index({ location: "2dsphere" });
 
 CityObject = mongoose.model("CityObject", CityObjectSchema);
 
 module.exports = {
   Model: CityObject,
-  Schema: CityObjectSchema
+  Schema: CityObjectSchema,
 };
+
+function validURL(str) {
+  var pattern = new RegExp(
+    "^(https?:\\/\\/)?" + // protocol
+    "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
+    "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
+    "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
+    "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
+      "(\\#[-a-z\\d_]*)?$",
+    "i"
+  ); // fragment locator
+  return !!pattern.test(str);
+}

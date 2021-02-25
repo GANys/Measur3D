@@ -332,12 +332,14 @@ module.exports = {
 
       new_objects[object.jsonName + "_" + key] = result.object;
 
-      if (result.bbox[3] > max_x) max_x = result.bbox[3];
-      if (result.bbox[0] < min_x) min_x = result.bbox[0];
-      if (result.bbox[4] > max_y) max_y = result.bbox[4];
-      if (result.bbox[1] < min_y) min_y = result.bbox[1];
-      if (result.bbox[5] > max_z) max_z = result.bbox[5];
-      if (result.bbox[2] < min_z) min_z = result.bbox[2];
+      if (result.bbox != undefined) {
+        if (result.bbox[3] > max_x) max_x = result.bbox[3];
+        if (result.bbox[0] < min_x) min_x = result.bbox[0];
+        if (result.bbox[4] > max_y) max_y = result.bbox[4];
+        if (result.bbox[1] < min_y) min_y = result.bbox[1];
+        if (result.bbox[5] > max_z) max_z = result.bbox[5];
+        if (result.bbox[2] < min_z) min_z = result.bbox[2];
+      }
     }
 
     if (object.json.metadata == undefined) {
@@ -535,7 +537,7 @@ async function saveCityObject(object, element) {
   }
 
   // Stores real coordinates in BBOX
-  if (object.json.transform != undefined) {
+  if (object.json.transform !== undefined) {
     min_x =
       min_x * object.json.transform.scale[0] +
       object.json.transform.translate[0];
@@ -554,23 +556,43 @@ async function saveCityObject(object, element) {
     max_z =
       max_z * object.json.transform.scale[2] +
       object.json.transform.translate[2];
+
+    element.transform = object.json.transform;
+  } else {
+    object.json.transform = { scale: [1, 1, 1], translate: [0, 0, 0] };
   }
 
-  element.geographicalExtent = [min_x, min_y, min_z, max_x, max_y, max_z];
+  if (element.geographicalExtent != undefined) {
+    min_x = element.geographicalExtent[0];
+    max_x = element.geographicalExtent[3];
+    min_y = element.geographicalExtent[1];
+    max_y = element.geographicalExtent[4];
+    min_z = element.geographicalExtent[2];
+    max_z = element.geographicalExtent[5];
+  }
 
-  element.transform = object.json.transform;
+  if (min_x != Infinity) {
+    element.geographicalExtent = [min_x, min_y, min_z, max_x, max_y, max_z];
+  }
 
   try {
     var epsg_code = object.json.metadata.referenceSystem;
   } catch (err) {
-    console.warn("No reference have been provided. SpatialIndex wont be used for object : " + object.jsonName + "_" + key);
+    console.warn(
+      "No reference have been provided. SpatialIndex wont be used for object : " +
+        object.jsonName +
+        "_" +
+        key
+    );
   }
 
   var reg = /\d/g; // Only numbers
 
   var location;
 
-  if (epsg_code != undefined) {
+  if (min_x == Infinity) {
+    location = {};
+  } else if (epsg_code != undefined) {
     var epsgio = "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
 
     var proj_string = await axios.get(epsgio);

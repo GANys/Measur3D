@@ -24,13 +24,8 @@ let SolitaryVegetationObject = mongoose.model("CityObject").discriminator(
 );
 
 module.exports = {
-  insertSolitaryVegetationObject: async (
-    object,
-    jsonName
-  ) => {
+  insertSolitaryVegetationObject: async (object, jsonName) => {
     object["CityModel"] = jsonName;
-
-    /* ATTENTION - Need to be reworked */
 
     var temp_geometries = [];
 
@@ -50,13 +45,18 @@ module.exports = {
         return -1;
       }
 
-        temp_geometries.push(await Geometry.insertGeometry(object.geometry[geometry], jsonName)
-        );
+      temp_geometries.push(
+        await Geometry.insertGeometry(object.geometry[geometry], jsonName)
+      );
     }
 
     object.geometry = temp_geometries;
 
-    var solitaryvegetationobject = new SolitaryVegetationObject(object);
+    try {
+      var solitaryvegetationobject = new SolitaryVegetationObject(object);
+    } catch (err) {
+      console.log(err);
+    }
 
     try {
       let element = await solitaryvegetationobject.save();

@@ -114,7 +114,9 @@ export async function loadCityObjects(threescene, cm_name) {
         var coType = json.CityObjects[cityObj].type;
 
         //set color of object
-        if (json.CityObjects[cityObj].geometry[0].type !== "MultiPoint") {
+        if (json.CityObjects[cityObj].geometry[0] == null) {
+          console.log('No geometry for : ' + cityObj)
+        } else if (json.CityObjects[cityObj].geometry[0].type !== "MultiPoint") {
           var material = new THREE.MeshStandardMaterial();
           material.color.setHex(ALLCOLOURS[coType]);
 
@@ -203,7 +205,24 @@ async function parseObject(object, transform, cityObj, geoms) {
   // CityObject JSON, transform, CityObject name, threeScene.Geoms
   var boundaries;
 
-  if (object["pointcloud-file"] !== undefined) console.log(object["pointcloud-file"])
+  if (object["pointcloud-file"] !== undefined) {
+    await axios
+      .get(object["pointcloud-file"].pointFile, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Request-Headers": "Access-Control-Allow-Origin"
+        },
+        crossdomain: true,
+        withCredentials: true,
+      })
+      .then(async (response) => {
+        console.log(response.data);
+        console.log(response.status);
+        console.log(response.statusText);
+        console.log(response.headers);
+        console.log(response.config);
+      });
+  }
 
   //create geometry and empty list for the vertices
   var geom = new THREE.Geometry();

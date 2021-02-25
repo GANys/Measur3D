@@ -1,4 +1,4 @@
-![Measur3D logo](client/src/logo_app_black.png)
+![Measur3D logo](client/src/images/logo_app_black.png)
 
 # Measur3D
 
