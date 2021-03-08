@@ -12,28 +12,30 @@ import axios from "axios";
 
 import { EventEmitter } from "./events";
 
+
+// From https://doi.org/10.3390/ijgi10030138
 var ALLCOLOURS = {
-  Building: 0xcc0000,
-  BuildingPart: 0xcc0000,
-  BuildingInstallation: 0xcc0000,
-  Bridge: 0x999999,
-  BridgePart: 0x999999,
-  BridgeInstallation: 0x999999,
-  BridgeConstructionElement: 0x999999,
-  CityObjectGroup: 0xffffb3,
-  CityFurniture: 0xcc0000,
-  GenericCityObject: 0xcc0000,
-  LandUse: 0xffffb3,
-  PlantCover: 0x39ac39,
-  Railway: 0x222222,
-  Road: 0x999999,
-  SolitaryVegetationObject: 0x197319,
-  TINRelief: 0x3fd43f,
-  TransportSquare: 0x999999,
-  Tunnel: 0x999999,
-  TunnelPart: 0x999999,
-  TunnelInstallation: 0x999999,
-  WaterBody: 0x4da6ff,
+  Building: 0x73726f,
+  BuildingPart: 0x8f8b7e,
+  BuildingInstallation: 0x615e54,
+  Bridge: 0x757575,
+  BridgePart: 0x4a4a4a,
+  BridgeInstallation: 0x696969,
+  BridgeConstructionElement: 0x7a7a7a,
+  CityObjectGroup: 0x5a5f61,
+  CityFurniture: 0x7b8285,
+  GenericCityObject: 0xa5adb0,
+  LandUse: 0x85837b,
+  PlantCover: 0x687d5e,
+  Railway: 0x594b3f,
+  Road: 0x595654,
+  SolitaryVegetationObject: 0x5e8c4c,
+  TINRelief: 0x7a8774,
+  TransportSquare: 0x5c5955,
+  Tunnel: 0x454340,
+  TunnelPart: 0x66635f,
+  TunnelInstallation: 0x6b655c,
+  WaterBody: 0x8bacb5,
 };
 
 //convert CityObjects to mesh and add them to the viewer
