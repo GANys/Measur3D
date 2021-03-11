@@ -56,23 +56,17 @@ class ThreeScene extends Component {
     window.addEventListener("resize", this.handleWindowResize);
     document
       .getElementById("ThreeScene")
-      .addEventListener("mousedown", this.handleClick);
+      .addEventListener("click", this.handleClick);
 
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
     //ADD SCENE
     this.scene = new THREE.Scene();
     //ADD CAMERA
-    this.camera = new THREE.PerspectiveCamera(
-      60, // Field of view
-      width / height, // Aspect ratio
-      0.01, // Near clipping pane
-      10000 // Far clipping pane
-    );
-    this.camera.position.z = 2;
+    this.camera = new THREE.PerspectiveCamera();
 
     //ADD RENDERER
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
     this.renderer.setClearColor("#000000");
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
@@ -231,6 +225,7 @@ class ThreeScene extends Component {
     var action_button = document.querySelectorAll(
       "div > div > span > button"
     );
+
     // eslint-disable-next-line
     if (evt != undefined) {
       // eslint-disable-next-line

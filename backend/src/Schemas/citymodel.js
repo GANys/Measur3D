@@ -199,8 +199,8 @@ let CityModelSchema = new mongoose.Schema({
     nbr_el: Number,
     geographicalExtent: { type: [Number], default: undefined },
     location: {
-      type: { type: String, enum: "Polygon" },
-      coordinates: { type: [[[Number]]] },
+      type: { type: String },
+      coordinates: { type: [], default: undefined },
     },
     spatialIndex: { type: Boolean, default: false },
     referenceSystem: {
@@ -538,23 +538,17 @@ async function saveCityObject(object, element) {
 
   // Stores real coordinates in BBOX
   if (object.json.transform !== undefined) {
-    min_x =
-      min_x * object.json.transform.scale[0] +
+    min_x *= object.json.transform.scale[0] +
       object.json.transform.translate[0];
-    max_x =
-      max_x * object.json.transform.scale[0] +
+    max_x *= object.json.transform.scale[0] +
       object.json.transform.translate[0];
-    min_y =
-      min_y * object.json.transform.scale[1] +
+    min_y *= object.json.transform.scale[1] +
       object.json.transform.translate[1];
-    max_y =
-      max_y * object.json.transform.scale[1] +
+    max_y *= object.json.transform.scale[1] +
       object.json.transform.translate[1];
-    min_z =
-      min_z * object.json.transform.scale[2] +
+    min_z *= object.json.transform.scale[2] +
       object.json.transform.translate[2];
-    max_z =
-      max_z * object.json.transform.scale[2] +
+    max_z *= object.json.transform.scale[2] +
       object.json.transform.translate[2];
 
     element.transform = object.json.transform;
@@ -591,7 +585,7 @@ async function saveCityObject(object, element) {
   var location;
 
   if (min_x == Infinity) {
-    location = {};
+    location = {"type": "Polygon", "coordinates": []};
   } else if (epsg_code != undefined) {
     var epsgio = "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
 
@@ -614,6 +608,7 @@ async function saveCityObject(object, element) {
 
     element.spatialIndex = true;
   } else {
+    /*
     location = {
       type: "Polygon",
       coordinates: [
@@ -626,6 +621,9 @@ async function saveCityObject(object, element) {
         ],
       ],
     };
+    */
+
+    location = {"type": "Polygon", "coordinates": []}
 
     element.spatialIndex = false;
   }

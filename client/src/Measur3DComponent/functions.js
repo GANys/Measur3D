@@ -12,7 +12,6 @@ import axios from "axios";
 
 import { EventEmitter } from "./events";
 
-
 // From https://doi.org/10.3390/ijgi10030138
 var ALLCOLOURS = {
   Building: 0x73726f,
@@ -50,19 +49,20 @@ export async function loadCityObjects(threescene, cm_name) {
       var json = responseCity.data;
 
       var ext = json.metadata.geographicalExtent;
-      var avgX = (ext[0] + ext[3]) / 2;
-      var avgY = (ext[1] + ext[4]) / 2;
-      var avgZ = (ext[2] + ext[5]) / 2;
 
-      var z_dist = (ext[3] - ext[0]) / (2 * Math.tan((30 * Math.PI) / 180));
-      var y_dist = (ext[3] - ext[0]) / (2 * Math.tan((30 * Math.PI) / 180));
+      const ext_min = new THREE.Vector3(ext[0], ext[1], ext[2]);
+      const ext_max = new THREE.Vector3(ext[3], ext[4], ext[5]);
+      const cityModelBBOX = new THREE.Box3(ext_min, ext_max);
 
-      threescene.camera.position.set(avgX, avgY - y_dist, avgZ + z_dist); // Can be improved
-      threescene.camera.lookAt(avgX, avgY, avgZ);
+      // Changes the UP vector to Z rather than Y
+      threescene.camera.up = new THREE.Vector3(0, 0, 1);
 
-      threescene.camera.updateProjectionMatrix();
-
-      threescene.controls.target.set(avgX, avgY, avgZ);
+      fitCameraToObject(
+        threescene.camera,
+        cityModelBBOX,
+        1.2,
+        threescene.controls
+      );
 
       //enable movement parallel to ground
       threescene.controls.screenSpacePanning = true;
@@ -117,8 +117,10 @@ export async function loadCityObjects(threescene, cm_name) {
 
         //set color of object
         if (json.CityObjects[cityObj].geometry[0] == null) {
-          console.log('No geometry for : ' + cityObj)
-        } else if (json.CityObjects[cityObj].geometry[0].type !== "MultiPoint") {
+          console.log("No geometry for : " + cityObj);
+        } else if (
+          json.CityObjects[cityObj].geometry[0].type !== "MultiPoint"
+        ) {
           var material = new THREE.MeshStandardMaterial();
           material.color.setHex(ALLCOLOURS[coType]);
 
@@ -157,8 +159,49 @@ export async function loadCityObjects(threescene, cm_name) {
         cityModel: true,
       });
 
+      console.log(threescene);
+
       threescene.renderer.render(threescene.scene, threescene.camera);
     });
+}
+
+function fitCameraToObject(camera, boundingBox, offset, controls) {
+  // Need to rework
+  offset = offset || 1.25;
+
+  const center = new THREE.Vector3();
+  boundingBox.getCenter(center);
+
+  const size = new THREE.Vector3();
+  boundingBox.getSize(size);
+
+  // get the max side of the bounding box (fits to width OR height as needed )
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * (Math.PI / 180);
+  let cameraZ = Math.abs((maxDim / 4) * Math.tan(fov * 2));
+
+  cameraZ *= offset; // zoom out a little so that objects don't fill the screen
+
+  camera.position.z = cameraZ;
+  camera.position.x = center.x;
+
+  const minZ = boundingBox.min.z;
+  const cameraToFarEdge = minZ < 0 ? -minZ + cameraZ : cameraZ - minZ;
+
+  camera.far = cameraToFarEdge * 3;
+  camera.updateProjectionMatrix();
+
+  if (controls) {
+    // set camera to rotate around center of loaded object
+    controls.target = center;
+
+    // prevent camera from zooming out far enough to create far plane cutoff
+    controls.maxDistance = cameraToFarEdge * 2;
+
+    controls.saveState();
+  } else {
+    camera.lookAt(center);
+  }
 }
 
 //-- calculate normal of a set of points
@@ -212,7 +255,7 @@ async function parseObject(object, transform, cityObj, geoms) {
       .get(object["pointcloud-file"].pointFile, {
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Request-Headers": "Access-Control-Allow-Origin"
+          "Access-Control-Request-Headers": "Access-Control-Allow-Origin",
         },
         crossdomain: true,
         withCredentials: true,
@@ -226,16 +269,21 @@ async function parseObject(object, transform, cityObj, geoms) {
       });
   }
 
-  //create geometry and empty list for the vertices
-  var geom = new THREE.Geometry();
+  //create geometry
+  var geom = new THREE.BufferGeometry();
 
   if (object.geometry[0] == null) return; // If no geometry (eg: CityObjectGroup (not always true))
 
   //each geometrytype must be handled different
   var geomType = object.geometry[0].type;
 
-  var object_vertices = object.vertices;
-  var face_vertices = [];
+  var object_vertices = object.vertices; // Extracted vertices for this particular object from the CityModel
+
+  /*
+  if (object.name == 'railway_GMLID_BUI30683_572_6686') {
+    console.log(JSON.stringify(object.geometry[0].boundaries))
+  }
+  */
 
   if (geomType === "Solid") {
     boundaries = object.geometry[0].boundaries[0];
@@ -246,8 +294,6 @@ async function parseObject(object, transform, cityObj, geoms) {
   } else if (geomType === "MultiPoint") {
     //return object.children
     boundaries = object.geometry[0].boundaries;
-
-    var dotGeometry = new THREE.BufferGeometry();
 
     const vertices = [];
 
@@ -261,55 +307,57 @@ async function parseObject(object, transform, cityObj, geoms) {
       }
     }
 
-    dotGeometry.setAttribute(
+    geom.setAttribute(
       "position",
       new THREE.Float32BufferAttribute(vertices, 3)
     );
 
-    dotGeometry.computeBoundingSphere();
+    geom.computeBoundingSphere();
 
     var dotMaterial = new THREE.PointsMaterial({
       size: 4,
       sizeAttenuation: false,
       color: ALLCOLOURS[object.type],
     });
-    var dots = new THREE.Points(dotGeometry, dotMaterial);
+    var dots = new THREE.Points(geom, dotMaterial);
 
     geoms[object.name] = dots;
 
     return object.children;
   }
 
+  var geom_indices = [];
+
   for (var i = 0; i < boundaries.length; i++) {
     var boundary = [],
       holes = [];
-    for (var j = 0; j < boundaries[i].length; j++) {
-      if (boundary.length > 0) {
-        holes.push(boundary.length);
-      }
-      var new_boundary = decomposeFaces(
-        geom,
-        boundaries[i][j],
-        face_vertices,
-        object_vertices,
-        transform
-      );
-      boundary.push(...new_boundary);
-    }
+
+    boundary = boundaries[i][0];
+
     if (boundary.length === 3) {
-      geom.faces.push(new THREE.Face3(boundary[0], boundary[1], boundary[2]));
+      geom_indices.push(boundary[0], boundary[1], boundary[2]);
     } else if (boundary.length > 3) {
       //create list of points
       var pList = [],
+        vList = [],
         k;
 
-      for (k = 0; k < boundary.length; k++) {
-        pList.push({
-          x: object_vertices[face_vertices[boundary[k]]][0],
-          y: object_vertices[face_vertices[boundary[k]]][1],
-          z: object_vertices[face_vertices[boundary[k]]][2],
-        });
+      for (var j = 0; j < boundaries[i].length; j++) {
+        for (var k = 0; k < boundaries[i][j].length; k++) {
+          pList.push({
+            x: object_vertices[boundaries[i][j][k]][0],
+            y: object_vertices[boundaries[i][j][k]][1],
+            z: object_vertices[boundaries[i][j][k]][2],
+          });
+
+          if (j > 0 && k == 0) {
+            holes.push(vList.length);
+          }
+
+          vList.push(boundaries[i][j][k]);
+        }
       }
+
       //get normal of these points
       var normal = await get_normal_newell(pList);
 
@@ -325,63 +373,30 @@ async function parseObject(object, transform, cityObj, geoms) {
       var tr = await earcut(pv, holes, 2);
 
       //create faces based on triangulation
-      for (k = 0; k < tr.length; k += 3) {
-        geom.faces.push(
-          new THREE.Face3(
-            boundary[tr[k]],
-            boundary[tr[k + 1]],
-            boundary[tr[k + 2]]
-          )
-        );
+      for (k = 0; k < tr.length; k += 1) {
+        geom_indices.push(vList[tr[k]]);
       }
     }
   }
 
+  geom.setIndex(new THREE.BufferAttribute(new Uint16Array(geom_indices), 1));
+
+  geom.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute([].concat.apply([], object_vertices), 3)
+  );
+
   //needed for shadow
-  geom.computeFaceNormals();
-  //geom.computeVertexNormals();
+  geom.computeVertexNormals();
+
+  geom.computeBoundingBox();
 
   geoms[object.name] = geom;
 
   return object.children;
 }
 
-function decomposeFaces(geom, boundary, indices, vertices, transform) {
-  var new_boundary = [];
-  var j;
-  for (j = 0; j < boundary.length; j++) {
-    //the original index from the json file
-    var index = boundary[j];
-
-    //if this index is already there
-    if (indices.includes(index)) {
-      var vertPos = indices.indexOf(index);
-      new_boundary.push(vertPos);
-    } else {
-      // Add vertex to geometry
-      if (transform !== undefined) {
-        var point = new THREE.Vector3(
-          vertices[index][0] * transform.scale[0] + transform.translate[0],
-          vertices[index][1] * transform.scale[1] + transform.translate[1],
-          vertices[index][2] * transform.scale[2] + transform.translate[2]
-        );
-      } else {
-        point = new THREE.Vector3(
-          vertices[index][0],
-          vertices[index][1],
-          vertices[index][2]
-        );
-      }
-      geom.vertices.push(point);
-
-      new_boundary.push(indices.length);
-      indices.push(index);
-    }
-  }
-  return new_boundary;
-}
-
-//action if mouseclick (for getting attributes ofobjects)
+//action if mouseclick (for getting attributes of objects)
 export async function intersectMeshes(event, threescene) {
   //if no cityjson is loaded return
   // eslint-disable-next-line

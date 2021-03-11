@@ -10,48 +10,6 @@ let Functions = require("./util/functions");
 const router = express.Router();
 
 //-------------------------------------------------------------------------------------
-// Web caching Middleware - clear after 15 minutes
-
-var cache = {};
-
-var array = [];
-
-function push(key) {
-  array.push({
-    value: key,
-    time: Date.now(),
-  });
-}
-
-setInterval(function () {
-  var time = Date.now();
-
-  array = array.filter(function (item) {
-    if (time < item.time + (1000 * 60 * 15)) {
-      return true;
-    } else {
-      delete cache[item.value];
-      return false;
-    }
-  });
-}, (1000 * 60 * 15));
-
-var midWareCaching = (req, res, next) => {
-  const key = req.url;
-  if (cache[key]) {
-    res.json(JSON.parse(cache[key]));
-  } else {
-    res.sendResponse = res.send;
-    res.send = (body) => {
-      cache[key] = body;
-      res.sendResponse(body);
-    };
-    push(key)
-    next();
-  }
-};
-
-//-------------------------------------------------------------------------------------
 
 /**
  * @swagger
@@ -123,7 +81,7 @@ router.post("/uploadCityModel", (req, res) => {
  *         404:
  *           description: Not found - There is no CityModel in the database.
  */
-router.get("/getCityModelsList", midWareCaching, (req, res) => {
+router.get("/getCityModelsList", (req, res) => {
   mongoose
     .model("CityModel")
     .find({}, async (err, data) => {
@@ -173,7 +131,7 @@ router.get("/getCityModelsList", midWareCaching, (req, res) => {
  *         500:
  *           description: Not found - There is no CityModel in the database.
  */
-router.get("/getNamedCityModel", midWareCaching, async (req, res) => {
+router.get("/getNamedCityModel", async (req, res) => {
 
   var cityModel = await mongoose
     .model("CityModel")
@@ -211,8 +169,6 @@ router.get("/getNamedCityModel", midWareCaching, async (req, res) => {
         break;
       default:
     }
-
-    //console.log(cityModel.CityObjects[cityobject].id + " " + cityobject)
 
     cityModel.CityObjects[cityobject] = await mongoose // Get the document of the CityObjects
       .model(cityObjectType)
@@ -372,7 +328,7 @@ router.delete("/deleteNamedCityModel", (req, res) => {
  *         500:
  *           description: Internal error - getObject could not find Object in Collection. Error is sent by database.
  */
-router.get("/getObject", midWareCaching, (req, res) => {
+router.get("/getObject", (req, res) => {
   if (typeof req.query.name != "undefined") {
     mongoose
       .model(req.query.CityObjectType)
@@ -469,7 +425,7 @@ router.delete("/deleteObject", async (req, res) => {
  *         500:
  *           description: Internal error - getObjectAttributes could not find Object in Collection. Error is sent by database.
  */
-router.get("/getObjectAttributes", midWareCaching, (req, res) => {
+router.get("/getObjectAttributes", (req, res) => {
   var cityObjectType = req.query.CityObjectType;
 
   switch (cityObjectType) {
