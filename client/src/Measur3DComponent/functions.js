@@ -12,6 +12,9 @@ import axios from "axios";
 
 import { EventEmitter } from "./events";
 
+import { LASLoader } from "@loaders.gl/las";
+import { load } from "@loaders.gl/core";
+
 // From https://doi.org/10.3390/ijgi10030138
 var ALLCOLOURS = {
   Building: 0x73726f,
@@ -250,27 +253,50 @@ async function parseObject(object, transform, cityObj, geoms) {
   // CityObject JSON, transform, CityObject name, threeScene.Geoms
   var boundaries;
 
-  if (object["pointcloud-file"] !== undefined) {
-    await axios
-      .get(object["pointcloud-file"].pointFile, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Request-Headers": "Access-Control-Allow-Origin",
-        },
-        crossdomain: true,
-        withCredentials: true,
-      })
-      .then(async (response) => {
-        console.log(response.data);
-        console.log(response.status);
-        console.log(response.statusText);
-        console.log(response.headers);
-        console.log(response.config);
-      });
-  }
-
   //create geometry
   var geom = new THREE.BufferGeometry();
+
+  if (object["pointcloud-file"] !== undefined) {
+    console.warn('Warning : Chrome and other browsers might block calls to external URIs. Please consider taking attention to security before proceeding.')
+    const pointcloud_data = await load(
+      object["pointcloud-file"].pointFile,
+      LASLoader,
+      {}
+    );
+
+    var pts = [];
+
+    for (
+      var i = 0;
+      i < pointcloud_data.attributes.POSITION.value.length;
+      i += 3
+    ) {
+      pts.push(
+        pointcloud_data.attributes.POSITION.value[i],
+        pointcloud_data.attributes.POSITION.value[i + 1],
+        pointcloud_data.attributes.POSITION.value[i + 2],
+      );
+    }
+
+
+    geom.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(pts, 3)
+    );
+
+    geom.computeBoundingSphere();
+
+    var dotMaterial = new THREE.PointsMaterial({
+      size: 0.2,
+      sizeAttenuation: true,
+      color: ALLCOLOURS[object.type],
+    });
+    var dots = new THREE.Points(geom, dotMaterial);
+
+    geoms[object.name] = dots;
+
+    return object.children
+  }
 
   if (object.geometry[0] == null) return; // If no geometry (eg: CityObjectGroup (not always true))
 
@@ -314,12 +340,13 @@ async function parseObject(object, transform, cityObj, geoms) {
 
     geom.computeBoundingSphere();
 
-    var dotMaterial = new THREE.PointsMaterial({
+    dotMaterial = new THREE.PointsMaterial({
       size: 4,
       sizeAttenuation: false,
       color: ALLCOLOURS[object.type],
     });
-    var dots = new THREE.Points(geom, dotMaterial);
+
+    dots = new THREE.Points(geom, dotMaterial);
 
     geoms[object.name] = dots;
 
@@ -328,7 +355,7 @@ async function parseObject(object, transform, cityObj, geoms) {
 
   var geom_indices = [];
 
-  for (var i = 0; i < boundaries.length; i++) {
+  for (i = 0; i < boundaries.length; i++) {
     var boundary = [],
       holes = [];
 
@@ -343,14 +370,14 @@ async function parseObject(object, transform, cityObj, geoms) {
         k;
 
       for (var j = 0; j < boundaries[i].length; j++) {
-        for (var k = 0; k < boundaries[i][j].length; k++) {
+        for (k = 0; k < boundaries[i][j].length; k++) {
           pList.push({
             x: object_vertices[boundaries[i][j][k]][0],
             y: object_vertices[boundaries[i][j][k]][1],
             z: object_vertices[boundaries[i][j][k]][2],
           });
 
-          if (j > 0 && k == 0) {
+          if (j > 0 && k === 0) {
             holes.push(vList.length);
           }
 

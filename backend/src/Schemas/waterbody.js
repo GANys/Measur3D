@@ -20,7 +20,7 @@ module.exports = {
     for (var geometry in object.geometry) {
       var authorised_type = ["Solid", "CompositeSolid", "MultiSurface", "CompositeSurface", "MultiLineString"];
       if (!authorised_type.includes(object.geometry[geometry].type)) {
-        throw new Error(object.type + " is not a valid geometry type.");
+        throw new Error(object.geometry[geometry].type + " is not a valid geometry type.");
         return;
       }
 

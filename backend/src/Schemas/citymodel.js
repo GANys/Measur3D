@@ -326,7 +326,7 @@ module.exports = {
     for ([key, element] of Object.entries(object.json.CityObjects)) {
       var result = await saveCityObject(object, element);
 
-      if (result.object === undefined) continue;
+      //if (result.object === undefined) continue;
 
       objectPromises.push(result.object);
 
@@ -585,7 +585,7 @@ async function saveCityObject(object, element) {
   var location;
 
   if (min_x == Infinity) {
-    location = {"type": "Polygon", "coordinates": []};
+    location = {"type": "Polygon", "coordinates": undefined};
   } else if (epsg_code != undefined) {
     var epsgio = "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
 
@@ -623,7 +623,7 @@ async function saveCityObject(object, element) {
     };
     */
 
-    location = {"type": "Polygon", "coordinates": []}
+    location = {"type": "Polygon", "coordinates": undefined}
 
     element.spatialIndex = false;
   }
