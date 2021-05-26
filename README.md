@@ -68,7 +68,7 @@ Public release
 
 ## Acknowledgments
 
-The management of the 3D meshes is based on the [Ninja](https://ninja.cityjson.org/) viewer and its features. This tool is developed under the supervision of [Hugo Ledoux](https://twitter.com/hugoledoux) by the GeoInformation research Group from TUDelft.
+The management of the 3D meshes is partially based on the [Ninja](https://ninja.cityjson.org/) viewer and its features. This tool is developed under the supervision of [Hugo Ledoux](https://twitter.com/hugoledoux) by the GeoInformation research Group from TUDelft.
 
 ## Authors
 

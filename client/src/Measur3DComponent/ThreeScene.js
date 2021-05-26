@@ -215,9 +215,12 @@ class ThreeScene extends Component {
     // Not be enough for collisions -> array.splice doesnt change anything
     // Be careful to not delete the light ... Speaking from experience
     var mesh = new THREE.Mesh();
+    var points = new THREE.Points();
+
+    console.log(this.scene.children)
 
     this.scene.children = this.scene.children.filter(
-      value => value.type !== mesh.type
+      value => value.type !== mesh.type && value.type !== points.type
     );
   };
 
