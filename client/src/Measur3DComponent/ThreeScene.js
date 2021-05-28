@@ -217,8 +217,6 @@ class ThreeScene extends Component {
     var mesh = new THREE.Mesh();
     var points = new THREE.Points();
 
-    console.log(this.scene.children)
-
     this.scene.children = this.scene.children.filter(
       value => value.type !== mesh.type && value.type !== points.type
     );

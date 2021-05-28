@@ -316,6 +316,10 @@ module.exports = {
 
     object.json["name"] = object.jsonName;
 
+    if (object.json.metadata == undefined) {
+      object.json.metadata = {};
+    }
+
     var min_x = Infinity,
       max_x = -Infinity,
       min_y = Infinity,
@@ -332,29 +336,34 @@ module.exports = {
 
       new_objects[object.jsonName + "_" + key] = result.object;
 
-      if (result.bbox != undefined) {
-        if (result.bbox[3] > max_x) max_x = result.bbox[3];
-        if (result.bbox[0] < min_x) min_x = result.bbox[0];
-        if (result.bbox[4] > max_y) max_y = result.bbox[4];
-        if (result.bbox[1] < min_y) min_y = result.bbox[1];
-        if (result.bbox[5] > max_z) max_z = result.bbox[5];
-        if (result.bbox[2] < min_z) min_z = result.bbox[2];
+      if (object.json.metadata.geographicalExtent == undefined) {
+        if (result.bbox != undefined) {
+          if (result.bbox[3] > max_x) max_x = result.bbox[3];
+          if (result.bbox[0] < min_x) min_x = result.bbox[0];
+          if (result.bbox[4] > max_y) max_y = result.bbox[4];
+          if (result.bbox[1] < min_y) min_y = result.bbox[1];
+          if (result.bbox[5] > max_z) max_z = result.bbox[5];
+          if (result.bbox[2] < min_z) min_z = result.bbox[2];
+        }
       }
     }
 
-    if (object.json.metadata == undefined) {
-      object.json.metadata = {};
-    }
-
-    var epsg_code = object.json.metadata.referenceSystem;
-
     var reg = /\d/g; // Only numbers
+
+    var epsg_string = object.json.metadata.referenceSystem
+
+    if (epsg_string != undefined) {
+      var epsg_code = epsg_string.match(reg).join("");
+    }
 
     var location;
 
-    if (epsg_code != undefined) {
-      var epsgio =
-        "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
+    if (
+      epsg_code != undefined &&
+      epsg_code != "4326" &&
+      object.json.metadata.geographicalExtent == undefined
+    ) {
+      var epsgio = "https://epsg.io/" + epsg_code + ".proj4";
 
       var proj_string = await axios.get(epsgio);
 
@@ -375,33 +384,58 @@ module.exports = {
 
       object.json.metadata.spatialIndex = true;
     } else {
-      location = {
-        type: "Polygon",
-        coordinates: [
-          [
-            [min_x, min_y],
-            [min_x, max_y],
-            [max_x, max_y],
-            [max_x, min_y],
-            [min_x, min_y],
+      if (epsg_code == "4326" && object.json.metadata.geographicalExtent == undefined) {
+        location = {
+          type: "Polygon",
+          coordinates: [
+            [
+              [min_x, min_y],
+              [min_x, max_y],
+              [max_x, max_y],
+              [max_x, min_y],
+              [min_x, min_y],
+            ],
           ],
-        ],
-      };
+        };
 
-      object.json.metadata.spatialIndex = false;
+        object.json.metadata.spatialIndex = true;
+      } else {
+        var geoExt = object.json.metadata.geographicalExtent;
+
+        location = {
+          type: "Polygon",
+          coordinates: [
+            [
+              [geoExt[0], geoExt[1]],
+              [geoExt[0], geoExt[4]],
+              [geoExt[3], geoExt[4]],
+              [geoExt[3], geoExt[1]],
+              [geoExt[0], geoExt[1]],
+            ],
+          ],
+        };
+      }
+
+      if (epsg_code == "4326") {
+        object.json.metadata.spatialIndex = true;
+      } else {
+        object.json.metadata.spatialIndex = false;
+      }
     }
 
     object.json.metadata.location = location;
 
-    // Real citymodel bbox
-    object.json.metadata.geographicalExtent = [
-      min_x,
-      min_y,
-      min_z,
-      max_x,
-      max_y,
-      max_z,
-    ];
+    if (object.json.metadata.geographicalExtent == undefined) {
+      // Real citymodel bbox
+      object.json.metadata.geographicalExtent = [
+        min_x,
+        min_y,
+        min_z,
+        max_x,
+        max_y,
+        max_z,
+      ];
+    }
 
     await Promise.all(objectPromises);
 
@@ -538,18 +572,18 @@ async function saveCityObject(object, element) {
 
   // Stores real coordinates in BBOX
   if (object.json.transform !== undefined) {
-    min_x *= object.json.transform.scale[0] +
-      object.json.transform.translate[0];
-    max_x *= object.json.transform.scale[0] +
-      object.json.transform.translate[0];
-    min_y *= object.json.transform.scale[1] +
-      object.json.transform.translate[1];
-    max_y *= object.json.transform.scale[1] +
-      object.json.transform.translate[1];
-    min_z *= object.json.transform.scale[2] +
-      object.json.transform.translate[2];
-    max_z *= object.json.transform.scale[2] +
-      object.json.transform.translate[2];
+    min_x *=
+      object.json.transform.scale[0] + object.json.transform.translate[0];
+    max_x *=
+      object.json.transform.scale[0] + object.json.transform.translate[0];
+    min_y *=
+      object.json.transform.scale[1] + object.json.transform.translate[1];
+    max_y *=
+      object.json.transform.scale[1] + object.json.transform.translate[1];
+    min_z *=
+      object.json.transform.scale[2] + object.json.transform.translate[2];
+    max_z *=
+      object.json.transform.scale[2] + object.json.transform.translate[2];
 
     element.transform = object.json.transform;
   } else {
@@ -585,7 +619,7 @@ async function saveCityObject(object, element) {
   var location;
 
   if (min_x == Infinity) {
-    location = {"type": "Polygon", "coordinates": undefined};
+    location = { type: "Polygon", coordinates: undefined };
   } else if (epsg_code != undefined) {
     var epsgio = "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
 
@@ -623,7 +657,7 @@ async function saveCityObject(object, element) {
     };
     */
 
-    location = {"type": "Polygon", "coordinates": undefined}
+    location = { type: "Polygon", coordinates: undefined };
 
     element.spatialIndex = false;
   }

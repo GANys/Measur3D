@@ -60,10 +60,12 @@ export async function loadCityObjects(threescene, cm_name) {
       // Changes the UP vector to Z rather than Y
       threescene.camera.up = new THREE.Vector3(0, 0, 1);
 
+      console.log(json.metadata.geographicalExtent)
+
       fitCameraToObject(
         threescene.camera,
         cityModelBBOX,
-        1.2,
+        1,
         threescene.controls
       );
 
@@ -162,9 +164,9 @@ export async function loadCityObjects(threescene, cm_name) {
         cityModel: true,
       });
 
-      console.log(threescene);
-
       threescene.renderer.render(threescene.scene, threescene.camera);
+
+      console.log(threescene)
     });
 }
 
