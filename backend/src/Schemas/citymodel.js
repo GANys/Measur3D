@@ -330,8 +330,6 @@ module.exports = {
     for ([key, element] of Object.entries(object.json.CityObjects)) {
       var result = await saveCityObject(object, element);
 
-      //if (result.object === undefined) continue;
-
       objectPromises.push(result.object);
 
       new_objects[object.jsonName + "_" + key] = result.object;
@@ -350,16 +348,18 @@ module.exports = {
 
     var reg = /\d/g; // Only numbers
 
-    var epsg_string = object.json.metadata.referenceSystem
+    var location;
+    var epsg_string = object.json.metadata.referenceSystem;
+    var epsg_code = "";
 
     if (epsg_string != undefined) {
-      var epsg_code = epsg_string.match(reg).join("");
+      epsg_code = epsg_string.match(reg).join("");
+    } else {
+      epsg_code = "4326";
+      console.log("WARN: No CRS -> 4326 assumed.");
     }
 
-    var location;
-
     if (
-      epsg_code != undefined &&
       epsg_code != "4326" &&
       object.json.metadata.geographicalExtent == undefined
     ) {
@@ -383,38 +383,39 @@ module.exports = {
       };
 
       object.json.metadata.spatialIndex = true;
+    } else if (
+      epsg_code == "4326" &&
+      object.json.metadata.geographicalExtent == undefined
+    ) {
+      location = {
+        type: "Polygon",
+        coordinates: [
+          [
+            [min_x, min_y],
+            [min_x, max_y],
+            [max_x, max_y],
+            [max_x, min_y],
+            [min_x, min_y],
+          ],
+        ],
+      };
+
+      object.json.metadata.spatialIndex = true;
     } else {
-      if (epsg_code == "4326" && object.json.metadata.geographicalExtent == undefined) {
-        location = {
-          type: "Polygon",
-          coordinates: [
-            [
-              [min_x, min_y],
-              [min_x, max_y],
-              [max_x, max_y],
-              [max_x, min_y],
-              [min_x, min_y],
-            ],
-          ],
-        };
+      var geoExt = object.json.metadata.geographicalExtent;
 
-        object.json.metadata.spatialIndex = true;
-      } else {
-        var geoExt = object.json.metadata.geographicalExtent;
-
-        location = {
-          type: "Polygon",
-          coordinates: [
-            [
-              [geoExt[0], geoExt[1]],
-              [geoExt[0], geoExt[4]],
-              [geoExt[3], geoExt[4]],
-              [geoExt[3], geoExt[1]],
-              [geoExt[0], geoExt[1]],
-            ],
+      location = {
+        type: "Polygon",
+        coordinates: [
+          [
+            [geoExt[0], geoExt[1]],
+            [geoExt[0], geoExt[4]],
+            [geoExt[3], geoExt[4]],
+            [geoExt[3], geoExt[1]],
+            [geoExt[0], geoExt[1]],
           ],
-        };
-      }
+        ],
+      };
 
       if (epsg_code == "4326") {
         object.json.metadata.spatialIndex = true;
@@ -446,7 +447,7 @@ module.exports = {
     var city = new CityModel(object.json);
 
     // Build 2D index
-    //mongoose.model("CityObject").schema.index({ location: '2dsphere' });
+    mongoose.model("CityObject").schema.index({ location: "2dsphere" });
 
     try {
       await city.save();
@@ -510,7 +511,7 @@ async function saveCityObject(object, element) {
   element.vertices = [];
 
   // Help extracting vertices between the min and max index in all geometries
-  // It is the complex part
+  // It is the ressource consuming part
   for (geometry in element.geometry) {
     if (element.geometry[geometry].type == "GeometryInstance") {
       // Deep clone of a template - Shallow copy create tooo much problems afterwards
@@ -561,35 +562,6 @@ async function saveCityObject(object, element) {
     }
   }
 
-  for (ver in element.vertices) {
-    if (element.vertices[ver][0] > max_x) max_x = element.vertices[ver][0];
-    if (element.vertices[ver][0] < min_x) min_x = element.vertices[ver][0];
-    if (element.vertices[ver][1] > max_y) max_y = element.vertices[ver][1];
-    if (element.vertices[ver][1] < min_y) min_y = element.vertices[ver][1];
-    if (element.vertices[ver][2] > max_z) max_z = element.vertices[ver][2];
-    if (element.vertices[ver][2] < min_z) min_z = element.vertices[ver][2];
-  }
-
-  // Stores real coordinates in BBOX
-  if (object.json.transform !== undefined) {
-    min_x *=
-      object.json.transform.scale[0] + object.json.transform.translate[0];
-    max_x *=
-      object.json.transform.scale[0] + object.json.transform.translate[0];
-    min_y *=
-      object.json.transform.scale[1] + object.json.transform.translate[1];
-    max_y *=
-      object.json.transform.scale[1] + object.json.transform.translate[1];
-    min_z *=
-      object.json.transform.scale[2] + object.json.transform.translate[2];
-    max_z *=
-      object.json.transform.scale[2] + object.json.transform.translate[2];
-
-    element.transform = object.json.transform;
-  } else {
-    object.json.transform = { scale: [1, 1, 1], translate: [0, 0, 0] };
-  }
-
   if (element.geographicalExtent != undefined) {
     min_x = element.geographicalExtent[0];
     max_x = element.geographicalExtent[3];
@@ -597,31 +569,62 @@ async function saveCityObject(object, element) {
     max_y = element.geographicalExtent[4];
     min_z = element.geographicalExtent[2];
     max_z = element.geographicalExtent[5];
-  }
+  } else if (element.vertices == []) {
+    element.geographicalExtent = [];
+  } else {
+    // Extract Min/Max coordinates from extracted vertices
+    for (ver in element.vertices) {
+      if (element.vertices[ver][0] > max_x) max_x = element.vertices[ver][0];
+      if (element.vertices[ver][0] < min_x) min_x = element.vertices[ver][0];
+      if (element.vertices[ver][1] > max_y) max_y = element.vertices[ver][1];
+      if (element.vertices[ver][1] < min_y) min_y = element.vertices[ver][1];
+      if (element.vertices[ver][2] > max_z) max_z = element.vertices[ver][2];
+      if (element.vertices[ver][2] < min_z) min_z = element.vertices[ver][2];
+    }
 
-  if (min_x != Infinity) {
+    // Transform to real coordinates to store in geographicalExtent
+    if (object.json.transform !== undefined) {
+      min_x =
+        min_x * object.json.transform.scale[0] +
+        object.json.transform.translate[0];
+      max_x =
+        max_x * object.json.transform.scale[0] +
+        object.json.transform.translate[0];
+      min_y =
+        min_y * object.json.transform.scale[1] +
+        object.json.transform.translate[1];
+      max_y =
+        max_y * object.json.transform.scale[1] +
+        object.json.transform.translate[1];
+      min_z =
+        min_z * object.json.transform.scale[2] +
+        object.json.transform.translate[2];
+      max_z =
+        max_z * object.json.transform.scale[2] +
+        object.json.transform.translate[2];
+
+      element.transform = object.json.transform;
+    } else {
+      object.json.transform = { scale: [1, 1, 1], translate: [0, 0, 0] };
+    }
+
     element.geographicalExtent = [min_x, min_y, min_z, max_x, max_y, max_z];
-  }
-
-  try {
-    var epsg_code = object.json.metadata.referenceSystem;
-  } catch (err) {
-    console.warn(
-      "No reference have been provided. SpatialIndex wont be used for object : " +
-        object.jsonName +
-        "_" +
-        key
-    );
   }
 
   var reg = /\d/g; // Only numbers
 
   var location;
+  var epsg_string = object.json.metadata.referenceSystem;
+  var epsg_code = "";
 
-  if (min_x == Infinity) {
-    location = { type: "Polygon", coordinates: undefined };
-  } else if (epsg_code != undefined) {
-    var epsgio = "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
+  if (epsg_string != undefined) {
+    epsg_code = epsg_string.match(reg).join("");
+  } else {
+    epsg_code = "4326";
+  }
+
+  if (epsg_code != "4326" && min_x != Infinity) {
+    var epsgio = "https://epsg.io/" + epsg_code + ".proj4";
 
     var proj_string = await axios.get(epsgio);
 
@@ -641,8 +644,7 @@ async function saveCityObject(object, element) {
     };
 
     element.spatialIndex = true;
-  } else {
-    /*
+  } else if (min_x != Infinity) {
     location = {
       type: "Polygon",
       coordinates: [
@@ -655,10 +657,9 @@ async function saveCityObject(object, element) {
         ],
       ],
     };
-    */
 
-    location = { type: "Polygon", coordinates: undefined };
-
+    element.spatialIndex = true;
+  } else {
     element.spatialIndex = false;
   }
 

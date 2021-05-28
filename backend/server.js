@@ -111,6 +111,7 @@ mongoose
     useNewUrlParser: true,
     useCreateIndex: true,
     useFindAndModify: false,
+    poolSize: 100,
   })
   .then(() => {
     console.log(`Connected to server ${server}/${database} with success.`);

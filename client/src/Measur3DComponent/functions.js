@@ -60,8 +60,6 @@ export async function loadCityObjects(threescene, cm_name) {
       // Changes the UP vector to Z rather than Y
       threescene.camera.up = new THREE.Vector3(0, 0, 1);
 
-      console.log(json.metadata.geographicalExtent)
-
       fitCameraToObject(
         threescene.camera,
         cityModelBBOX,
@@ -165,8 +163,6 @@ export async function loadCityObjects(threescene, cm_name) {
       });
 
       threescene.renderer.render(threescene.scene, threescene.camera);
-
-      console.log(threescene)
     });
 }
 
@@ -280,7 +276,6 @@ async function parseObject(object, transform, cityObj, geoms) {
       );
     }
 
-
     geom.setAttribute(
       "position",
       new THREE.Float32BufferAttribute(pts, 3)
@@ -307,11 +302,11 @@ async function parseObject(object, transform, cityObj, geoms) {
 
   var object_vertices = object.vertices; // Extracted vertices for this particular object from the CityModel
 
-  /*
-  if (object.name == 'railway_GMLID_BUI30683_572_6686') {
-    console.log(JSON.stringify(object.geometry[0].boundaries))
+  for(var vertex in object_vertices) {
+    object_vertices[vertex][0] = object_vertices[vertex][0] * transform.scale[0] + transform.translate[0]
+    object_vertices[vertex][1] = object_vertices[vertex][1] * transform.scale[1] + transform.translate[1]
+    object_vertices[vertex][2] = object_vertices[vertex][2] * transform.scale[2] + transform.translate[2]
   }
-  */
 
   if (geomType === "Solid") {
     boundaries = object.geometry[0].boundaries[0];
@@ -325,7 +320,7 @@ async function parseObject(object, transform, cityObj, geoms) {
 
     const vertices = [];
 
-    for (var vertex in boundaries) {
+    for (vertex in boundaries) {
       if (object_vertices[boundaries[vertex]] !== undefined) {
         vertices.push(
           object_vertices[boundaries[vertex]][0],
@@ -376,7 +371,7 @@ async function parseObject(object, transform, cityObj, geoms) {
           pList.push({
             x: object_vertices[boundaries[i][j][k]][0],
             y: object_vertices[boundaries[i][j][k]][1],
-            z: object_vertices[boundaries[i][j][k]][2],
+            z: object_vertices[boundaries[i][j][k]][2]
           });
 
           if (j > 0 && k === 0) {
