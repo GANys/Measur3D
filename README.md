@@ -68,7 +68,7 @@ Public release
 
 ## Acknowledgments
 
-The management of the 3D meshes is partially based on the [Ninja](https://ninja.cityjson.org/) viewer and its features. This tool is developed under the supervision of [Hugo Ledoux](https://twitter.com/hugoledoux) by the GeoInformation research Group from TUDelft.
+The management of the 3D meshes is based on the [Ninja](https://ninja.cityjson.org/) viewer and its features. This tool is developed under the supervision of [Hugo Ledoux](https://twitter.com/hugoledoux) by the GeoInformation research Group from TUDelft.
 
 ## Authors
 
@@ -76,8 +76,23 @@ The management of the 3D meshes is partially based on the [Ninja](https://ninja.
 
 This project is part of the PhD Thesis of GANys under the supervision of [Prof. Roland Billen](https://twitter.com/RolandBillen) - [Geomatics Unit](http://geomatics.ulg.ac.be/home.php), University of Liège, Belgium. It is also part of the SIG3.0 project funded by the [National Fund for Scientific Research](https://www.frs-fnrs.be/en), Belgium.
 
-![UGeom logo](client/src/logo_geomatics.png)
+![UGeom logo](client/src/images/logo_geomatics.png)
 
 ## License
 
 This project is licensed under the Apache License - see the [LICENSE.md](LICENSE) file for details.
+
+## If you use Measur3D or the simplified database schema in a scientific context, please cite this article:
+Nys G.-A. and Billen R. (2021). From consistency to flexibility: A simplified database schema for the management of CityJSON 3D city models. Transactions in GIS.
+
+```
+@article{nys_consistency_2021,
+	title = {From consistency to flexibility: {A} simplified database schema for the management of {CityJSON} {3D} city models},
+	doi = {10.1111/tgis.12807},
+	urldate = {2021-08-16},
+	journal = {Transactions in GIS},
+	author = {Nys, Gilles-Antoine and Billen, Roland},
+	month = jul,
+	year = {2021},
+}
+```

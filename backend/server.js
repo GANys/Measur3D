@@ -13,9 +13,6 @@ var rfs = require("rotating-file-stream"); // version 2.x
 
 const {auth, rateLimiterUsingThirdParty} = require("./middleware");
 
-let Cities = require("./src/Schemas/citymodel.js");
-let Functions = require("./util/functions");
-
 const server = "127.0.0.1:27017"; // REPLACE WITH YOUR DB SERVER
 const database = "citymodel"; // REPLACE WITH YOUR DB NAME
 

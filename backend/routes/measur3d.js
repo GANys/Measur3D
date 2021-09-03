@@ -88,7 +88,7 @@ router.get("/getCityModelsList", (req, res) => {
       if (err) {
         return res
           .status(404)
-          .send({ error: "There is no CityModels in the database." });
+          .send({ error: "There is no CityModel in the database." });
       }
 
       var responseCities = [];
