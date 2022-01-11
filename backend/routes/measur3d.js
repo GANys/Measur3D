@@ -132,19 +132,16 @@ router.get("/getCityModelsList", (req, res) => {
  *           description: Not found - There is no CityModel in the database.
  */
 router.get("/getNamedCityModel", async (req, res) => {
-
-  var cityModel = await mongoose
-    .model("CityModel")
-    .findOne({ name: req.query.name }, async (err, data) => {
-      if (err) {
-        return res
-          .status(500)
-          .send({
-            error: "There is no CityModel with this name in the database.",
-          });
-      }
-    })
-    .lean();
+  try {
+    var cityModel = await mongoose
+      .model("CityModel")
+      .findOne({ name: req.query.name })
+      .lean();
+  } catch (err) {
+    return res.status(500).send({
+      error: "There is no CityModel with this name in the database.",
+    });
+  }
 
   for (var cityobject in cityModel.CityObjects) {
     var cityObjectType = cityModel.CityObjects[cityobject].type;
@@ -170,34 +167,32 @@ router.get("/getNamedCityModel", async (req, res) => {
       default:
     }
 
-    cityModel.CityObjects[cityobject] = await mongoose // Get the document of the CityObjects
-      .model(cityObjectType)
-      .findOne({ name: cityobject }, (err, data_object) => {
-        if (err) return res.status(500).send(err);
-
-        return data_object;
-      })
-      .lean();
+    try {
+      cityModel.CityObjects[cityobject] = await mongoose // Get the document of the CityObjects
+        .model(cityObjectType)
+        .findOne({ name: cityobject })
+        .lean();
+    } catch (err) {
+      return res.status(500).send(err);
+    }
 
     //console.log(cityModel.CityObjects[cityobject]._id + " " + cityobject)
     //console.log("-----------------------------------------------------------------------------------------");
 
     var geometries = [];
+    var geometry;
 
     for (var geom in cityModel.CityObjects[cityobject].geometry) {
-      geometries.push(
-        await mongoose // Get geometries for the CityObject
+      try {
+        geometry = await mongoose // Get geometries for the CityObject
           .model("Geometry")
-          .findOne(
-            { _id: cityModel.CityObjects[cityobject].geometry[geom] },
-            async (err, res_geom) => {
-              if (err) return res.status(500).send(err);
+          .findOne({ _id: cityModel.CityObjects[cityobject].geometry[geom] })
+          .lean();
+      } catch (err) {
+        return res.status(500).send(err);
+      }
 
-              return res_geom;
-            }
-          )
-          .lean()
-      );
+      geometries.push(geometry);
     }
 
     var max_lod = 0;

@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _index = _interopRequireDefault(require("../../../_lib/buildMatchPatternFn/index.js"));
+var _index = _interopRequireDefault(require("../../../_lib/buildMatchFn/index.js"));
 
-var _index2 = _interopRequireDefault(require("../../../_lib/buildMatchFn/index.js"));
+var _index2 = _interopRequireDefault(require("../../../_lib/buildMatchPatternFn/index.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -66,20 +66,20 @@ var parseDayPeriodPatterns = {
   }
 };
 var match = {
-  ordinalNumber: (0, _index.default)({
+  ordinalNumber: (0, _index2.default)({
     matchPattern: matchOrdinalNumberPattern,
     parsePattern: parseOrdinalNumberPattern,
     valueCallback: function (value) {
       return parseInt(value, 10);
     }
   }),
-  era: (0, _index2.default)({
+  era: (0, _index.default)({
     matchPatterns: matchEraPatterns,
     defaultMatchWidth: 'wide',
     parsePatterns: parseEraPatterns,
     defaultParseWidth: 'any'
   }),
-  quarter: (0, _index2.default)({
+  quarter: (0, _index.default)({
     matchPatterns: matchQuarterPatterns,
     defaultMatchWidth: 'wide',
     parsePatterns: parseQuarterPatterns,
@@ -88,19 +88,19 @@ var match = {
       return index + 1;
     }
   }),
-  month: (0, _index2.default)({
+  month: (0, _index.default)({
     matchPatterns: matchMonthPatterns,
     defaultMatchWidth: 'wide',
     parsePatterns: parseMonthPatterns,
     defaultParseWidth: 'any'
   }),
-  day: (0, _index2.default)({
+  day: (0, _index.default)({
     matchPatterns: matchDayPatterns,
     defaultMatchWidth: 'wide',
     parsePatterns: parseDayPatterns,
     defaultParseWidth: 'any'
   }),
-  dayPeriod: (0, _index2.default)({
+  dayPeriod: (0, _index.default)({
     matchPatterns: matchDayPeriodPatterns,
     defaultMatchWidth: 'any',
     parsePatterns: parseDayPeriodPatterns,

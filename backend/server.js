@@ -106,9 +106,7 @@ mongoose
   .connect(`mongodb://${server}/${database}`, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false,
-    poolSize: 100,
+    maxPoolSize: 100
   })
   .then(() => {
     console.log(`Connected to server ${server}/${database} with success.`);
