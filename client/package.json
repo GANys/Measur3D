@@ -25,7 +25,7 @@
     "react-split-pane": "^0.1.91",
     "react-virtualized": "^9.21.2",
     "swagger-ui-react": "^3.35.1",
-    "three": "^0.115.0"
+    "three": "^0.137.0"
   },
   "scripts": {
     "start": "react-scripts start",
