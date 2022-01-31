@@ -3,7 +3,7 @@ const basicAuth = require("express-basic-auth");
 
 //-------------------------------------------------------------------------------------
 
-// Limit EACH ip
+// Limit EVERY ip
 // MongoDB could be used to store rate limiter logs also
 // Brute force shouldn't be a problem
 
@@ -23,12 +23,13 @@ const rateLimiterUsingThirdParty = rateLimit({
 
 //-------------------------------------------------------------------------------------
 
-const auth = basicAuth({
-  users: { ugeom: "supersecret", ganys: "iamthedev" },
+var auth = basicAuth({
+  users: { "ugeom": "supersecret", "ganys": "iamthedev" },
   unauthorizedResponse: getUnauthorizedResponse,
 });
 
 function getUnauthorizedResponse(req) {
+  console.log(typeof req)
   return req.auth
     ? "Credentials " + req.auth.user + ":" + req.auth.password + " rejected"
     : "No credentials provided";

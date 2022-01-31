@@ -21,12 +21,15 @@ const API_PORT = 3001;
 const app = express(); // Middleware order is important
 // Security Middleware - low stack - Counters many small attacks type
 app.use(helmet());
-// Authentication layer
-//app.use(auth);
-// Limit the connection - Counters DDOS
-app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
+
 // Allows server to fecth information from different origins but different ports/API aswell.
 app.use(cors()); // Cross-Origin Resource Sharing
+
+// Limit the connection - Counters DDOS
+app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
+// Authentication layer
+app.use(auth);
+
 // Basic compression
 app.use(compression());
 

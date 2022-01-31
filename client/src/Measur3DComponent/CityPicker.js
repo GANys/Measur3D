@@ -25,27 +25,31 @@ const tableIcons = {
   )),
   Edit: forwardRef((props, ref) => <GetAppRoundedIcon {...props} ref={ref} />),
   ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
-  ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
+  ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />),
 };
 
 const actions = [
   {
-    name: 'load', // Added custom name property so we know which action to check for
+    name: "load", // Added custom name property so we know which action to check for
     icon: () => <GetAppRoundedIcon />,
     tooltip: "Load City Model",
-    onClick: (event, rowData) => EventEmitter.dispatch("loadScene", rowData.name),
+    onClick: (event, rowData) =>
+      EventEmitter.dispatch("loadScene", rowData.name),
     disabled: false, // Set disabled to false by default for all actions
-    position: "row"
-  }
+    position: "row",
+  },
 ];
 
 class BasicMaterialTable extends React.Component {
   async componentDidMount() {
     await axios
-      .get("http://localhost:3001/measur3d/getCityModelsList")
-      .then(async responseList => {
+      .get(
+        "http://localhost:3001/measur3d/getCityModelsList",
+        { auth: { username: "ganys", password: "iamthedev" } }
+      )
+      .then(async (responseList) => {
         this.setState({
-          data: responseList.data
+          data: responseList.data,
         });
       });
   }
@@ -54,14 +58,14 @@ class BasicMaterialTable extends React.Component {
     columns: [
       { title: "Name", field: "name" },
       { title: "Number of elements", field: "nbr_el" },
-      { title: "File Size in Database", field: "filesize" }
+      { title: "File Size in Database", field: "filesize" },
     ],
     data: [],
-    tableTitle: "Available city models in the database"
+    tableTitle: "Available city models in the database",
   };
 
   deleteRows = () => {
-    this.setState(prevState => {
+    this.setState((prevState) => {
       const data = [];
       return { ...prevState, data };
     });
@@ -70,41 +74,40 @@ class BasicMaterialTable extends React.Component {
   render() {
     return (
       <MaterialTable
-      actions={actions}
+        actions={actions}
         options={{
           search: false,
           paging: false,
           draggable: false,
           sorting: false,
-          maxBodyHeight: 212 // 3 lines on my screen - sorry for selfishness
-
+          maxBodyHeight: 212, // 3 lines on my screen - sorry for selfishness
         }}
         title={this.state.tableTitle}
         icons={tableIcons}
         columns={this.state.columns}
         data={this.state.data}
         editable={{
-          onRowDelete: oldData =>
-            new Promise(resolve => {
+          onRowDelete: (oldData) =>
+            new Promise((resolve) => {
               // Delete City Model in DB
               axios.delete(
                 "http://localhost:3001/measur3d/deleteNamedCityModel",
                 {
                   data: {
-                    name: oldData.name
-                  }
+                    name: oldData.name,
+                  },
                 }
               );
 
               setTimeout(() => {
                 resolve();
-                this.setState(prevState => {
+                this.setState((prevState) => {
                   const data = [...prevState.data];
                   data.splice(data.indexOf(oldData), 1);
                   return { ...prevState, data };
                 });
               }, 500);
-            })
+            }),
         }}
       />
     );
