@@ -99,8 +99,8 @@ let WaterBody = require("./waterbody.js");
  *                 description: A hierarchy of arrays following the ISO19107 standard. Duplicate information of the '#/geographicalExtent'. Useful in order to index objects spatialy.
  *               referenceSystem:
  *                 type: string
- *                 format: OGC CRS URN
- *                 description: A string that defines a coordinate reference system. Note that all CityObjects need to have the same CRS.
+ *                 format: URL
+ *                 description: A string that defines a coordinate reference system. Note that all CityObjects need to have the same CRS (http://www.opengis.net/def/crs/authority/version/code).
  *               contactDetails:
  *                 type: object
  *                 properties:
@@ -205,7 +205,7 @@ let CityModelSchema = new mongoose.Schema({
     spatialIndex: { type: Boolean, default: false },
     referenceSystem: {
       type: String,
-      default: "urn:ogc:def:crs:EPSG::4326",
+      default: "https://www.opengis.net/def/crs/EPSG/0/4326",
       required: true,
     },
     contactDetails: {
