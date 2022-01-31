@@ -10,6 +10,7 @@ let mongoose = require("mongoose");
  *         required:
  *           - name
  *           - CityModel
+ *           - transform
  *         properties:
  *           name:
  *             type: string
@@ -139,34 +140,23 @@ let CityObjectSchema = new mongoose.Schema({
   spatialIndex: { type: Boolean, default: false },
   geometry: [mongoose.Schema.Types.Mixed],
   transform: {
-    // No additional properties
-    scale: {
-      type: [Number],
-      default: undefined,
-      validate: function () {
-        return this.transform["scale"].length == 3;
+    type: {
+      scale: {
+        type: [Number],
+        default: undefined,
+        validate: function () {
+          return this.transform["scale"].length == 3;
+        },
       },
+      translate: {
+        type: [Number],
+        default: undefined,
+        validate: function () {
+          return this.transform["translate"].length == 3;
+        },
+      }
     },
-    translate: {
-      type: [Number],
-      default: undefined,
-      validate: function () {
-        return this.transform["translate"].length == 3;
-      },
-    },
-  },
-  "pointcloud-file": {
-    mimeType: {
-      type: String,
-      enum: ["application/vnd.las"],
-    },
-    pointFile: {
-      type: String,
-      required: function () {
-        return this.hasOwnProperty("pointcloud-file") && validURL(this.pointFile);
-      },
-    },
-    pointFileSrsName: String,
+    required: true
   },
   vertices: [[Number]],
 });

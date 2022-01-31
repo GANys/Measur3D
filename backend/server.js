@@ -27,8 +27,8 @@ app.use(cors()); // Cross-Origin Resource Sharing
 
 // Limit the connection - Counters DDOS
 app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
-// Authentication layer
-app.use(auth);
+// Authentication layer - To be updated to Passport/OID
+//app.use(auth);
 
 // Basic compression
 app.use(compression());

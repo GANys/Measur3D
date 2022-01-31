@@ -9,7 +9,6 @@ let Bridge = require("./bridge.js");
 let Building = require("./building.js");
 let CityFurniture = require("./cityfurniture.js");
 let CityObjectGroup = require("./cityobjectgroup.js");
-let GenericCityObject = require("./genericcityobject.js");
 let LandUse = require("./landuse.js");
 let PlantCover = require("./plantcover.js");
 let SolitaryVegetationObject = require("./solitaryvegetationobject.js");
@@ -30,6 +29,7 @@ let WaterBody = require("./waterbody.js");
  *           - version
  *           - CityObjects
  *           - vertices
+ *           - transform
  *         properties:
  *           name:
  *             type: string
@@ -173,7 +173,7 @@ let CityModelSchema = new mongoose.Schema({
   type: { type: String, default: "CityJSON", required: true },
   version: {
     type: String,
-    default: "1.0",
+    default: "1.1",
     required: true,
     validate: /^([0-9]\.)+([0-9])$/,
   },
@@ -258,21 +258,23 @@ let CityModelSchema = new mongoose.Schema({
     },
   },
   transform: {
-    // No additional properties
-    scale: {
-      type: [Number],
-      default: undefined,
-      validate: function () {
-        return this.transform["scale"].length == 3;
+    type: {
+      scale: {
+        type: [Number],
+        default: undefined,
+        validate: function () {
+          return this.transform["scale"].length == 3;
+        },
       },
+      translate: {
+        type: [Number],
+        default: undefined,
+        validate: function () {
+          return this.transform["translate"].length == 3;
+        },
+      }
     },
-    translate: {
-      type: [Number],
-      default: undefined,
-      validate: function () {
-        return this.transform["translate"].length == 3;
-      },
-    },
+    required: true
   },
   appearance: {
     // No additional properties
@@ -704,13 +706,6 @@ async function saveCityObject(object, element) {
       case "CityFurniture":
         element["name"] = object.jsonName + "_" + key;
         var element_id = CityFurniture.insertCityFurniture(
-          element,
-          object.jsonName
-        );
-        break;
-      case "GenericCityObject":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = GenericCityObject.insertGenericCityObject(
           element,
           object.jsonName
         );
