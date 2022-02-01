@@ -73,34 +73,24 @@ let WaterBody = require("./waterbody.js");
  *           metadata:
  *             type: object
  *             properties:
- *               filesize:
- *                 type: number
- *                 description: Size of the CityJSON file in bits - created by the method '#/Measur3D/uploadCityModel'.
- *               nbr_el:
- *                 type: number
- *                 descrption: Number of AbstractCityObject in the CityModel.
+ *               identifier:
+ *                 type: string
+ *                 description: A unique identifier for the dataset. It is recommend to use universally unique identifier, but it is not necessary.
  *               geographicalExtent:
  *                 type: array
  *                 items:
  *                   type: number
  *                 description: An array with 6 values - [minx, miny, minz, maxx, maxy, maxz].
- *               spatialIndex:
- *                 type: boolean
- *                 description: A boolean specifiying if the object is spatially indexed or not.
- *               location:
- *                 type: object
- *                 properties:
- *                   type:
- *                     type: string
- *                     default: ['Polygon']
- *                   coordinates:
- *                     type: string
- *                     format: ISO19107
- *                 description: A hierarchy of arrays following the ISO19107 standard. Duplicate information of the '#/geographicalExtent'. Useful in order to index objects spatialy.
+ *               referenceDate:
+ *                 type: string
+ *                 description: The date where the dataset was compiled, without the time of the day, only a "full-date" in RFC 3339, Section 5.6 should be used.
  *               referenceSystem:
  *                 type: string
  *                 format: URL
  *                 description: A string that defines a coordinate reference system. Note that all CityObjects need to have the same CRS (http://www.opengis.net/def/crs/authority/version/code).
+ *               title: A string describing the dataset.
+ *                 type: string
+ *                 description:
  *               contactDetails:
  *                 type: object
  *                 properties:
@@ -115,7 +105,7 @@ let WaterBody = require("./waterbody.js");
  *                   contactType:
  *                     type: string
  *                     enums: [individual, organization]
- *             description: A JSON object that may have different members giving information on the CityModel.
+ *             description: A JSON object that may have different information giving information on the CityModel (limited to these 6).
  *           transform:
  *             type: object
  *             required:
@@ -195,20 +185,16 @@ let CityModelSchema = new mongoose.Schema({
     },
   },
   metadata: {
-    filesize: String,
-    nbr_el: Number,
+    identifier: {type: String},
     geographicalExtent: { type: [Number], default: undefined },
-    location: {
-      type: { type: String },
-      coordinates: { type: [], default: undefined },
-    },
-    spatialIndex: { type: Boolean, default: false },
+    title: { type: String },
     referenceSystem: {
       type: String,
       default: "https://www.opengis.net/def/crs/EPSG/0/4326",
       required: true,
     },
-    contactDetails: {
+    referenceDate: { type: Date},
+    pointOfContact: {
       contactName: {
         type: String,
       },
@@ -350,7 +336,7 @@ module.exports = {
 
     var reg = /\d/g; // Only numbers
 
-    var location;
+    //var location;
     var epsg_string = object.json.metadata.referenceSystem;
     var epsg_code = "";
 
@@ -371,6 +357,7 @@ module.exports = {
 
       proj4.defs("currentProj", proj_string.data);
 
+      /*
       location = {
         type: "Polygon",
         coordinates: [
@@ -383,12 +370,14 @@ module.exports = {
           ],
         ],
       };
+      */
 
       object.json.metadata.spatialIndex = true;
     } else if (
       epsg_code == "4326" &&
       object.json.metadata.geographicalExtent == undefined
     ) {
+      /*
       location = {
         type: "Polygon",
         coordinates: [
@@ -401,11 +390,13 @@ module.exports = {
           ],
         ],
       };
+      */
 
       object.json.metadata.spatialIndex = true;
     } else {
       var geoExt = object.json.metadata.geographicalExtent;
 
+      /*
       location = {
         type: "Polygon",
         coordinates: [
@@ -419,6 +410,8 @@ module.exports = {
         ],
       };
 
+      */
+
       if (epsg_code == "4326") {
         object.json.metadata.spatialIndex = true;
       } else {
@@ -426,7 +419,7 @@ module.exports = {
       }
     }
 
-    object.json.metadata.location = location;
+    //object.json.metadata.location = location;
 
     if (object.json.metadata.geographicalExtent == undefined) {
       // Real citymodel bbox
@@ -449,7 +442,7 @@ module.exports = {
     var city = new CityModel(object.json);
 
     // Build 2D index
-    mongoose.model("CityObject").schema.index({ location: "2dsphere" });
+    //mongoose.model("CityObject").schema.index({ location: "2dsphere" });
 
     try {
       await city.save();
@@ -615,7 +608,7 @@ async function saveCityObject(object, element) {
 
   var reg = /\d/g; // Only numbers
 
-  var location;
+  //var location;
   var epsg_string = object.json.metadata.referenceSystem;
   var epsg_code = "";
 
@@ -632,6 +625,7 @@ async function saveCityObject(object, element) {
 
     proj4.defs("currentProj", proj_string.data);
 
+    /*
     location = {
       type: "Polygon",
       coordinates: [
@@ -645,8 +639,11 @@ async function saveCityObject(object, element) {
       ],
     };
 
+    */
+
     element.spatialIndex = true;
   } else if (min_x != Infinity) {
+    /*
     location = {
       type: "Polygon",
       coordinates: [
@@ -659,13 +656,14 @@ async function saveCityObject(object, element) {
         ],
       ],
     };
+    */
 
     element.spatialIndex = true;
   } else {
     element.spatialIndex = false;
   }
 
-  element.location = location;
+  //element.location = location;
 
   try {
     switch (element.type) {

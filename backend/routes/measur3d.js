@@ -73,11 +73,7 @@ router.post("/uploadCityModel", (req, res) => {
  *                   properties:
  *                     name:
  *                       type: string
- *                     nbr_el:
- *                       type: number
- *                     filesize:
- *                       type: string
- *               example: [{name: model_1, nbr_el: 845, filesize: 1.24Mb}, {name: model_2, nbr_el: 642, filesize: 835.1Kb}]
+ *               example: [{name: model_1}, {name: model_2}]
  *         404:
  *           description: Not found - There is no CityModel in the database.
  */
@@ -94,11 +90,8 @@ router.get("/getCityModelsList", (req, res) => {
       var responseCities = [];
 
       for (var i = 0; i < data.length; ++i) {
-        var filesize = Functions.lengthInUtf8Bytes(JSON.stringify(data[i])); // Only the city model document, not CityObjects neither geometries...... To be improved
         responseCities.push({
-          name: data[i].name,
-          nbr_el: Object.keys(data[i].CityObjects).length,
-          filesize: Functions.formatBytes(filesize),
+          name: data[i].name
         });
       }
 

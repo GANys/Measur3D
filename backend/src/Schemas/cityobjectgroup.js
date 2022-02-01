@@ -14,7 +14,7 @@ let CityObjectGroup = mongoose.model("CityObject").discriminator(
         return this.geometry.length <= 1;
       }
     },
-    members: {
+    children: {
       type: [String],
       required: true
     },
