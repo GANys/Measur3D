@@ -8,7 +8,7 @@ let Building = mongoose.model("CityObject").discriminator(
   new mongoose.Schema({
     type: {
       type: String,
-      enum: ["Building", "BuildingPart"],
+      enum: ["Building", "BuildingPart", "BuildingRoom", "BuildingStorey", "BuildingUnit"],
       default: "Building"
     },
     attributes: {
@@ -21,22 +21,22 @@ let Building = mongoose.model("CityObject").discriminator(
       yearOfConstruction: Number,
       yearOfDemolition: Number
     },
-    address: {
+    address: { // ["BuildingRoom", "BuildingStorey", "BuildingUnit"] should not have an address, need to find a solution [HERE]
       CountryName: String,
       LocalityName: String,
       ThoroughfareNumber: Number,
       ThoroughfareName: String,
       PostalCode: String,
       location: {
-        type: [mongoose.model("Geometry").schema],
+        type: [mongoose.model("MultiPointGeometry").schema],
         default: undefined
-      }
+      },
     },
     parents: {
       type: [String],
       default: undefined,
       required: function() {
-        return this.type == "BuildingPart";
+        return ["Building", "BuildingPart", "BuildingRoom", "BuildingStorey", "BuildingUnit"].includes(this.type);
       }
     },
     geometry: [mongoose.Schema.Types.Mixed]
@@ -47,7 +47,7 @@ let BuildingInstallation = mongoose.model("CityObject").discriminator(
   "BuildingInstallation",
   new mongoose.Schema({
     name: { type: String, required: true },
-    type: { type: String, default: "BuildingInstallation" },
+    type: { type: String, enum: ['BuildingInstallation', 'BuildingConstructiveElement', 'BuildingFurniture'], default: "BuildingInstallation" },
     geographicalExtent: { type: [Number], default: undefined },
     geometry: [mongoose.Schema.Types.Mixed],
     parents: { type: [String], default: undefined, required: true },

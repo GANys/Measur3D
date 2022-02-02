@@ -25,7 +25,7 @@ let Tunnel = mongoose.model("CityObject").discriminator(
 let TunnelInstallation = mongoose.model("CityObject").discriminator(
   "TunnelInstallation",
   new mongoose.Schema({
-    type: { type: String, default: "TunnelInstallation" },
+    type: { type: String, enum: ["TunnelInstallation", "TunnelConstructiveElement", "TunnelHollowSpace", "TunnelFurniture"],default: "TunnelInstallation" },
     geometry: [mongoose.Schema.Types.Mixed],
     parents: {
       type: [String],

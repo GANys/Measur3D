@@ -29,7 +29,7 @@ let BridgeInstallation = mongoose.model("CityObject").discriminator(
   new mongoose.Schema({
     type: {
       type: String,
-      enum: ["BridgeInstallation", "BridgeConstructionElement"],
+      enum: ["BridgeInstallation", "BridgeConstructiveElement", "BridgeRoom", "BridgeFurniture"],
       default: "BridgeInstallation"
     },
     geometry: [mongoose.Schema.Types.Mixed],

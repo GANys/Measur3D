@@ -26,7 +26,7 @@ app.use(helmet());
 app.use(cors()); // Cross-Origin Resource Sharing
 
 // Limit the connection - Counters DDOS
-app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
+//app.use(rateLimiterUsingThirdParty); // Rate-limit on IPs. -> Currently 1000 calls/24Hours.
 // Authentication layer - To be updated to Passport/OID
 //app.use(auth);
 
@@ -38,7 +38,6 @@ app.use(bodyParser.json({ limit: "100mb" }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 
 //-------------------------------------------------------------------------------------
-// Logging Middleware
 
 // create a rotating write stream
 var logStream = rfs.createStream("file.log", {

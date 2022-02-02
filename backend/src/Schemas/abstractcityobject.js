@@ -8,16 +8,8 @@ let mongoose = require("mongoose");
  *       AbstractCityObject:
  *         type: object
  *         required:
- *           - name
- *           - CityModel
  *           - transform
  *         properties:
- *           name:
- *             type: string
- *             description: Unique name of the CityObject (not its UUID) - created by the method '#/Measur3D/uploadCityModel'.
- *           CityModel:
- *             type: string
- *             description: Reference to the parent CityModel - created by the method '#/Measur3D/uploadCityModel'.
  *           attributes:
  *             type: object
  *             properties:
@@ -107,10 +99,8 @@ let mongoose = require("mongoose");
  *            geometry: [...]
  */
 
+// Generic AbstractCityObject
 let CityObjectSchema = new mongoose.Schema({
-  // Generic AbstractCityObject
-  name: { type: String, required: true, index: true },
-  CityModel: { type: String, required: true, index: true },
   attributes: {
     creationDate: {
       type: String,
@@ -179,6 +169,6 @@ function validURL(str) {
     "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
       "(\\#[-a-z\\d_]*)?$",
     "i"
-  ); // fragment locator
+  );
   return !!pattern.test(str);
 }

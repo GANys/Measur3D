@@ -137,4 +137,4 @@ let TextureSchema = new mongoose.Schema({
 });
 
 Material = mongoose.model("Material", MaterialSchema);
-Texture= mongoose.model("Texture", TextureSchema);
+Texture = mongoose.model("Texture", TextureSchema);

@@ -10,6 +10,7 @@ let Building = require("./building.js");
 let CityFurniture = require("./cityfurniture.js");
 let CityObjectGroup = require("./cityobjectgroup.js");
 let LandUse = require("./landuse.js");
+let OtherConstruction = require("./otherconstruction.js")
 let PlantCover = require("./plantcover.js");
 let SolitaryVegetationObject = require("./solitaryvegetationobject.js");
 let TINRelief = require("./tinrelief.js");
@@ -84,13 +85,23 @@ let WaterBody = require("./waterbody.js");
  *               referenceDate:
  *                 type: string
  *                 description: The date where the dataset was compiled, without the time of the day, only a "full-date" in RFC 3339, Section 5.6 should be used.
+ *               location:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     default: ['Polygon']
+ *                   coordinates:
+ *                     type: string
+ *                     format: ISO19107
+ *                 description: A hierarchy of arrays following the ISO19107 standard. Duplicate information of the '#/geographicalExtent'. Useful in order to index objects spatialy.
  *               referenceSystem:
  *                 type: string
  *                 format: URL
  *                 description: A string that defines a coordinate reference system. Note that all CityObjects need to have the same CRS (http://www.opengis.net/def/crs/authority/version/code).
- *               title: A string describing the dataset.
+ *               title:
  *                 type: string
- *                 description:
+ *                 description: A string describing the dataset.
  *               contactDetails:
  *                 type: object
  *                 properties:
@@ -185,7 +196,7 @@ let CityModelSchema = new mongoose.Schema({
     },
   },
   metadata: {
-    identifier: {type: String},
+    identifier: { type: String },
     geographicalExtent: { type: [Number], default: undefined },
     title: { type: String },
     referenceSystem: {
@@ -193,7 +204,7 @@ let CityModelSchema = new mongoose.Schema({
       default: "https://www.opengis.net/def/crs/EPSG/0/4326",
       required: true,
     },
-    referenceDate: { type: Date},
+    referenceDate: { type: Date },
     pointOfContact: {
       contactName: {
         type: String,
@@ -242,6 +253,10 @@ let CityModelSchema = new mongoose.Schema({
         },
       },
     },
+    location: {
+      type: { type: String, enum: "Polygon" },
+      coordinates: { type: [[[Number]]] },
+    },
   },
   transform: {
     type: {
@@ -258,9 +273,9 @@ let CityModelSchema = new mongoose.Schema({
         validate: function () {
           return this.transform["translate"].length == 3;
         },
-      }
+      },
     },
-    required: true
+    required: true,
   },
   appearance: {
     // No additional properties
@@ -336,7 +351,7 @@ module.exports = {
 
     var reg = /\d/g; // Only numbers
 
-    //var location;
+    var location;
     var epsg_string = object.json.metadata.referenceSystem;
     var epsg_code = "";
 
@@ -357,7 +372,6 @@ module.exports = {
 
       proj4.defs("currentProj", proj_string.data);
 
-      /*
       location = {
         type: "Polygon",
         coordinates: [
@@ -370,14 +384,12 @@ module.exports = {
           ],
         ],
       };
-      */
 
       object.json.metadata.spatialIndex = true;
     } else if (
       epsg_code == "4326" &&
       object.json.metadata.geographicalExtent == undefined
     ) {
-      /*
       location = {
         type: "Polygon",
         coordinates: [
@@ -390,13 +402,11 @@ module.exports = {
           ],
         ],
       };
-      */
 
       object.json.metadata.spatialIndex = true;
     } else {
       var geoExt = object.json.metadata.geographicalExtent;
 
-      /*
       location = {
         type: "Polygon",
         coordinates: [
@@ -410,8 +420,6 @@ module.exports = {
         ],
       };
 
-      */
-
       if (epsg_code == "4326") {
         object.json.metadata.spatialIndex = true;
       } else {
@@ -419,7 +427,7 @@ module.exports = {
       }
     }
 
-    //object.json.metadata.location = location;
+    object.json.metadata.location = location;
 
     if (object.json.metadata.geographicalExtent == undefined) {
       // Real citymodel bbox
@@ -442,7 +450,7 @@ module.exports = {
     var city = new CityModel(object.json);
 
     // Build 2D index
-    //mongoose.model("CityObject").schema.index({ location: "2dsphere" });
+    mongoose.model("CityObject").schema.index({ location: "2dsphere" });
 
     try {
       await city.save();
@@ -608,7 +616,7 @@ async function saveCityObject(object, element) {
 
   var reg = /\d/g; // Only numbers
 
-  //var location;
+  var location;
   var epsg_string = object.json.metadata.referenceSystem;
   var epsg_code = "";
 
@@ -625,7 +633,6 @@ async function saveCityObject(object, element) {
 
     proj4.defs("currentProj", proj_string.data);
 
-    /*
     location = {
       type: "Polygon",
       coordinates: [
@@ -639,11 +646,8 @@ async function saveCityObject(object, element) {
       ],
     };
 
-    */
-
     element.spatialIndex = true;
   } else if (min_x != Infinity) {
-    /*
     location = {
       type: "Polygon",
       coordinates: [
@@ -656,14 +660,13 @@ async function saveCityObject(object, element) {
         ],
       ],
     };
-    */
 
     element.spatialIndex = true;
   } else {
     element.spatialIndex = false;
   }
 
-  //element.location = location;
+  element.location = location;
 
   try {
     switch (element.type) {

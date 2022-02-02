@@ -3,35 +3,22 @@ let mongoose = require("mongoose");
 let Geometry = require("./geometry.js");
 let CityObject = require("./abstractcityobject.js");
 
-let Transportation = mongoose.model("CityObject").discriminator(
-  "Transportation",
+let OtherConstruction = new mongoose.model("CityObject").discriminator(
+  "OtherConstruction",
   new mongoose.Schema({
-    type: {
-      type: String,
-      required: true,
-      enum: ["Road", "Railway", "TransportSquare", "Waterway"]
-    },
-    geometry: [mongoose.Schema.Types.Mixed],
-    attributes: {
-      type: Object,
-      properties: {
-        trafficDirection: {
-          type: String,
-          enum: ['one-way', "two-way"]
-        }
-      }
-    }
+    type: { type: String, required: true, default: "OtherConstruction" },
+    geometry: [mongoose.Schema.Types.Mixed]
   })
 );
 
 module.exports = {
-  insertTransportation: async (object, jsonName) => {
+  insertOtherConstruction: async (object, jsonName) => {
     object["CityModel"] = jsonName
 
     var temp_geometries = [];
 
     for (var geometry in object.geometry) {
-      var authorised_type = ["MultiSurface", "CompositeSurface", "MultiLineString", "MultiPoint"];
+      var authorised_type = ["MultiSurface", "Solid", "CompositeSolid"];
       if (!authorised_type.includes(object.geometry[geometry].type)) {
         throw new Error(object.geometry[geometry].type + " is not a valid geometry type.");
         return;
@@ -42,14 +29,14 @@ module.exports = {
 
     object.geometry = temp_geometries;
 
-    var transportation = new Transportation(object);
+    var otherconstruction = new OtherConstruction(object);
 
     try {
-      let element = await transportation.save();
+      let element = await otherconstruction.save();
       return element.id;
     } catch (err) {
       console.error(err.message);
     }
   },
-  Model: Transportation
+  Model: OtherConstruction
 };
