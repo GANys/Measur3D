@@ -3,20 +3,29 @@ const axios = require("axios");
 let proj4 = require("proj4");
 
 let Geometry = require("./geometry.js");
+let CityObject = require("./abstractcityobject.js");
+let Appearance = require("./appearance.js");
 
+let {Building, BuildingInstallation} = require("./building.js");
+let {Bridge, BridgeInstallation} = require("./bridge.js");
+let {CityFurniture} = require("./cityfurniture.js");
+let {CityObjectGroup} = require("./cityobjectgroup.js");
+let {LandUse} = require("./landuse.js");
+let {OtherConstruction} = require("./otherconstruction.js")
+let {PlantCover} = require("./plantcover.js");
+let {SolitaryVegetationObject} = require("./solitaryvegetationobject.js");
+let {TINRelief} = require("./tinrelief.js");
+let {Transportation} = require("./transportation.js");
+let {Tunnel, TunnelInstallation} = require("./tunnel.js");
+let {WaterBody} = require("./waterbody.js");
+
+/*
 let Appearance = require("./appearance.js");
 let Bridge = require("./bridge.js");
 let Building = require("./building.js");
-let CityFurniture = require("./cityfurniture.js");
-let CityObjectGroup = require("./cityobjectgroup.js");
-let LandUse = require("./landuse.js");
-let OtherConstruction = require("./otherconstruction.js")
-let PlantCover = require("./plantcover.js");
-let SolitaryVegetationObject = require("./solitaryvegetationobject.js");
-let TINRelief = require("./tinrelief.js");
-let Transportation = require("./transportation.js");
-let Tunnel = require("./tunnel.js");
-let WaterBody = require("./waterbody.js");
+
+
+*/
 
 /**
  *  @swagger
@@ -170,7 +179,6 @@ let WaterBody = require("./waterbody.js");
  */
 
 let CityModelSchema = new mongoose.Schema({
-  name: { type: String, required: true },
   type: { type: String, default: "CityJSON", required: true },
   version: {
     type: String,
@@ -178,8 +186,8 @@ let CityModelSchema = new mongoose.Schema({
     required: true,
     validate: /^([0-9]\.)+([0-9])$/,
   },
-  CityObjects: { type: {}, required: true, index: true }, // No need of rules and schemas as it is already handled in the insertCity function
-  vertices: {},
+  CityObjects: [mongoose.model("CityObject").schema], // No need of rules and schemas as it is already handled in the insertCity function
+  vertices: [],
   extensions: {
     url: {
       type: String,
@@ -264,14 +272,14 @@ let CityModelSchema = new mongoose.Schema({
         type: [Number],
         default: undefined,
         validate: function () {
-          return this.transform["scale"].length == 3;
+          return this["scale"].length == 3;
         },
       },
       translate: {
         type: [Number],
         default: undefined,
         validate: function () {
-          return this.transform["translate"].length == 3;
+          return this["translate"].length == 3;
         },
       },
     },
@@ -291,7 +299,7 @@ let CityModelSchema = new mongoose.Schema({
   "geometry-templates": {
     // No additional properties
     templates: {
-      type: [mongoose.model("GeometryInstance").schema],
+      type: [Geometry.GeometryInstance],
       default: undefined,
     },
     "vertices-template": {
@@ -310,27 +318,44 @@ let CityModelSchema = new mongoose.Schema({
   },
 });
 
+CityModelSchema.path('CityObjects').discriminator('Bridge', Bridge);
+CityModelSchema.path('CityObjects').discriminator('BridgeInstallation', BridgeInstallation);
+CityModelSchema.path('CityObjects').discriminator('Building', Building);
+CityModelSchema.path('CityObjects').discriminator('BuildingInstallation', BuildingInstallation);
+CityModelSchema.path('CityObjects').discriminator('CityFurniture', CityFurniture);
+CityModelSchema.path('CityObjects').discriminator('CityObjectGroup', CityObjectGroup);
+CityModelSchema.path('CityObjects').discriminator('LandUse', LandUse);
+CityModelSchema.path('CityObjects').discriminator('OtherConstruction', OtherConstruction);
+CityModelSchema.path('CityObjects').discriminator('PlantCover', PlantCover);
+CityModelSchema.path('CityObjects').discriminator('SolitaryVegetationObject', SolitaryVegetationObject);
+CityModelSchema.path('CityObjects').discriminator('TINRelief', TINRelief);
+CityModelSchema.path('CityObjects').discriminator('Transportation', Transportation);
+CityModelSchema.path('CityObjects').discriminator('Tunnel', Tunnel);
+CityModelSchema.path('CityObjects').discriminator('TunnelInstallation', TunnelInstallation);
+CityModelSchema.path('CityObjects').discriminator('WaterBody', WaterBody);
+
+
 CityModel = mongoose.model("CityModel", CityModelSchema);
 
 module.exports = {
   insertCity: async (object) => {
-    var new_objects = {};
-    var objectPromises = [];
+    //var new_objects = {};
+    //var objectPromises = [];
 
-    object.json["name"] = object.jsonName;
+    //object.json["name"] = object.jsonName;
 
-    if (object.json.metadata == undefined) {
+    /*if (object.json.metadata == undefined) {
       object.json.metadata = {};
-    }
+    }*/
 
-    var min_x = Infinity,
-      max_x = -Infinity,
-      min_y = Infinity,
-      max_y = -Infinity,
-      min_z = Infinity,
-      max_z = -Infinity;
+    //var min_x = Infinity,
+    //  max_x = -Infinity,
+    //  min_y = Infinity,
+    //  max_y = -Infinity,
+    //  min_z = Infinity,
+    //  max_z = -Infinity;
 
-    for ([key, element] of Object.entries(object.json.CityObjects)) {
+    /*for ([key, element] of Object.entries(object.json.CityObjects)) {
       var result = await saveCityObject(object, element);
 
       objectPromises.push(result.object);
@@ -347,22 +372,22 @@ module.exports = {
           if (result.bbox[2] < min_z) min_z = result.bbox[2];
         }
       }
-    }
+    }*/
 
-    var reg = /\d/g; // Only numbers
+    //var reg = /\d/g; // Only numbers
 
-    var location;
-    var epsg_string = object.json.metadata.referenceSystem;
-    var epsg_code = "";
+    //var location;
+    //var epsg_string = object.json.metadata.referenceSystem;
+    //var epsg_code = "";
 
-    if (epsg_string != undefined) {
+    /*if (epsg_string != undefined) {
       epsg_code = epsg_string.match(reg).join("");
     } else {
       epsg_code = "4326";
       console.log("WARN: No CRS -> 4326 assumed.");
-    }
+    }*/
 
-    if (
+    /*if (
       epsg_code != "4326" &&
       object.json.metadata.geographicalExtent == undefined
     ) {
@@ -425,11 +450,11 @@ module.exports = {
       } else {
         object.json.metadata.spatialIndex = false;
       }
-    }
+    }*/
 
-    object.json.metadata.location = location;
+    //object.json.metadata.location = location;
 
-    if (object.json.metadata.geographicalExtent == undefined) {
+    /*if (object.json.metadata.geographicalExtent == undefined) {
       // Real citymodel bbox
       object.json.metadata.geographicalExtent = [
         min_x,
@@ -439,18 +464,28 @@ module.exports = {
         max_y,
         max_z,
       ];
+    }*/
+
+    //await Promise.all(objectPromises);
+
+    //object.json.CityObjects = new_objects;
+    //object.json.vertices = []; // Can be emptied as vertices are in CityObjects now
+    //object.json["geometry-templates"] = {}; // Can be emptied as geometries have been updated in the objects
+
+    // CityObjects are {} in CityJSON, they should be [] in MongoDB
+    var cityObjects = []
+
+    for (var uid in object.json.CityObjects) {
+      object.json.CityObjects[uid].name = uid
+      cityObjects.push(object.json.CityObjects[uid])
     }
 
-    await Promise.all(objectPromises);
-
-    object.json.CityObjects = new_objects;
-    object.json.vertices = []; // Can be emptied as vertices are in CityObjects now
-    object.json["geometry-templates"] = {}; // Can be emptied as geometries have been updated in the objects
+    object.json.CityObjects = cityObjects
 
     var city = new CityModel(object.json);
 
     // Build 2D index
-    mongoose.model("CityObject").schema.index({ location: "2dsphere" });
+    //mongoose.model("CityObject").schema.index({ location: "2dsphere" });
 
     try {
       await city.save();
@@ -498,6 +533,7 @@ function switchGeometry(array, min_index) {
   return array;
 }
 
+/*
 async function saveCityObject(object, element) {
   var min_index = Infinity,
     max_index = -Infinity;
@@ -697,12 +733,12 @@ async function saveCityObject(object, element) {
         break;
       case "CityObjectGroup":
         return { object: undefined, bbox: undefined };
-        /*element["name"] = object.jsonName + "_" + key;
+        element["name"] = object.jsonName + "_" + key;
         var element_id = CityObjectGroup.insertCityObjectGroup(
           element,
           object.jsonName
         );
-        */
+
         break;
       case "CityFurniture":
         element["name"] = object.jsonName + "_" + key;
@@ -781,3 +817,4 @@ async function saveCityObject(object, element) {
 
   return { object: cityobject, bbox: element.geographicalExtent };
 }
+*/

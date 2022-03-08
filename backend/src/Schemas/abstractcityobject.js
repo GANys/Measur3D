@@ -1,5 +1,7 @@
 let mongoose = require("mongoose");
 
+let {MultiPoint, MultiLineString, MultiSurface, Solid, MultiSolid, GeometryInstance} = require("./geometry.js");
+
 /**
  *  @swagger
  *   components:
@@ -35,9 +37,6 @@ let mongoose = require("mongoose");
  *             items:
  *               type: number
  *             description: An array with 6 values - [minx, miny, minz, maxx, maxy, maxz].
- *           spatialIndex:
- *             type: boolean
- *             description: A boolean specifiying if the object is spatially indexed or not.
  *           location:
  *             type: object
  *             properties:
@@ -100,58 +99,72 @@ let mongoose = require("mongoose");
  */
 
 // Generic AbstractCityObject
-let CityObjectSchema = new mongoose.Schema({
-  attributes: {
-    creationDate: {
-      type: String,
-      validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
+let CityObjectSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String
     },
-    terminationDate: {
-      type: String,
-      validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
+    attributes: {
+      creationDate: {
+        type: String,
+        validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
+      },
+      terminationDate: {
+        type: String,
+        validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
+      },
+      class: String,
+      function: String,
+      usage: String,
     },
-    class: String,
-    function: String,
-    usage: String,
-  },
-  parents: { type: [String], default: undefined },
-  children: { type: [String], default: undefined },
-  geographicalExtent: {
-    type: [Number],
-    default: undefined,
-    validate: function () {
-      return this["geographicalExtent"].length % 6 == 0;
+    parents: { type: [String], default: undefined },
+    children: { type: [String], default: undefined },
+    geographicalExtent: {
+      type: [Number],
+      default: undefined,
+      validate: function () {
+        return this["geographicalExtent"].length % 6 == 0;
+      },
     },
-  },
-  location: {
-    type: { type: String },
-    coordinates: { type: [], default: undefined },
-  },
-  spatialIndex: { type: Boolean, default: false },
-  geometry: [mongoose.Schema.Types.Mixed],
-  transform: {
-    type: {
-      scale: {
-        type: [Number],
-        default: undefined,
-        validate: function () {
-          return this.transform["scale"].length == 3;
+    location: {
+      type: { type: String },
+      coordinates: { type: [], default: undefined },
+    },
+    geometry: [mongoose.model("Geometry").schema],
+    transform: {
+      type: {
+        scale: {
+          type: [Number],
+          default: undefined,
+          validate: function () {
+            return this["scale"].length == 3;
+          },
+        },
+        translate: {
+          type: [Number],
+          default: undefined,
+          validate: function () {
+            return this["translate"].length == 3;
+          },
         },
       },
-      translate: {
-        type: [Number],
-        default: undefined,
-        validate: function () {
-          return this.transform["translate"].length == 3;
-        },
-      }
     },
-    required: true
   },
-  vertices: [[Number]],
-});
+  { discriminatorKey: "type" }
+);
+CityObjectSchema.path('geometry').discriminator('MultiPoint', MultiPoint);
+CityObjectSchema.path('geometry').discriminator('MultiLineString', MultiLineString);
+CityObjectSchema.path('geometry').discriminator(['MultiSurface','CompositeSurface'], MultiSurface);
+CityObjectSchema.path('geometry').discriminator('Solid', Solid);
+CityObjectSchema.path('geometry').discriminator(['MultiSolid','CompositeSolid'], MultiSolid);
+
+CityObjectSchema.path('geometry').discriminator('GeometryInstance', GeometryInstance);
 
 //CityObjectSchema.index({ location: "2dsphere" });
+
+CityObjectSchema.pre("validate", function (next) {
+  next();
+});
 
 CityObject = mongoose.model("CityObject", CityObjectSchema);
 

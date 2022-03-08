@@ -136,6 +136,8 @@ router.get("/getNamedCityModel", async (req, res) => {
     });
   }
 
+  /*
+
   for (var cityobject in cityModel.CityObjects) {
     var cityObjectType = cityModel.CityObjects[cityobject].type;
 
@@ -201,6 +203,7 @@ router.get("/getNamedCityModel", async (req, res) => {
 
     cityModel.CityObjects[cityobject].geometry = [geometries[max_id]];
   }
+  */
 
   res.status(200);
   return res.json(cityModel);
