@@ -56,7 +56,7 @@ class BasicMaterialTable extends React.Component {
 
   state = {
     columns: [
-      { title: "Name", field: "name" },
+      { title: "UID", field: "uid" },
       { title: "Number of elements", field: "nbr_el" },
       { title: "File Size in Database", field: "filesize" },
     ],

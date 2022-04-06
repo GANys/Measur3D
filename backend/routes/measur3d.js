@@ -49,7 +49,8 @@ const router = express.Router();
 router.post("/uploadCityModel", (req, res) => {
   req.setTimeout(10 * 60 * 1000); // Special timeOut
 
-  Cities.insertCity(req.body).then(function (data) {
+  Cities.insertCity(req.body.modelName, req.body.json).then(function (data) {
+    console.log(data)
     return res.status(201).send({ success: "File uploaded" });
   });
 });
@@ -80,7 +81,7 @@ router.post("/uploadCityModel", (req, res) => {
 router.get("/getCityModelsList", (req, res) => {
   mongoose
     .model("CityModel")
-    .find({}, async (err, data) => {
+    .find({}, 'uid', async (err, data) => {
       if (err) {
         return res
           .status(404)
@@ -89,9 +90,11 @@ router.get("/getCityModelsList", (req, res) => {
 
       var responseCities = [];
 
+      console.log(data)
+
       for (var i = 0; i < data.length; ++i) {
         responseCities.push({
-          name: data[i].name
+          uid: data[i].uid
         });
       }
 
@@ -128,7 +131,7 @@ router.get("/getNamedCityModel", async (req, res) => {
   try {
     var cityModel = await mongoose
       .model("CityModel")
-      .findOne({ name: req.query.name })
+      .findOne({ uid: req.query.name })
       .lean();
   } catch (err) {
     return res.status(500).send({
@@ -203,6 +206,7 @@ router.get("/getNamedCityModel", async (req, res) => {
 
     cityModel.CityObjects[cityobject].geometry = [geometries[max_id]];
   }
+
   */
 
   res.status(200);

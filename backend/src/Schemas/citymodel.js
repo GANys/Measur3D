@@ -6,26 +6,18 @@ let Geometry = require("./geometry.js");
 let CityObject = require("./abstractcityobject.js");
 let Appearance = require("./appearance.js");
 
-let {Building, BuildingInstallation} = require("./building.js");
-let {Bridge, BridgeInstallation} = require("./bridge.js");
-let {CityFurniture} = require("./cityfurniture.js");
-let {CityObjectGroup} = require("./cityobjectgroup.js");
-let {LandUse} = require("./landuse.js");
-let {OtherConstruction} = require("./otherconstruction.js")
-let {PlantCover} = require("./plantcover.js");
-let {SolitaryVegetationObject} = require("./solitaryvegetationobject.js");
-let {TINRelief} = require("./tinrelief.js");
-let {Transportation} = require("./transportation.js");
-let {Tunnel, TunnelInstallation} = require("./tunnel.js");
-let {WaterBody} = require("./waterbody.js");
-
-/*
-let Appearance = require("./appearance.js");
-let Bridge = require("./bridge.js");
 let Building = require("./building.js");
-
-
-*/
+let Bridge = require("./bridge.js");
+let CityFurniture = require("./cityfurniture.js");
+let CityObjectGroup = require("./cityobjectgroup.js");
+let LandUse = require("./landuse.js");
+let OtherConstruction = require("./otherconstruction.js");
+let PlantCover = require("./plantcover.js");
+let SolitaryVegetationObject = require("./solitaryvegetationobject.js");
+let TINRelief = require("./tinrelief.js");
+let Transportation = require("./transportation.js");
+let Tunnel = require("./tunnel.js");
+let WaterBody = require("./waterbody.js");
 
 /**
  *  @swagger
@@ -34,16 +26,16 @@ let Building = require("./building.js");
  *       CityModel:
  *         type: object
  *         required:
- *           - name
+ *           - uid
  *           - type
  *           - version
  *           - CityObjects
  *           - vertices
  *           - transform
  *         properties:
- *           name:
+ *           uid:
  *             type: string
- *             description: Unique name of the CityModel (not its UUID) - created by the method '#/Measur3D/uploadCityModel'. Basically the name of the uploaded file.
+ *             description: Unique identifier of the CityModel (not its UUID) - created by the method '#/Measur3D/uploadCityModel'. Basically the name of the uploaded file.
  *           type:
  *             type: string
  *             default: CityJSON
@@ -54,7 +46,7 @@ let Building = require("./building.js");
  *           CityObjects:
  *             type: object
  *             properties:
- *               '#/AbstractCityObject/name':
+ *               '#/AbstractCityObject/uid':
  *                 type: object
  *                 properties:
  *                   id:
@@ -180,14 +172,14 @@ let Building = require("./building.js");
 
 let CityModelSchema = new mongoose.Schema({
   type: { type: String, default: "CityJSON", required: true },
+  uid: { type: String, required: true },
   version: {
     type: String,
     default: "1.1",
     required: true,
     validate: /^([0-9]\.)+([0-9])$/,
   },
-  CityObjects: [mongoose.model("CityObject").schema], // No need of rules and schemas as it is already handled in the insertCity function
-  vertices: [],
+  CityObjects: { type: {}, required: true, index: true }, // No need of rules and schemas as it is already handled in the insertCity function
   extensions: {
     url: {
       type: String,
@@ -266,6 +258,7 @@ let CityModelSchema = new mongoose.Schema({
       coordinates: { type: [[[Number]]] },
     },
   },
+  vertices: [],
   transform: {
     type: {
       scale: {
@@ -299,10 +292,10 @@ let CityModelSchema = new mongoose.Schema({
   "geometry-templates": {
     // No additional properties
     templates: {
-      type: [Geometry.GeometryInstance],
+      type: [mongoose.model("GeometryInstance").schema],
       default: undefined,
     },
-    "vertices-template": {
+    "vertices-templates": {
       type: [[Number]],
       default: undefined,
       validate: function () {
@@ -318,182 +311,145 @@ let CityModelSchema = new mongoose.Schema({
   },
 });
 
-CityModelSchema.path('CityObjects').discriminator('Bridge', Bridge);
-CityModelSchema.path('CityObjects').discriminator('BridgeInstallation', BridgeInstallation);
-CityModelSchema.path('CityObjects').discriminator('Building', Building);
-CityModelSchema.path('CityObjects').discriminator('BuildingInstallation', BuildingInstallation);
-CityModelSchema.path('CityObjects').discriminator('CityFurniture', CityFurniture);
-CityModelSchema.path('CityObjects').discriminator('CityObjectGroup', CityObjectGroup);
-CityModelSchema.path('CityObjects').discriminator('LandUse', LandUse);
-CityModelSchema.path('CityObjects').discriminator('OtherConstruction', OtherConstruction);
-CityModelSchema.path('CityObjects').discriminator('PlantCover', PlantCover);
-CityModelSchema.path('CityObjects').discriminator('SolitaryVegetationObject', SolitaryVegetationObject);
-CityModelSchema.path('CityObjects').discriminator('TINRelief', TINRelief);
-CityModelSchema.path('CityObjects').discriminator('Transportation', Transportation);
-CityModelSchema.path('CityObjects').discriminator('Tunnel', Tunnel);
-CityModelSchema.path('CityObjects').discriminator('TunnelInstallation', TunnelInstallation);
-CityModelSchema.path('CityObjects').discriminator('WaterBody', WaterBody);
-
-
 CityModel = mongoose.model("CityModel", CityModelSchema);
 
 module.exports = {
-  insertCity: async (object) => {
-    //var new_objects = {};
-    //var objectPromises = [];
+  insertCity: async (modelName, citymodel) => {
+    return new Promise(async function (resolve, reject) {
+      citymodel["uid"] = modelName;
+      /*
+   var new_objects = {};
+   var objectPromises = [];
 
-    //object.json["name"] = object.jsonName;
+   var min_x = Infinity,
+     max_x = -Infinity,
+     min_y = Infinity,
+     max_y = -Infinity,
+     min_z = Infinity,
+     max_z = -Infinity;
 
-    /*if (object.json.metadata == undefined) {
-      object.json.metadata = {};
-    }*/
+   for ([key, element] of Object.entries(object.json.CityObjects)) {
+     var result = await saveCityObject(object, element);
 
-    //var min_x = Infinity,
-    //  max_x = -Infinity,
-    //  min_y = Infinity,
-    //  max_y = -Infinity,
-    //  min_z = Infinity,
-    //  max_z = -Infinity;
+     if (result.object === undefined) continue;
 
-    /*for ([key, element] of Object.entries(object.json.CityObjects)) {
-      var result = await saveCityObject(object, element);
+     objectPromises.push(result.object);
 
-      objectPromises.push(result.object);
+     new_objects[object.jsonName + "_" + key] = result.object;
 
-      new_objects[object.jsonName + "_" + key] = result.object;
+     if (result.bbox[3] > max_x) max_x = result.bbox[3];
+     if (result.bbox[0] < min_x) min_x = result.bbox[0];
+     if (result.bbox[4] > max_y) max_y = result.bbox[4];
+     if (result.bbox[1] < min_y) min_y = result.bbox[1];
+     if (result.bbox[5] > max_z) max_z = result.bbox[5];
+     if (result.bbox[2] < min_z) min_z = result.bbox[2];
+   }
 
-      if (object.json.metadata.geographicalExtent == undefined) {
-        if (result.bbox != undefined) {
-          if (result.bbox[3] > max_x) max_x = result.bbox[3];
-          if (result.bbox[0] < min_x) min_x = result.bbox[0];
-          if (result.bbox[4] > max_y) max_y = result.bbox[4];
-          if (result.bbox[1] < min_y) min_y = result.bbox[1];
-          if (result.bbox[5] > max_z) max_z = result.bbox[5];
-          if (result.bbox[2] < min_z) min_z = result.bbox[2];
+   if (object.json.metadata == undefined) {
+     object.json.metadata = {};
+   }
+
+   var epsg_code = object.json.metadata.referenceSystem;
+
+   var reg = /\d/g; // Only numbers
+
+   var location;
+
+   if (epsg_code != undefined) {
+     var epsgio =
+       "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
+
+     var proj_string = await axios.get(epsgio);
+
+     proj4.defs("currentProj", proj_string.data);
+
+     location = {
+       type: "Polygon",
+       coordinates: [
+         [
+           proj4("currentProj", "WGS84", [min_x, min_y]),
+           proj4("currentProj", "WGS84", [min_x, max_y]),
+           proj4("currentProj", "WGS84", [max_x, max_y]),
+           proj4("currentProj", "WGS84", [max_x, min_y]),
+           proj4("currentProj", "WGS84", [min_x, min_y]),
+         ],
+       ],
+     };
+
+     object.json.metadata.spatialIndex = true;
+   } else {
+     location = {
+       type: "Polygon",
+       coordinates: [
+         [
+           [min_x, min_y],
+           [min_x, max_y],
+           [max_x, max_y],
+           [max_x, min_y],
+           [min_x, min_y],
+         ],
+       ],
+     };
+
+     object.json.metadata.spatialIndex = false;
+   }
+
+   object.json.metadata.location = location;
+
+   // Real citymodel bbox
+   object.json.metadata.geographicalExtent = [
+     min_x,
+     min_y,
+     min_z,
+     max_x,
+     max_y,
+     max_z,
+   ];
+
+   await Promise.all(objectPromises);
+
+   object.json.CityObjects = new_objects;
+   object.json.vertices = []; // Can be emptied as vertices are in CityObjects now
+   object.json["geometry-templates"] = {}; // Can be emptied as geometries have been updated in the objects
+
+
+
+   // Build 2D index
+   //mongoose.model("CityObject").schema.index({ location: '2dsphere' });
+   */
+
+      var temp_keys = [];
+      var temp_objects = [];
+
+      for ([key, element] of Object.entries(citymodel.CityObjects)) {
+        temp_keys.push(key);
+        temp_objects.push(saveCityObject(citymodel, element));
+      }
+
+      Promise.allSettled(temp_objects).then((resolved_objects) => {
+        var cityobjects = {};
+        for (var i in resolved_objects) {
+          if (resolved_objects[i].status == "rejected") {
+            console.log(resolved_objects[i].reason);
+          } else {
+            cityobjects[temp_keys[i]] = resolved_objects[i].value;
+          }
         }
-      }
-    }*/
 
-    //var reg = /\d/g; // Only numbers
+        citymodel.CityObjects = cityobjects;
+        citymodel.vertices = [];
 
-    //var location;
-    //var epsg_string = object.json.metadata.referenceSystem;
-    //var epsg_code = "";
+        var city = new CityModel(citymodel);
 
-    /*if (epsg_string != undefined) {
-      epsg_code = epsg_string.match(reg).join("");
-    } else {
-      epsg_code = "4326";
-      console.log("WARN: No CRS -> 4326 assumed.");
-    }*/
-
-    /*if (
-      epsg_code != "4326" &&
-      object.json.metadata.geographicalExtent == undefined
-    ) {
-      var epsgio = "https://epsg.io/" + epsg_code + ".proj4";
-
-      var proj_string = await axios.get(epsgio);
-
-      proj4.defs("currentProj", proj_string.data);
-
-      location = {
-        type: "Polygon",
-        coordinates: [
-          [
-            proj4("currentProj", "WGS84", [min_x, min_y]),
-            proj4("currentProj", "WGS84", [min_x, max_y]),
-            proj4("currentProj", "WGS84", [max_x, max_y]),
-            proj4("currentProj", "WGS84", [max_x, min_y]),
-            proj4("currentProj", "WGS84", [min_x, min_y]),
-          ],
-        ],
-      };
-
-      object.json.metadata.spatialIndex = true;
-    } else if (
-      epsg_code == "4326" &&
-      object.json.metadata.geographicalExtent == undefined
-    ) {
-      location = {
-        type: "Polygon",
-        coordinates: [
-          [
-            [min_x, min_y],
-            [min_x, max_y],
-            [max_x, max_y],
-            [max_x, min_y],
-            [min_x, min_y],
-          ],
-        ],
-      };
-
-      object.json.metadata.spatialIndex = true;
-    } else {
-      var geoExt = object.json.metadata.geographicalExtent;
-
-      location = {
-        type: "Polygon",
-        coordinates: [
-          [
-            [geoExt[0], geoExt[1]],
-            [geoExt[0], geoExt[4]],
-            [geoExt[3], geoExt[4]],
-            [geoExt[3], geoExt[1]],
-            [geoExt[0], geoExt[1]],
-          ],
-        ],
-      };
-
-      if (epsg_code == "4326") {
-        object.json.metadata.spatialIndex = true;
-      } else {
-        object.json.metadata.spatialIndex = false;
-      }
-    }*/
-
-    //object.json.metadata.location = location;
-
-    /*if (object.json.metadata.geographicalExtent == undefined) {
-      // Real citymodel bbox
-      object.json.metadata.geographicalExtent = [
-        min_x,
-        min_y,
-        min_z,
-        max_x,
-        max_y,
-        max_z,
-      ];
-    }*/
-
-    //await Promise.all(objectPromises);
-
-    //object.json.CityObjects = new_objects;
-    //object.json.vertices = []; // Can be emptied as vertices are in CityObjects now
-    //object.json["geometry-templates"] = {}; // Can be emptied as geometries have been updated in the objects
-
-    // CityObjects are {} in CityJSON, they should be [] in MongoDB
-    var cityObjects = []
-
-    for (var uid in object.json.CityObjects) {
-      object.json.CityObjects[uid].name = uid
-      cityObjects.push(object.json.CityObjects[uid])
-    }
-
-    object.json.CityObjects = cityObjects
-
-    var city = new CityModel(object.json);
-
-    // Build 2D index
-    //mongoose.model("CityObject").schema.index({ location: "2dsphere" });
-
-    try {
-      await city.save();
-    } catch (err) {
-      console.warn(err.message);
-    }
-
-    return;
+        try {
+          city.save().then((data) => {
+            resolve("Citymodel saved");
+          });
+        } catch (err) {
+          console.error(err.message);
+        }
+      });
+    });
   },
   Model: CityModel,
   Schema: CityModelSchema,
@@ -533,157 +489,129 @@ function switchGeometry(array, min_index) {
   return array;
 }
 
-/*
-async function saveCityObject(object, element) {
-  var min_index = Infinity,
-    max_index = -Infinity;
+async function saveCityObject(citymodel, object) {
+  return new Promise(async function (resolve, reject) {
+    var min_index = Infinity,
+      max_index = -Infinity;
 
-  var min_x = Infinity,
-    max_x = -Infinity,
-    min_y = Infinity,
-    max_y = -Infinity,
-    min_z = Infinity,
-    max_z = -Infinity;
+    var min_x = Infinity,
+      max_x = -Infinity,
+      min_y = Infinity,
+      max_y = -Infinity,
+      min_z = Infinity,
+      max_z = -Infinity;
 
-  var geometryTemplates = object.json["geometry-templates"];
+    object.vertices = [];
 
-  element.vertices = [];
+    // Help extracting vertices between the min and max index in all geometries
+    // It is the complex part
+    for (var geometry in object.geometry) {
+      if (object.geometry[geometry].type == "GeometryInstance") {
+        // Deep clone of a template - Shallow copy create to much problems afterwards
+        var instance = await Geometry.getGeometryInstance(
+          JSON.parse(JSON.stringify(object.geometry[geometry])),
+          JSON.parse(
+            JSON.stringify(
+              citymodel["geometry-templates"].templates[
+                object.geometry[geometry].template
+              ]
+            )
+          ),
+          citymodel.vertices,
+          citymodel.transform,
+          citymodel["geometry-templates"]["vertices-templates"]
+        );
 
-  // Help extracting vertices between the min and max index in all geometries
-  // It is the ressource consuming part
-  for (geometry in element.geometry) {
-    if (element.geometry[geometry].type == "GeometryInstance") {
-      // Deep clone of a template - Shallow copy create tooo much problems afterwards
-      var copyTemplate = JSON.parse(
-        JSON.stringify(
-          geometryTemplates.templates[element.geometry[geometry].template]
-        )
-      );
+        object.geometry[geometry] = instance[0];
+        object.vertices = object.vertices.concat(instance[1]);
+      } else {
+        [min_index, max_index] = getExtreme(
+          object.geometry[geometry].boundaries,
+          min_index,
+          max_index
+        );
 
-      var instance = await Geometry.getGeometryInstance(
-        element.geometry[geometry],
-        copyTemplate,
-        object.json.vertices,
-        object.json.transform,
-        geometryTemplates["vertices-templates"]
-      );
+        // Extract only the relevant vertices for the CityObject
+        object.vertices = citymodel.vertices.slice().splice(
+          // Slice() makes a deep copy
+          min_index,
+          max_index - min_index + 1
+        );
 
-      element.geometry[geometry] = instance[0];
-      element.vertices = element.vertices.concat(instance[1]);
-
-      for (var vertex in element.vertices) {
-        for (var el in element.vertices[vertex]) {
-          element.vertices[vertex][el] =
-            (element.vertices[vertex][el] -
-              object.json.transform.translate[el]) /
-            object.json.transform.scale[el];
-        }
+        // Populate geometries with the real vertices instead of indexes
+        object.geometry[geometry].boundaries = switchGeometry(
+          object.geometry[geometry].boundaries,
+          min_index
+        );
       }
-    } else {
-      [min_index, max_index] = getExtreme(
-        element.geometry[geometry].boundaries,
-        min_index,
-        max_index
-      );
-
-      // Extract only the relevant vertices for the CityObject
-      element.vertices = object.json.vertices.slice().splice(
-        // Slice() makes a deep copy
-        min_index,
-        max_index - min_index + 1
-      );
-
-      // Populate geometries with the real vertices instead of indexes
-      element.geometry[geometry].boundaries = switchGeometry(
-        element.geometry[geometry].boundaries,
-        min_index
-      );
-    }
-  }
-
-  if (element.geographicalExtent != undefined) {
-    min_x = element.geographicalExtent[0];
-    max_x = element.geographicalExtent[3];
-    min_y = element.geographicalExtent[1];
-    max_y = element.geographicalExtent[4];
-    min_z = element.geographicalExtent[2];
-    max_z = element.geographicalExtent[5];
-  } else if (element.vertices == []) {
-    element.geographicalExtent = [];
-  } else {
-    // Extract Min/Max coordinates from extracted vertices
-    for (ver in element.vertices) {
-      if (element.vertices[ver][0] > max_x) max_x = element.vertices[ver][0];
-      if (element.vertices[ver][0] < min_x) min_x = element.vertices[ver][0];
-      if (element.vertices[ver][1] > max_y) max_y = element.vertices[ver][1];
-      if (element.vertices[ver][1] < min_y) min_y = element.vertices[ver][1];
-      if (element.vertices[ver][2] > max_z) max_z = element.vertices[ver][2];
-      if (element.vertices[ver][2] < min_z) min_z = element.vertices[ver][2];
     }
 
-    // Transform to real coordinates to store in geographicalExtent
-    if (object.json.transform !== undefined) {
+    for (ver in object.vertices) {
+      if (object.vertices[ver][0] > max_x) max_x = object.vertices[ver][0];
+      if (object.vertices[ver][0] < min_x) min_x = object.vertices[ver][0];
+      if (object.vertices[ver][1] > max_y) max_y = object.vertices[ver][1];
+      if (object.vertices[ver][1] < min_y) min_y = object.vertices[ver][1];
+      if (object.vertices[ver][2] > max_z) max_z = object.vertices[ver][2];
+      if (object.vertices[ver][2] < min_z) min_z = object.vertices[ver][2];
+    }
+
+    // Stores real coordinates in BBOX
+    if (citymodel.transform != undefined) {
       min_x =
-        min_x * object.json.transform.scale[0] +
-        object.json.transform.translate[0];
+        min_x * citymodel.transform.scale[0] + citymodel.transform.translate[0];
       max_x =
-        max_x * object.json.transform.scale[0] +
-        object.json.transform.translate[0];
+        max_x * citymodel.transform.scale[0] + citymodel.transform.translate[0];
       min_y =
-        min_y * object.json.transform.scale[1] +
-        object.json.transform.translate[1];
+        min_y * citymodel.transform.scale[1] + citymodel.transform.translate[1];
       max_y =
-        max_y * object.json.transform.scale[1] +
-        object.json.transform.translate[1];
+        max_y * citymodel.transform.scale[1] + citymodel.transform.translate[1];
       min_z =
-        min_z * object.json.transform.scale[2] +
-        object.json.transform.translate[2];
+        min_z * citymodel.transform.scale[2] + citymodel.transform.translate[2];
       max_z =
-        max_z * object.json.transform.scale[2] +
-        object.json.transform.translate[2];
-
-      element.transform = object.json.transform;
-    } else {
-      object.json.transform = { scale: [1, 1, 1], translate: [0, 0, 0] };
+        max_z * citymodel.transform.scale[2] + citymodel.transform.translate[2];
     }
 
-    element.geographicalExtent = [min_x, min_y, min_z, max_x, max_y, max_z];
-  }
+    object.geographicalExtent = [min_x, min_y, min_z, max_x, max_y, max_z];
 
-  var reg = /\d/g; // Only numbers
+    object.transform = citymodel.transform;
 
-  var location;
-  var epsg_string = object.json.metadata.referenceSystem;
-  var epsg_code = "";
+    try {
+      var epsg_code = citymodel.metadata.referenceSystem;
+    } catch (err) {
+      console.warn(
+        "No reference have been provided. SpatialIndex wont be used for object : " +
+          key
+      );
+    }
 
-  if (epsg_string != undefined) {
-    epsg_code = epsg_string.match(reg).join("");
-  } else {
-    epsg_code = "4326";
-  }
+    var reg = /\d/g; // Only numbers
 
-  if (epsg_code != "4326" && min_x != Infinity) {
-    var epsgio = "https://epsg.io/" + epsg_code + ".proj4";
+    var location;
+    /*
 
-    var proj_string = await axios.get(epsgio);
+      if (epsg_code != undefined) {
+        var epsgio = "https://epsg.io/" + epsg_code.match(reg).join("") + ".proj4";
 
-    proj4.defs("currentProj", proj_string.data);
+        var proj_string = await axios.get(epsgio);
 
-    location = {
-      type: "Polygon",
-      coordinates: [
-        [
-          proj4("currentProj", "WGS84", [min_x, min_y]),
-          proj4("currentProj", "WGS84", [min_x, max_y]),
-          proj4("currentProj", "WGS84", [max_x, max_y]),
-          proj4("currentProj", "WGS84", [max_x, min_y]),
-          proj4("currentProj", "WGS84", [min_x, min_y]),
-        ],
-      ],
-    };
+        proj4.defs("currentProj", proj_string.data);
 
-    element.spatialIndex = true;
-  } else if (min_x != Infinity) {
+        location = {
+          type: "Polygon",
+          coordinates: [
+            [
+              proj4("currentProj", "WGS84", [min_x, min_y]),
+              proj4("currentProj", "WGS84", [min_x, max_y]),
+              proj4("currentProj", "WGS84", [max_x, max_y]),
+              proj4("currentProj", "WGS84", [max_x, min_y]),
+              proj4("currentProj", "WGS84", [min_x, min_y]),
+            ],
+          ],
+        };
+
+        object.spatialIndex = true;
+      } else {
+      */
     location = {
       type: "Polygon",
       coordinates: [
@@ -697,124 +625,89 @@ async function saveCityObject(object, element) {
       ],
     };
 
-    element.spatialIndex = true;
-  } else {
-    element.spatialIndex = false;
-  }
+    object.spatialIndex = false;
+    //}
 
-  element.location = location;
+    object.location = location;
 
-  try {
-    switch (element.type) {
-      case "Building":
-      case "BuildingPart":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Building.insertBuilding(element, object.jsonName);
-        break;
-      case "BuildingInstallation":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Building.insertBuildingInstallation(
-          element,
-          object.jsonName
-        );
-        break;
-      case "Bridge":
-      case "BridgePart":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Bridge.insertBridge(element, object.jsonName);
-        break;
-      case "BridgeInstallation":
-      case "BridgeConstructionElement":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Bridge.insertBridgeInstallation(
-          element,
-          object.jsonName
-        );
-        break;
-      case "CityObjectGroup":
-        return { object: undefined, bbox: undefined };
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = CityObjectGroup.insertCityObjectGroup(
-          element,
-          object.jsonName
-        );
+    object["uid"] = key;
 
-        break;
-      case "CityFurniture":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = CityFurniture.insertCityFurniture(
-          element,
-          object.jsonName
-        );
-        break;
-      case "LandUse":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = LandUse.insertLandUse(element, object.jsonName);
-        break;
-      case "PlantCover":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = PlantCover.insertPlantCover(element, object.jsonName);
-        break;
-      case "Railway":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Transportation.insertTransportation(
-          element,
-          object.jsonName
-        );
-        break;
-      case "Road":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Transportation.insertTransportation(
-          element,
-          object.jsonName
-        );
-        break;
-      case "SolitaryVegetationObject":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(
-          element,
-          object.jsonName
-        );
-        break;
-      case "TINRelief":
-        element["name"] = object.jsonName + "_" + key; // Add a reference to the building for the client - attribute in document
-        var element_id = TINRelief.insertTINRelief(element, object.jsonName);
-        break;
-      case "TransportSquare":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Transportation.insertTransportation(
-          element,
-          object.jsonName
-        );
-        break;
-      case "Tunnel":
-      case "TunnelPart":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Tunnel.insertTunnel(element, object.jsonName);
-        break;
-      case "TunnelInstallation":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = Tunnel.insertTunnelInstallation(
-          element,
-          object.jsonName
-        );
-        break;
-      case "WaterBody":
-        element["name"] = object.jsonName + "_" + key;
-        var element_id = WaterBody.insertWaterBody(element, object.jsonName);
-        break;
-      default:
-        throw new Error("insertCity: " + key + " is not a CityObject.");
+    var temp_object_id;
+
+    try {
+      switch (object.type) {
+        case "Building":
+        case "BuildingPart":
+          temp_object_id = await Building.insertBuilding(object);
+          break;
+        case "BuildingInstallation":
+          temp_object_id = await Building.insertBuildingInstallation(object);
+          break;
+        case "Bridge":
+        case "BridgePart":
+          temp_object_id = await Bridge.insertBridge(object);
+          break;
+        case "BridgeInstallation":
+        case "BridgeConstructiveElement":
+          temp_object_id = await Bridge.insertBridgeInstallation(object);
+          break;
+        case "CityObjectGroup":
+          return reject(
+            "insertCity: " + object.type + " is not supported yet."
+          );
+          /*
+          temp_object_id = await CityObjectGroup.insertCityObjectGroup(object);
+         */
+          break;
+        case "CityFurniture":
+          temp_object_id = await CityFurniture.insertCityFurniture(object);
+          break;
+        case "LandUse":
+          temp_object_id = await LandUse.insertLandUse(object);
+          break;
+        case "PlantCover":
+          temp_object_id = await PlantCover.insertPlantCover(object);
+          break;
+        case "Railway":
+          temp_object_id = await Transportation.insertTransportation(object);
+          break;
+        case "Road":
+          temp_object_id = await Transportation.insertTransportation(object);
+          break;
+        case "SolitaryVegetationObject":
+          temp_object_id = await SolitaryVegetationObject.insertSolitaryVegetationObject(
+            object
+          );
+          break;
+        case "TINRelief":
+          temp_object_id = await TINRelief.insertTINRelief(object);
+          break;
+        case "TransportSquare":
+          temp_object_id = await Transportation.insertTransportation(object);
+          break;
+        case "Tunnel":
+        case "TunnelPart":
+          temp_object_id = await Tunnel.insertTunnel(object);
+          break;
+        case "TunnelInstallation":
+          temp_object_id = await Tunnel.insertTunnelInstallation(object);
+          break;
+        case "WaterBody":
+          temp_object_id = await WaterBody.insertWaterBody(object);
+          break;
+        default:
+          return reject(
+            "insertCity: " +
+              key +
+              " is not a supported CityObject (" +
+              object.type +
+              ")."
+          );
+      }
+
+      resolve(mongoose.Types.ObjectId(temp_object_id));
+    } catch (err) {
+      console.warn(err.message);
     }
-
-    var cityobject = {};
-
-    cityobject["id"] = element_id;
-    cityobject["type"] = element.type;
-  } catch (err) {
-    console.warn(err.message);
-  }
-
-  return { object: cityobject, bbox: element.geographicalExtent };
+  });
 }
-*/

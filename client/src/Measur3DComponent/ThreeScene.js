@@ -183,7 +183,7 @@ class ThreeScene extends Component {
     axios
       .post("http://localhost:3001/measur3d/uploadCityModel", {
         json: file.content,
-        jsonName: file.jsonName
+        modelName: file.modelName
       })
       .then(res => {
         EventEmitter.dispatch("success", res.data.success);

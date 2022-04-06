@@ -1,7 +1,5 @@
 let mongoose = require("mongoose");
 
-let {MultiPoint, MultiLineString, MultiSurface, Solid, MultiSolid, GeometryInstance} = require("./geometry.js");
-
 /**
  *  @swagger
  *   components:
@@ -10,8 +8,11 @@ let {MultiPoint, MultiLineString, MultiSurface, Solid, MultiSolid, GeometryInsta
  *       AbstractCityObject:
  *         type: object
  *         required:
- *           - transform
+ *           - uid
  *         properties:
+ *           uid:
+ *             type: string
+ *             description: Unique identifier of the CityObject (not its UUID) - created by the method '#/Measur3D/uploadCityModel'.
  *           attributes:
  *             type: object
  *             properties:
@@ -37,6 +38,9 @@ let {MultiPoint, MultiLineString, MultiSurface, Solid, MultiSolid, GeometryInsta
  *             items:
  *               type: number
  *             description: An array with 6 values - [minx, miny, minz, maxx, maxy, maxz].
+ *           spatialIndex:
+ *             type: boolean
+ *             description: A boolean specifiying if the object is spatially indexed or not.
  *           location:
  *             type: object
  *             properties:
@@ -67,18 +71,6 @@ let {MultiPoint, MultiLineString, MultiSurface, Solid, MultiSolid, GeometryInsta
  *                 items:
  *                   type: number
  *             description: Scale factor and the translation needed to obtain the original coordinates from the integer vertices (stored with floats/doubles)
- *           pointcloud-file:
- *             type: object
- *             properties:
- *               mimeType:
- *                 type: string
- *                 enum: ["application/vnd.las"]
- *               pointFile:
- *                 type: string
- *                 format: URL
- *               pointFileSrsName:
- *                 type: string
- *                 default: "EPSG:4326"
  *           vertices:
  *             type: array
  *             items:
@@ -87,7 +79,7 @@ let {MultiPoint, MultiLineString, MultiSurface, Solid, MultiSolid, GeometryInsta
  *                type: number
  *             description: An array of coordinates of each vertex of the city object. Their position in this array (0-based) is used as an index to be referenced by the Geometric Objects. The indexing mechanism of the format Wavefront OBJ is basically reused. Vertices are stored as integer (refer to #/transform).
  *         example:
- *            name: Liège-4000-1337
+ *            uid: Liège-4000-1337
  *            type: Building
  *            geographicalExtent: [ 45789.1, 123849.0, 2.4, 45789.7, 123873.4, 35.2 ]
  *            attributes:
@@ -99,66 +91,65 @@ let {MultiPoint, MultiLineString, MultiSurface, Solid, MultiSolid, GeometryInsta
  */
 
 // Generic AbstractCityObject
-let CityObjectSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String
+let CityObjectSchema = new mongoose.Schema({
+  uid: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  attributes: {
+    creationDate: {
+      type: String,
+      validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
     },
-    attributes: {
-      creationDate: {
-        type: String,
-        validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
-      },
-      terminationDate: {
-        type: String,
-        validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
-      },
-      class: String,
-      function: String,
-      usage: String,
+    terminationDate: {
+      type: String,
+      validate: /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/,
     },
-    parents: { type: [String], default: undefined },
-    children: { type: [String], default: undefined },
-    geographicalExtent: {
-      type: [Number],
-      default: undefined,
-      validate: function () {
-        return this["geographicalExtent"].length % 6 == 0;
-      },
+    class: String,
+    function: String,
+    usage: String,
+  },
+  parents: { type: [String], default: undefined },
+  children: { type: [String], default: undefined },
+  geographicalExtent: {
+    type: [Number],
+    default: undefined,
+    validate: function () {
+      return this["geographicalExtent"].length % 6 == 0;
     },
-    location: {
-      type: { type: String },
-      coordinates: { type: [], default: undefined },
-    },
-    geometry: [mongoose.model("Geometry").schema],
-    transform: {
-      type: {
-        scale: {
-          type: [Number],
-          default: undefined,
-          validate: function () {
-            return this["scale"].length == 3;
-          },
+  },
+  location: {
+    type: { type: String },
+    coordinates: { type: [], default: undefined },
+  },
+  geometry: [mongoose.Schema.Types.ObjectId],
+  transform: {
+    type: {
+      scale: {
+        type: [Number],
+        default: undefined,
+        validate: function () {
+          return this["scale"].length == 3;
         },
-        translate: {
-          type: [Number],
-          default: undefined,
-          validate: function () {
-            return this["translate"].length == 3;
-          },
+      },
+      translate: {
+        type: [Number],
+        default: undefined,
+        validate: function () {
+          return this["translate"].length == 3;
         },
       },
     },
   },
-  { discriminatorKey: "type" }
-);
-CityObjectSchema.path('geometry').discriminator('MultiPoint', MultiPoint);
-CityObjectSchema.path('geometry').discriminator('MultiLineString', MultiLineString);
-CityObjectSchema.path('geometry').discriminator(['MultiSurface','CompositeSurface'], MultiSurface);
-CityObjectSchema.path('geometry').discriminator('Solid', Solid);
-CityObjectSchema.path('geometry').discriminator(['MultiSolid','CompositeSolid'], MultiSolid);
+});
+//CityObjectSchema.path('geometry').discriminator('MultiPoint', MultiPoint);
+//CityObjectSchema.path('geometry').discriminator('MultiLineString', MultiLineString);
+//CityObjectSchema.path('geometry').discriminator(['MultiSurface','CompositeSurface'], MultiSurface);
+//CityObjectSchema.path('geometry').discriminator('Solid', Solid);
+//CityObjectSchema.path('geometry').discriminator(['MultiSolid','CompositeSolid'], MultiSolid);
 
-CityObjectSchema.path('geometry').discriminator('GeometryInstance', GeometryInstance);
+//CityObjectSchema.path('geometry').discriminator('GeometryInstance', GeometryInstance);
 
 //CityObjectSchema.index({ location: "2dsphere" });
 

@@ -2,7 +2,20 @@ let mongoose = require("mongoose");
 
 let Geometry = require("./geometry.js");
 
-let Building = new mongoose.Schema({
+let Building = mongoose.model("CityObject").discriminator(
+  "Building",
+  new mongoose.Schema({
+    type: {
+      type: String,
+      enum: [
+        "Building",
+        "BuildingPart",
+        "BuildingRoom",
+        "BuildingStorey",
+        "BuildingUnit",
+      ],
+      default: "Building",
+    },
     attributes: {
       measuredHeight: Number,
       roofType: String,
@@ -14,14 +27,13 @@ let Building = new mongoose.Schema({
       yearOfDemolition: Number,
     },
     address: {
-      // ["BuildingRoom", "BuildingStorey", "BuildingUnit"] should not have an address, need to find a solution [HERE]
       CountryName: String,
       LocalityName: String,
       ThoroughfareNumber: Number,
       ThoroughfareName: String,
       PostalCode: String,
       location: {
-        type: [Geometry.MultiPoint],
+        type: [], // MultiPoint
         default: undefined,
       },
     },
@@ -37,16 +49,96 @@ let Building = new mongoose.Schema({
         ].includes(this.type);
       },
     },
-  }
+    geometry: [mongoose.Schema.Types.ObjectId],
+  })
 );
 
-let BuildingInstallation = new mongoose.Schema({
-  geographicalExtent: { type: [Number] },
-  parents: { type: [String], required: true },
-  attributes: {},
-});
+let BuildingInstallation = mongoose.model("CityObject").discriminator(
+  "BuildingInstallation",
+  new mongoose.Schema({
+    type: {
+      type: String,
+      enum: [
+        "BuildingInstallation",
+        "BuildingConstructiveElement",
+        "BuildingFurniture",
+      ],
+      default: "BuildingInstallation",
+    },
+    geographicalExtent: { type: [Number], default: undefined },
+    parents: { type: [String], default: undefined, required: true },
+    attributes: {},
+  })
+);
 
 module.exports = {
-  Building: Building,
-  BuildingInstallation: BuildingInstallation,
+  insertBuilding: (object) => {
+    return new Promise(async function (resolve, reject) {
+      var temp_geometries = [];
+
+      for (var geometry in object.geometry) {
+        var authorised_type = ["Solid", "CompositeSolid", "MultiSurface"];
+        if (!authorised_type.includes(object.geometry[geometry].type)) {
+          throw new Error(object.type + " is not a valid geometry type.");
+          return;
+        }
+
+        temp_geometries.push(
+          Geometry.insertGeometry(object.geometry[geometry])
+        );
+      }
+
+      Promise.all(temp_geometries).then((resolved_geometries) => {
+        object.geometry = resolved_geometries;
+        var building = new Building(object);
+
+        try {
+          building.save().then((data) => {
+            resolve(mongoose.Types.ObjectId(data.id));
+          });
+        } catch (err) {
+          console.error(err.message);
+        }
+      });
+    });
+  },
+  insertBuildingInstallation: (object) => {
+    return new Promise(async function (resolve, reject) {
+      var temp_geometries = [];
+
+      for (var geometry in object.geometry) {
+        var authorised_type = [
+          "Solid",
+          "MultiSolid",
+          "CompositeSolid",
+          "MultiSurface",
+          "CompositeSurface",
+          "MultiLineString",
+          "MultiPoint",
+        ];
+        if (!authorised_type.includes(object.geometry[geometry].type)) {
+          throw new Error(object.type + " is not a valid geometry type.");
+          return;
+        }
+
+        temp_geometries.push(
+          Geometry.insertGeometry(object.geometry[geometry])
+        );
+      }
+
+      Promise.all(temp_geometries).then((resolved_geometries) => {
+        object.geometry = resolved_geometries;
+        var building = new BuildingInstallation(object);
+
+        try {
+          building.save().then((data) => {
+            resolve(mongoose.Types.ObjectId(data.id));
+          });
+        } catch (err) {
+          console.error(err.message);
+        }
+      });
+    });
+  },
+  Model: Building,
 };

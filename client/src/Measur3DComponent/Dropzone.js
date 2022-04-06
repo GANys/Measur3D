@@ -45,6 +45,7 @@ class BasicDropzone extends React.Component {
 
       reader.onloadend = function() {
         EventEmitter.dispatch("uploadFile", {
+          modelName: acceptedFile[0].name.split(".")[0],
           content: JSON.parse(reader.result)
         });
       };

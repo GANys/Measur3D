@@ -38,7 +38,7 @@ app.use(bodyParser.json({ limit: "100mb" }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 
 //-------------------------------------------------------------------------------------
-
+///// Logging
 // create a rotating write stream
 var logStream = rfs.createStream("file.log", {
   interval: "3d", // rotate every 3 days
@@ -56,11 +56,10 @@ app.use(
 
 // log all requests to access.log
 app.use(
-  logger("short", {
+  logger(':date[web] :method :url :status - :response-time ms', {
     stream: logStream,
   })
 );
-
 //-------------------------------------------------------------------------------------
 
 const options = {

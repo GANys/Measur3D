@@ -102,7 +102,8 @@ export async function loadCityObjects(threescene, cm_name) {
           json.CityObjects[cityObj],
           json.transform,
           cityObj,
-          threescene.geoms
+          threescene.geoms,
+          json.vertices
         );
 
         //if object has children add them to the childrendict
@@ -133,7 +134,7 @@ export async function loadCityObjects(threescene, cm_name) {
           // Added by Measur3D
           coMesh.name = cityObj;
           coMesh.CityObjectClass = json.CityObjects[cityObj].type;
-          coMesh.jsonName = json.name;
+          coMesh.uid = json.name;
           coMesh.childrenMeshes = childrenMeshes;
 
           coMesh.castShadow = true;
@@ -146,7 +147,7 @@ export async function loadCityObjects(threescene, cm_name) {
           // Added by Measur3D
           dotGeometry.name = cityObj;
           dotGeometry.CityObjectClass = json.CityObjects[cityObj].type;
-          dotGeometry.jsonName = json.name;
+          dotGeometry.uid = json.name;
           dotGeometry.childrenMeshes = childrenMeshes;
 
           dotGeometry.castShadow = true;
@@ -247,7 +248,7 @@ function to_2d(p, n) {
 }
 
 //convert json file to viewer-object
-async function parseObject(object, transform, cityObj, geoms) {
+async function parseObject(object, transform, cityObj, geoms, vertices) {
   // CityObject JSON, transform, CityObject name, threeScene.Geoms
   var boundaries;
 
@@ -300,7 +301,7 @@ async function parseObject(object, transform, cityObj, geoms) {
   //each geometrytype must be handled different
   var geomType = object.geometry[0].type;
 
-  var object_vertices = object.vertices; // Extracted vertices for this particular object from the CityModel
+  var object_vertices = vertices; // Extracted vertices for this particular object from the CityModel
 
   for(var vertex in object_vertices) {
     object_vertices[vertex][0] = object_vertices[vertex][0] * transform.scale[0] + transform.translate[0]

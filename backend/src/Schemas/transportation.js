@@ -1,17 +1,55 @@
 let mongoose = require("mongoose");
 
-let Transportation = new mongoose.Schema({
-  attributes: {
-    type: Object,
-    properties: {
-      trafficDirection: {
-        type: String,
-        enum: ["one-way", "two-way"],
-      },
+let Geometry = require("./geometry.js");
+let CityObject = require("./abstractcityobject.js");
+
+let AbstractTransportationComplex = mongoose.model("CityObject").discriminator(
+  "AbstractTransportationComplex",
+  new mongoose.Schema({
+    type: {
+      type: String,
+      required: true,
+      enum: ["Road", "Railway", "TransportSquare", "Waterway"],
     },
-  },
-});
+  })
+);
 
 module.exports = {
-  Transportation: Transportation,
+  insertTransportation: (object) => {
+    return new Promise(async function (resolve, reject) {
+      var temp_geometries = [];
+
+      for (var geometry in object.geometry) {
+        var authorised_type = [
+          "MultiSurface",
+          "CompositeSurface",
+          "MultiLineString",
+        ];
+        if (!authorised_type.includes(object.geometry[geometry].type)) {
+          throw new Error(object.type + " is not a valid geometry type.");
+          return;
+        }
+
+        temp_geometries.push(
+          Geometry.insertGeometry(object.geometry[geometry])
+        );
+      }
+
+      Promise.all(temp_geometries).then((resolved_geometries) => {
+        object.geometry = resolved_geometries;
+        var abstracttransportationcomplex = new AbstractTransportationComplex(
+          object
+        );
+
+        try {
+          abstracttransportationcomplex.save().then((data) => {
+            resolve(mongoose.Types.ObjectId(data.id));
+          });
+        } catch (err) {
+          console.error(err.message);
+        }
+      });
+    });
+  },
+  Model: AbstractTransportationComplex,
 };
