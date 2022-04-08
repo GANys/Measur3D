@@ -55,11 +55,9 @@ class BasicMaterialTable extends React.Component {
 
     this.updateTable = this.updateTable.bind(this);
     this.updateTitle = this.updateTitle.bind(this);
-    this.updateCityModel = this.updateCityModel.bind(this);
 
     EventEmitter.subscribe("attObject", event => this.updateTable(event));
     EventEmitter.subscribe("attObjectTitle", event => this.updateTitle(event));
-    EventEmitter.subscribe("cityModelLoaded", event => this.updateCityModel(event));
   }
 
   state = {
@@ -69,8 +67,7 @@ class BasicMaterialTable extends React.Component {
     ],
     data: [],
     tableTitle: "Object attributes",
-    CityObjectType: null,
-    CityModel: null
+    CityObjectType: null
   };
 
   deleteRows = () => {
@@ -115,10 +112,6 @@ class BasicMaterialTable extends React.Component {
       tableTitle: data.title,
       CityObjectType: data.type
     });
-  };
-
-  updateCityModel = data => {
-    this.setState({ CityModel: data });
   };
 
   addAttribute = async newData => {
@@ -175,8 +168,7 @@ class BasicMaterialTable extends React.Component {
                 "http://localhost:3001/measur3d/deleteObject",
                 {
                   data: {
-                    name: this.state.tableTitle,
-                    CityModel: this.state.CityModel
+                    name: this.state.tableTitle
                   }
                 }
               );

@@ -34,7 +34,7 @@ const actions = [
     icon: () => <GetAppRoundedIcon />,
     tooltip: "Load City Model",
     onClick: (event, rowData) =>
-      EventEmitter.dispatch("loadScene", rowData.name),
+      EventEmitter.dispatch("loadScene", rowData.cm_uid),
     disabled: false, // Set disabled to false by default for all actions
     position: "row",
   },
@@ -56,7 +56,7 @@ class BasicMaterialTable extends React.Component {
 
   state = {
     columns: [
-      { title: "UID", field: "uid" },
+      { title: "UID", field: "cm_uid" },
       { title: "Number of elements", field: "nbr_el" },
       { title: "File Size in Database", field: "filesize" },
     ],
@@ -91,10 +91,10 @@ class BasicMaterialTable extends React.Component {
             new Promise((resolve) => {
               // Delete City Model in DB
               axios.delete(
-                "http://localhost:3001/measur3d/deleteNamedCityModel",
+                "http://localhost:3001/measur3d/deleteCityModel",
                 {
                   data: {
-                    name: oldData.name,
+                    cm_uid: oldData.cm_uid,
                   },
                 }
               );

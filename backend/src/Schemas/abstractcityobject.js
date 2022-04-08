@@ -123,7 +123,15 @@ let CityObjectSchema = new mongoose.Schema({
     type: { type: String },
     coordinates: { type: [], default: undefined },
   },
-  geometry: [mongoose.Schema.Types.ObjectId],
+  geometry: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Geometry",
+      // ref: 'Post',
+      required: true,
+      index: true,
+    },
+  ],
   transform: {
     type: {
       scale: {
@@ -142,14 +150,8 @@ let CityObjectSchema = new mongoose.Schema({
       },
     },
   },
+  vertices: [[Number]]
 });
-//CityObjectSchema.path('geometry').discriminator('MultiPoint', MultiPoint);
-//CityObjectSchema.path('geometry').discriminator('MultiLineString', MultiLineString);
-//CityObjectSchema.path('geometry').discriminator(['MultiSurface','CompositeSurface'], MultiSurface);
-//CityObjectSchema.path('geometry').discriminator('Solid', Solid);
-//CityObjectSchema.path('geometry').discriminator(['MultiSolid','CompositeSolid'], MultiSolid);
-
-//CityObjectSchema.path('geometry').discriminator('GeometryInstance', GeometryInstance);
 
 //CityObjectSchema.index({ location: "2dsphere" });
 

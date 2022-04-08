@@ -11,7 +11,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const yaml = require("js-yaml");
 var rfs = require("rotating-file-stream"); // version 2.x
 
-const {auth, rateLimiterUsingThirdParty} = require("./middleware");
+const { auth, rateLimiterUsingThirdParty } = require("./middleware");
 
 const server = "127.0.0.1:27017"; // REPLACE WITH YOUR DB SERVER
 const database = "citymodel"; // REPLACE WITH YOUR DB NAME
@@ -47,7 +47,8 @@ var logStream = rfs.createStream("file.log", {
 
 // log only 4xx and 5xx responses to console
 app.use(
-  logger("tiny", { // Can be "short" for more information
+  logger("tiny", {
+    // Can be "short" for more information
     skip: function (req, res) {
       return res.statusCode < 400;
     },
@@ -56,7 +57,7 @@ app.use(
 
 // log all requests to access.log
 app.use(
-  logger(':date[web] :method :url :status - :response-time ms', {
+  logger(":date[web] :method :url :status - :response-time ms", {
     stream: logStream,
   })
 );
@@ -107,7 +108,7 @@ mongoose
   .connect(`mongodb://${server}/${database}`, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
-    maxPoolSize: 100
+    maxPoolSize: 100,
   })
   .then(() => {
     console.log(`Connected to server ${server}/${database} with success.`);

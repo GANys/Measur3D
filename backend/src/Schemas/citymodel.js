@@ -179,7 +179,15 @@ let CityModelSchema = new mongoose.Schema({
     required: true,
     validate: /^([0-9]\.)+([0-9])$/,
   },
-  CityObjects: { type: {}, required: true, index: true }, // No need of rules and schemas as it is already handled in the insertCity function
+  CityObjects: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CityObject",
+      // ref: 'Post',
+      required: true,
+      index: true,
+    },
+  ],
   extensions: {
     url: {
       type: String,
@@ -314,9 +322,9 @@ let CityModelSchema = new mongoose.Schema({
 CityModel = mongoose.model("CityModel", CityModelSchema);
 
 module.exports = {
-  insertCity: async (modelName, citymodel) => {
+  insertCity: async (cm_uid, citymodel) => {
     return new Promise(async function (resolve, reject) {
-      citymodel["uid"] = modelName;
+      citymodel["uid"] = cm_uid;
       /*
    var new_objects = {};
    var objectPromises = [];
@@ -427,12 +435,12 @@ module.exports = {
       }
 
       Promise.allSettled(temp_objects).then((resolved_objects) => {
-        var cityobjects = {};
+        var cityobjects = [];
         for (var i in resolved_objects) {
           if (resolved_objects[i].status == "rejected") {
             console.log(resolved_objects[i].reason);
           } else {
-            cityobjects[temp_keys[i]] = resolved_objects[i].value;
+            cityobjects.push(resolved_objects[i].value);
           }
         }
 

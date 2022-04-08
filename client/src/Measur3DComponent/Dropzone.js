@@ -28,10 +28,10 @@ class BasicDropzone extends React.Component {
 
       var result = await axios.get("http://localhost:3001/measur3d/getCityModelsList");
 
-      // If model already exist in DB -> Stop
+      // TO BE CORRECTED
       for(var models in result.data) {
         // eslint-disable-next-line
-        if (result.data[models].name == acceptedFile[0].name.split(".")[0]) {
+        if (result.data[models].uid == acceptedFile[0].uid.split(".")[0]) {
           EventEmitter.dispatch("error", "This model already exist in the database.");
           return;
         }
@@ -45,7 +45,7 @@ class BasicDropzone extends React.Component {
 
       reader.onloadend = function() {
         EventEmitter.dispatch("uploadFile", {
-          modelName: acceptedFile[0].name.split(".")[0],
+          cm_uid: acceptedFile[0].name.split(".")[0],
           content: JSON.parse(reader.result)
         });
       };

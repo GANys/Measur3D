@@ -49,10 +49,22 @@ const router = express.Router();
 router.post("/uploadCityModel", (req, res) => {
   req.setTimeout(10 * 60 * 1000); // Special timeOut
 
-  Cities.insertCity(req.body.modelName, req.body.json).then(function (data) {
-    console.log(data)
-    return res.status(201).send({ success: "File uploaded" });
-  });
+  mongoose
+    .model("CityModel")
+    .countDocuments({ uid: req.body.cm_uid }, function (err, count) {
+      if (err) {
+        return res.status(400).json({ error: err });
+      }
+      if (count > 0) {
+        return res
+          .status(409)
+          .json({ error: "This model already exist. Consider updating it." });
+      }
+
+      Cities.insertCity(req.body.cm_uid, req.body.json).then(function (data) {
+        return res.status(201).json({ success: "File uploaded" });
+      });
+    });
 });
 
 /**
@@ -81,7 +93,7 @@ router.post("/uploadCityModel", (req, res) => {
 router.get("/getCityModelsList", (req, res) => {
   mongoose
     .model("CityModel")
-    .find({}, 'uid', async (err, data) => {
+    .find({}, "uid", async (err, data) => {
       if (err) {
         return res
           .status(404)
@@ -90,23 +102,20 @@ router.get("/getCityModelsList", (req, res) => {
 
       var responseCities = [];
 
-      console.log(data)
-
       for (var i = 0; i < data.length; ++i) {
         responseCities.push({
-          uid: data[i].uid
+          cm_uid: data[i].uid, // Possible to add more information
         });
       }
 
-      res.status(200);
-      return res.json(responseCities);
+      return res.status(200).json(responseCities);
     })
     .lean();
 });
 
 /**
  * @swagger
- * /getNamedCityModel:
+ * /getCityModel:
  *     get:
  *       summary: Get a specific CityModel.
  *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
@@ -127,14 +136,21 @@ router.get("/getCityModelsList", (req, res) => {
  *         500:
  *           description: Not found - There is no CityModel in the database.
  */
-router.get("/getNamedCityModel", async (req, res) => {
+router.get("/getCityModel", async (req, res) => {
+  console.log(req.query.cm_uid);
   try {
-    var cityModel = await mongoose
+    var citymodel = await mongoose
       .model("CityModel")
-      .findOne({ uid: req.query.name })
+      .findOne({ uid: req.query.cm_uid })
+      .populate({
+        path: "CityObjects",
+        populate: {
+          path: "geometry",
+        },
+      })
       .lean();
   } catch (err) {
-    return res.status(500).send({
+    return res.status(404).send({
       error: "There is no CityModel with this name in the database.",
     });
   }
@@ -209,8 +225,7 @@ router.get("/getNamedCityModel", async (req, res) => {
 
   */
 
-  res.status(200);
-  return res.json(cityModel);
+  return res.status(200).json(citymodel);
 });
 
 /**
@@ -429,8 +444,9 @@ router.get("/getObjectAttributes", (req, res) => {
       break;
     case "Road":
     case "Railway":
+    case "Waterway":
     case "TransportSquare":
-      cityObjectType = "Transportation";
+      cityObjectType = "AbstractTransportationComplex";
       break;
     case "TunnelPart":
       cityObjectType = "Tunnel";
@@ -444,26 +460,17 @@ router.get("/getObjectAttributes", (req, res) => {
     default:
   }
 
-  if (typeof req.query.name != "undefined") {
+  if (typeof req.query.uid != "undefined") {
     mongoose
       .model(cityObjectType)
-      .findOne({ name: req.query.name }, "attributes", (err, data) => {
-        if (err) return res.status(500).send(err);
-        return res.json(data);
-      })
-      .lean();
-  } else if (typeof req.query.id != "undefined") {
-    mongoose
-      .model(cityObjectType)
-      .findById(req.query.id, "attributes", (err, data) => {
-        if (err) return res.status(500).send(err);
-        return res.json(data);
+      .findOne({ name: req.query.uid }, "attributes", (err, data) => {
+        if (err) return res.status(500).send({ error: err });
+        return res.status(200).json(data);
       })
       .lean();
   } else {
-    return res.status(400).send({
-      error:
-        "Params are not valid - getObjectAttributes could not find Object in Collection.",
+    return res.status(404).send({
+      error: "Params are not valid (getObjectAttributes).",
     });
   }
 });

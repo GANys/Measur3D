@@ -77,7 +77,7 @@ class ThreeScene extends Component {
     // add raycaster and mouse (for clickable objects)
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
-    this.HIGHLIGHTED = null;
+    this.highlighted = null;
 
     //add AmbientLight (light that is only there that there's a minimum of light and you can see color)
     //kind of the natural daylight
@@ -183,7 +183,7 @@ class ThreeScene extends Component {
     axios
       .post("http://localhost:3001/measur3d/uploadCityModel", {
         json: file.content,
-        modelName: file.modelName
+        cm_uid: file.cm_uid
       })
       .then(res => {
         EventEmitter.dispatch("success", res.data.success);
@@ -195,20 +195,20 @@ class ThreeScene extends Component {
         });
 
         //load the cityObjects into the viewer
-        this.loadScene(file.jsonName);
+        this.loadScene(file.cm_uid);
       });
   };
 
-  loadScene = cm_name => {
+  loadScene = cm_uid => {
     this.clearScene();
 
     this.setState({
       boolJSONload: true
     });
 
-    Functions.loadCityObjects(this, cm_name);
+    Functions.loadCityModel(this, cm_uid);
 
-    EventEmitter.dispatch("cityModelLoaded", cm_name);
+    EventEmitter.dispatch("cityModelLoaded", cm_uid);
   };
 
   clearScene = () => {
@@ -244,24 +244,24 @@ class ThreeScene extends Component {
     Functions.intersectMeshes(evt, this);
   };
 
-  deleteObject = name => {
+  deleteObject = uid => {
     // Cleaning both Scene and ThreeScene objects -> Collisions seem to work oddly after it.
 
     this.setState({
       boolJSONload: true
     });
 
-    delete this.geoms[name];
+    delete this.geoms[uid];
 
     this.scene.children = this.scene.children.filter(
-      value => value.name !== name
+      value => value.uid !== uid
     );
 
     var index_mesh;
 
     for (var el in this.meshes) {
       // eslint-disable-next-line
-      if (this.meshes[el].name == name) {
+      if (this.meshes[el].uid == uid) {
         index_mesh = el;
       }
     }
@@ -269,7 +269,7 @@ class ThreeScene extends Component {
     for (var child in this.meshes[index_mesh].childrenMeshes) {
       for (el in this.meshes) {
         // eslint-disable-next-line
-        if (this.meshes[el].name == name) {
+        if (this.meshes[el].uid == uid) {
           index_mesh = el;
         }
       }
