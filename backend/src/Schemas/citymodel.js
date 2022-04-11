@@ -451,7 +451,7 @@ module.exports = {
 
         try {
           city.save().then((data) => {
-            resolve("Citymodel saved");
+            resolve("/uploadCityModel : Citymodel saved");
           });
         } catch (err) {
           console.error(err.message);
@@ -705,7 +705,7 @@ async function saveCityObject(citymodel, object) {
           break;
         default:
           return reject(
-            "insertCity: " +
+            "/uploadCityModel : " +
               key +
               " is not a supported CityObject (" +
               object.type +

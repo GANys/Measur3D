@@ -16,27 +16,14 @@ class BasicDropzone extends React.Component {
   onDrop = async acceptedFile => {
     //acceptedFile is a File Object
     if (
+      (acceptedFile[0].type != "application/json" && acceptedFile[0].type != "application/city+json") ||
       // eslint-disable-next-line
       acceptedFile[0] == undefined ||
-      // eslint-disable-next-line
-      acceptedFile[0].type != "application/json" ||
       // eslint-disable-next-line
       acceptedFile[0] == null
     ) {
       EventEmitter.dispatch("error", "An error occured while loading file !");
     } else {
-
-      var result = await axios.get("http://localhost:3001/measur3d/getCityModelsList");
-
-      // TO BE CORRECTED
-      for(var models in result.data) {
-        // eslint-disable-next-line
-        if (result.data[models].uid == acceptedFile[0].uid.split(".")[0]) {
-          EventEmitter.dispatch("error", "This model already exist in the database.");
-          return;
-        }
-      }
-
       EventEmitter.dispatch("info", "Loading JSON file ...");
 
       let reader = new FileReader();

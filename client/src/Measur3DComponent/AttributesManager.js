@@ -118,7 +118,7 @@ class BasicMaterialTable extends React.Component {
     await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       key: newData.key,
       value: newData.value,
-      jsonName: this.state.tableTitle,
+      uid: this.state.tableTitle,
       CityObjectType: this.state.CityObjectType
     });
   };
@@ -128,7 +128,7 @@ class BasicMaterialTable extends React.Component {
       old_key: oldData.key,
       key: newData.key,
       value: newData.value,
-      jsonName: this.state.tableTitle,
+      uid: this.state.tableTitle,
       CityObjectType: this.state.CityObjectType
     });
   };
@@ -137,7 +137,7 @@ class BasicMaterialTable extends React.Component {
     await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       key: oldData.key,
       value: "",
-      jsonName: this.state.tableTitle,
+      uid: this.state.tableTitle,
       CityObjectType: this.state.CityObjectType
     });
   };

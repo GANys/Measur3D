@@ -3,8 +3,8 @@ let mongoose = require("mongoose");
 let Geometry = require("./geometry.js");
 let CityObject = require("./abstractcityobject.js");
 
-let AbstractTransportationComplex = mongoose.model("CityObject").discriminator(
-  "AbstractTransportationComplex",
+let Transportation = mongoose.model("CityObject").discriminator(
+  "Transportation",
   new mongoose.Schema({
     type: {
       type: String,
@@ -37,12 +37,12 @@ module.exports = {
 
       Promise.all(temp_geometries).then((resolved_geometries) => {
         object.geometry = resolved_geometries;
-        var abstracttransportationcomplex = new AbstractTransportationComplex(
+        var transportation = new Transportation(
           object
         );
 
         try {
-          abstracttransportationcomplex.save().then((data) => {
+          transportation.save().then((data) => {
             resolve(mongoose.Types.ObjectId(data.id));
           });
         } catch (err) {
@@ -51,5 +51,5 @@ module.exports = {
       });
     });
   },
-  Model: AbstractTransportationComplex,
+  Model: Transportation,
 };

@@ -58,11 +58,11 @@ router.post("/uploadCityModel", (req, res) => {
       if (count > 0) {
         return res
           .status(409)
-          .json({ error: "This model already exist. Consider updating it." });
+          .json({ error: "/uploadCityModel : this model already exist. Consider updating it." });
       }
 
       Cities.insertCity(req.body.cm_uid, req.body.json).then(function (data) {
-        return res.status(201).json({ success: "File uploaded" });
+        return res.status(201).json({ success: "/uploadCityModel : model saved" });
       });
     });
 });
@@ -137,7 +137,6 @@ router.get("/getCityModelsList", (req, res) => {
  *           description: Not found - There is no CityModel in the database.
  */
 router.get("/getCityModel", async (req, res) => {
-  console.log(req.query.cm_uid);
   try {
     var citymodel = await mongoose
       .model("CityModel")
@@ -151,7 +150,7 @@ router.get("/getCityModel", async (req, res) => {
       .lean();
   } catch (err) {
     return res.status(404).send({
-      error: "There is no CityModel with this name in the database.",
+      error: "/getCityModel : there is no CityModel with this name in the database.",
     });
   }
 
@@ -339,25 +338,17 @@ router.delete("/deleteNamedCityModel", (req, res) => {
  *           description: Internal error - getObject could not find Object in Collection. Error is sent by database.
  */
 router.get("/getObject", (req, res) => {
-  if (typeof req.query.name != "undefined") {
+  if (typeof req.query.uid != "undefined") {
     mongoose
       .model(req.query.CityObjectType)
-      .findOne({ name: req.query.name }, (err, data) => {
-        if (err) return res.status(500).send(err);
-        return res.json(data);
-      })
-      .lean();
-  } else if (typeof req.query.id != "undefined") {
-    mongoose
-      .model(req.query.CityObjectType)
-      .findById(req.query.id, (err, data) => {
+      .findOne({ uid: req.query.uid }, (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
       })
       .lean();
   } else {
     return res.status(400).send({
-      error: "Params are not valid.",
+      error: "/getObject : No object exists under these conditions.",
     });
   }
 });
@@ -531,8 +522,11 @@ router.get("/getObjectAttributes", (req, res) => {
 router.put("/updateObjectAttribute", async (req, res) => {
   mongoose
     .model(req.body.CityObjectType)
-    .findOne({ name: req.body.jsonName }, (err, data) => {
-      if (err) return res.status(400).send({ error: "Params are not valid." });
+    .findOne({ uid: req.body.uid }, (err, data) => {
+      if (err)
+        return res
+          .status(400)
+          .send({ error: "/updateObjectAttribute : No object exists under this uid." });
 
       //var attributes = data.attributes;
       var attributes = Object.assign({}, data.attributes); // Copy the CityObject attributes from Schema -> Undefined value if key is empty.
@@ -563,11 +557,11 @@ router.put("/updateObjectAttribute", async (req, res) => {
 
       mongoose
         .model(req.body.CityObjectType)
-        .updateOne({ name: req.body.jsonName }, { attributes }, (err, data) => {
+        .updateOne({ uid: req.body.uid }, { attributes }, (err, data) => {
           // Be carefull that object might change has it is not loaded by updateOne
-          if (err) return res.status(500).send(err);
+          if (err) return res.status(500).send({ error: err });
 
-          return res.status(200).send({ success: "Object updated." });
+          return res.status(200).send({ success: "/updateObjectAttribute : Object updated." });
         });
     })
     .lean();

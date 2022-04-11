@@ -81,7 +81,7 @@ class ThreeScene extends Component {
 
     //add AmbientLight (light that is only there that there's a minimum of light and you can see color)
     //kind of the natural daylight
-    this.am_light = new THREE.AmbientLight(0xffffff, 0.7); // soft white light
+    this.am_light = new THREE.AmbientLight(0x666666, 0.7); // soft white light
     this.scene.add(this.am_light);
 
     // Add directional light
