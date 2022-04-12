@@ -168,7 +168,7 @@ class BasicMaterialTable extends React.Component {
                 "http://localhost:3001/measur3d/deleteObject",
                 {
                   data: {
-                    name: this.state.tableTitle
+                    uid: this.state.tableTitle
                   }
                 }
               );

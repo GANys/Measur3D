@@ -56,13 +56,16 @@ router.post("/uploadCityModel", (req, res) => {
         return res.status(400).json({ error: err });
       }
       if (count > 0) {
-        return res
-          .status(409)
-          .json({ error: "/uploadCityModel : this model already exist. Consider updating it." });
+        return res.status(409).json({
+          error:
+            "/uploadCityModel : this model already exist. Consider updating it.",
+        });
       }
 
       Cities.insertCity(req.body.cm_uid, req.body.json).then(function (data) {
-        return res.status(201).json({ success: "/uploadCityModel : model saved" });
+        return res
+          .status(201)
+          .json({ success: "/uploadCityModel : model saved" });
       });
     });
 });
@@ -95,9 +98,9 @@ router.get("/getCityModelsList", (req, res) => {
     .model("CityModel")
     .find({}, "uid", async (err, data) => {
       if (err) {
-        return res
-          .status(404)
-          .send({ error: "There is no CityModel in the database." });
+        return res.status(404).send({
+          error: "/getCityModelsList : there is no CityModel in the database.",
+        });
       }
 
       var responseCities = [];
@@ -150,7 +153,8 @@ router.get("/getCityModel", async (req, res) => {
       .lean();
   } catch (err) {
     return res.status(404).send({
-      error: "/getCityModel : there is no CityModel with this name in the database.",
+      error:
+        "/getCityModel : there is no CityModel with this name in the database.",
     });
   }
 
@@ -249,21 +253,21 @@ router.get("/getCityModel", async (req, res) => {
  *         404:
  *           description: Not found - There is no document with that name.
  */
-router.delete("/deleteNamedCityModel", (req, res) => {
+router.delete("/deleteCityModel", (req, res) => {
   mongoose.model("CityModel").deleteOne({ name: req.body.name }, (err) => {
     if (err)
-      return res
-        .status(500)
-        .send({ error: "There is no document with that name." });
+      return res.status(500).send({
+        error: "/deleteCityModel : there is no document with that name.",
+      });
   });
 
   mongoose
     .model("CityObject")
     .deleteMany({ CityModel: req.body.name }, (err) => {
       if (err)
-        return res
-          .status(500)
-          .send({ error: "There is no document with that name." });
+        return res.status(500).send({
+          error: "/deleteCityModel : there is no document with that name.",
+        });
     });
 
   mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, (err) => {
@@ -340,7 +344,7 @@ router.delete("/deleteNamedCityModel", (req, res) => {
 router.get("/getObject", (req, res) => {
   if (typeof req.query.uid != "undefined") {
     mongoose
-      .model(req.query.CityObjectType)
+      .model(Functions.mapType(req.query.CityObjectType))
       .findOne({ uid: req.query.uid }, (err, data) => {
         if (err) return res.status(500).send(err);
         return res.json(data);
@@ -377,12 +381,13 @@ router.get("/getObject", (req, res) => {
  */
 router.delete("/deleteObject", async (req, res) => {
   // Need of a recursive delete because of children
-  await Functions.recursiveDelete({
-    name: req.body.name,
-    CityModel: req.body.CityModel,
+  Functions.recursiveDelete({
+    uid: req.body.uid,
+  }).then(function () {
+    return res
+      .status(200)
+      .send({ success: "/deleteObject : object and children deleted !" });
   });
-
-  return res.status(200).send({ success: "Object and children deleted !" });
 });
 
 /**
@@ -427,33 +432,9 @@ router.delete("/deleteObject", async (req, res) => {
  *           description: Internal error - getObjectAttributes could not find Object in Collection. Error is sent by database.
  */
 router.get("/getObjectAttributes", (req, res) => {
-  var cityObjectType = req.query.CityObjectType;
-
-  switch (cityObjectType) {
-    case "BuildingPart":
-      cityObjectType = "Building";
-      break;
-    case "Road":
-    case "Railway":
-    case "Waterway":
-    case "TransportSquare":
-      cityObjectType = "AbstractTransportationComplex";
-      break;
-    case "TunnelPart":
-      cityObjectType = "Tunnel";
-      break;
-    case "BridgePart":
-      cityObjectType = "Bridge";
-      break;
-    case "BridgeConstructionElement":
-      cityObjectType = "BridgeInstallation";
-      break;
-    default:
-  }
-
   if (typeof req.query.uid != "undefined") {
     mongoose
-      .model(cityObjectType)
+      .model(Functions.mapType(req.query.CityObjectType))
       .findOne({ name: req.query.uid }, "attributes", (err, data) => {
         if (err) return res.status(500).send({ error: err });
         return res.status(200).json(data);
@@ -520,13 +501,15 @@ router.get("/getObjectAttributes", (req, res) => {
  *           description: Internal error - updateObjectAttribute could not find Object in Collection. Error is sent by database.
  */
 router.put("/updateObjectAttribute", async (req, res) => {
+  console.log(Functions.mapType(req.body.CityObjectType))
   mongoose
-    .model(req.body.CityObjectType)
+    .model(Functions.mapType(req.body.CityObjectType))
     .findOne({ uid: req.body.uid }, (err, data) => {
+      console.log(data)
       if (err)
-        return res
-          .status(400)
-          .send({ error: "/updateObjectAttribute : No object exists under this uid." });
+        return res.status(400).send({
+          error: "/updateObjectAttribute : No object exists under this uid.",
+        });
 
       //var attributes = data.attributes;
       var attributes = Object.assign({}, data.attributes); // Copy the CityObject attributes from Schema -> Undefined value if key is empty.
@@ -556,12 +539,14 @@ router.put("/updateObjectAttribute", async (req, res) => {
       }
 
       mongoose
-        .model(req.body.CityObjectType)
+        .model(Functions.mapType(req.body.CityObjectType))
         .updateOne({ uid: req.body.uid }, { attributes }, (err, data) => {
           // Be carefull that object might change has it is not loaded by updateOne
           if (err) return res.status(500).send({ error: err });
 
-          return res.status(200).send({ success: "/updateObjectAttribute : Object updated." });
+          return res
+            .status(200)
+            .send({ success: "/updateObjectAttribute : Object updated." });
         });
     })
     .lean();
