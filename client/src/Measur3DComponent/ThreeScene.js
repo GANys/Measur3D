@@ -66,7 +66,7 @@ class ThreeScene extends Component {
     this.camera = new THREE.PerspectiveCamera();
 
     //ADD RENDERER
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true});
     this.renderer.setClearColor("#000000");
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
@@ -212,7 +212,6 @@ class ThreeScene extends Component {
   };
 
   clearScene = () => {
-    // Not be enough for collisions -> array.splice doesnt change anything
     // Be careful to not delete the light ... Speaking from experience
     var mesh = new THREE.Mesh();
     var points = new THREE.Points();
@@ -246,6 +245,8 @@ class ThreeScene extends Component {
 
   deleteObject = uid => {
     // Cleaning both Scene and ThreeScene objects -> Collisions seem to work oddly after it.
+
+    console.log(this)
 
     this.setState({
       boolJSONload: true

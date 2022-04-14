@@ -86,8 +86,6 @@ let mongoose = require("mongoose");
 
 let GeometrySchema = new mongoose.Schema({
   type: { type: String },
-  CityModel: { type: String, index: true },
-  CityObject: { type: String, index: true },
   lod: { type: Number, required: true, validate: /([0-3]{1}\.?)+[0-3]?/ },
   boundaries: {},
   semantics: {},

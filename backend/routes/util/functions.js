@@ -19,19 +19,17 @@ function lengthInUtf8Bytes(str) {
 }
 
 function recursiveDelete(params) {
-  return new Promise(async function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     mongoose
       .model("CityObject")
-      .findOne({ uid: params.uid }, (err, data_object) => {
-        if (err) {
-          return res.status(404).send({
-            error: "/deleteObject : there is no object with that name.",
-          });
-        }
-      })
+      .findOneAndDelete({ uid: params.uid }, { children: 1, parents: 1 })
       .lean()
-      .then(async function (cityObject) {
-        console.log("Ok 1");
+      .catch((err) => {
+        resolve({
+          error: "/deleteObject : there is no object with that name.",
+        });
+      })
+      .then(function (cityObject) {
         // Recursive deletion of all children of the deleted object
         if (
           cityObject.children != undefined &&
@@ -47,7 +45,7 @@ function recursiveDelete(params) {
         // Update the children value for all parents of the deleted element
         if (cityObject.parents != undefined && cityObject.parents.length > 0) {
           for (var parent in cityObject.parents) {
-            mongoose.model("CityObject").update(
+            mongoose.model("CityObject").updateOne(
               { uid: cityObject.parents[parent] },
               {
                 $pull: {
@@ -56,13 +54,12 @@ function recursiveDelete(params) {
               },
               (err, objectParent) => {
                 if (err)
-                  return res.status(404).send({
+                  resolve({
                     error:
                       "/deleteObject: this object is isolated (no parent found).",
                   });
               }
             );
-            console.log("Ok 2");
           }
         }
 
@@ -78,32 +75,20 @@ function recursiveDelete(params) {
             },
             (err, data_citymodel) => {
               if (err)
-                return res.status(404).send({
+                resolve({
                   error:
                     "/deleteObject: this object is isolated (no city model found).",
                 });
             }
           )
           .lean();
-        console.log("Ok 3");
 
         mongoose
           .model("Geometry")
-          .deleteMany({ uid: cityObject.geometry }, (err) => {
+          .deleteMany({ _id: { $in: cityObject.geometry } }, (err) => {
             if (err)
-              return res.status(404).send({
+              resolve({
                 error: "/deleteObject: there is no geometry with that name.",
-              });
-          });
-      })
-      .then(function () {
-        // Finally delete the initial objects
-        mongoose
-          .model("CityObject")
-          .deleteOne({ uid: params.uid }, async (err, data_object) => {
-            if (err)
-              return res.status(404).send({
-                error: "/deleteObject: there is no object with that name.",
               });
           });
       });

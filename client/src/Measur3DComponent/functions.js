@@ -74,8 +74,6 @@ export async function loadCityModel(threescene, cm_uid) {
       for (var cityObj in json.CityObjects) {
         var cityobjectType = json.CityObjects[cityObj].type;
 
-        // TO BE UPDATED
-
         var childrenMeshes = [];
 
         //parse cityObj that it can be displayed in three js
@@ -88,12 +86,6 @@ export async function loadCityModel(threescene, cm_uid) {
         for (var i in returnChildren) {
           childrenMeshes.push(returnChildren[i]);
         }
-        /*} catch (e) {
-          var error_message = "ERROR at creating: " + cityObj;
-          console.log(error_message);
-          EventEmitter.dispatch("error", error_message);
-          continue;
-        }*/
 
         //set color of object
         if (json.CityObjects[cityObj].geometry[0] == null) {
@@ -101,11 +93,14 @@ export async function loadCityModel(threescene, cm_uid) {
         } else if (
           json.CityObjects[cityObj].geometry[0].type !== "MultiPoint"
         ) {
-          var material = new THREE.MeshPhysicalMaterial({wireframe: true});
+          var material = new THREE.MeshPhysicalMaterial({ wireframe: true });
           material.color.setHex(ALLCOLOURS[cityobjectType]);
 
           //create mesh
-          var coMesh = new THREE.Mesh(threescene.geoms[json.CityObjects[cityObj].uid], material);
+          var coMesh = new THREE.Mesh(
+            threescene.geoms[json.CityObjects[cityObj].uid],
+            material
+          );
         } else {
           var dotGeometry = threescene.geoms[json.CityObjects[cityObj].uid];
         }
@@ -213,181 +208,181 @@ function to_2d(p, n) {
 
 //convert json file to viewer-object
 async function parseObject(object, geoms) {
-    // CityObject JSON, threescene.geoms
-    var boundaries;
+  // CityObject JSON, threescene.geoms
+  var boundaries;
 
-    //create geometry
-    var geom = new THREE.BufferGeometry();
+  //create geometry
+  var geom = new THREE.BufferGeometry();
 
-    if (object["pointcloud-file"] !== undefined) {
-      console.warn(
-        "Warning : Chrome and other browsers might block calls to external URIs. Please consider taking attention to security before proceeding."
-      );
-      const pointcloud_data = await load(
-        object["pointcloud-file"].pointFile,
-        LASLoader,
-        {}
-      );
-
-      var pts = [];
-
-      for (
-        var i = 0;
-        i < pointcloud_data.attributes.POSITION.value.length;
-        i += 3
-      ) {
-        pts.push(
-          pointcloud_data.attributes.POSITION.value[i],
-          pointcloud_data.attributes.POSITION.value[i + 1],
-          pointcloud_data.attributes.POSITION.value[i + 2]
-        );
-      }
-
-      geom.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-
-      geom.computeBoundingSphere();
-
-      var dotMaterial = new THREE.PointsMaterial({
-        size: 0.2,
-        sizeAttenuation: true,
-        color: ALLCOLOURS[object.type],
-      });
-      var dots = new THREE.Points(geom, dotMaterial);
-
-      geoms[object.uid] = dots;
-
-      return object.children;
-    }
-
-    if (object.geometry[0] == null) return; // If no geometry (eg: CityObjectGroup (not always true))
-
-    //each geometrytype must be handled different
-    var geomType = object.geometry[0].type;
-
-    for (var vertex in object.vertices) {
-      object.vertices[vertex][0] =
-        object.vertices[vertex][0] * object.transform.scale[0] +
-        object.transform.translate[0];
-      object.vertices[vertex][1] =
-        object.vertices[vertex][1] * object.transform.scale[1] +
-        object.transform.translate[1];
-      object.vertices[vertex][2] =
-        object.vertices[vertex][2] * object.transform.scale[2] +
-        object.transform.translate[2];
-    }
-
-    if (geomType === "Solid") {
-      boundaries = object.geometry[0].boundaries[0];
-    } else if (geomType === "MultiSurface" || geomType === "CompositeSurface") {
-      boundaries = object.geometry[0].boundaries;
-    } else if (geomType === "MultiSolid" || geomType === "CompositeSolid") {
-      boundaries = object.geometry[0].boundaries;
-    } else if (geomType === "MultiPoint") {
-      //return object.children
-      boundaries = object.geometry[0].boundaries;
-
-      const vertices = [];
-
-      for (vertex in boundaries) {
-        if (object.vertices[boundaries[vertex]] !== undefined) {
-          vertices.push(
-            object.vertices[boundaries[vertex]][0],
-            object.vertices[boundaries[vertex]][1],
-            object.vertices[boundaries[vertex]][2]
-          );
-        }
-      }
-
-      await geom.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(vertices, 3)
-      );
-
-      geom.computeBoundingSphere();
-
-      dotMaterial = new THREE.PointsMaterial({
-        size: 4,
-        sizeAttenuation: false,
-        color: ALLCOLOURS[object.type],
-      });
-
-      dots = new THREE.Points(geom, dotMaterial);
-
-      geoms[object.uid] = dots;
-
-      return object.children;
-    }
-
-    var geom_indices = [];
-
-    for (i = 0; i < boundaries.length; i++) {
-      var boundary = [],
-        holes = [];
-
-      boundary = boundaries[i][0];
-
-      if (boundary.length === 3) {
-        geom_indices.push(boundary[0], boundary[1], boundary[2]);
-      } else if (boundary.length > 3) {
-        //create list of points
-        var pList = [],
-          vList = [],
-          k;
-
-        for (var j = 0; j < boundaries[i].length; j++) {
-          for (k = 0; k < boundaries[i][j].length; k++) {
-            pList.push({
-              x: object.vertices[boundaries[i][j][k]][0],
-              y: object.vertices[boundaries[i][j][k]][1],
-              z: object.vertices[boundaries[i][j][k]][2],
-            });
-
-            if (j > 0 && k === 0) {
-              holes.push(vList.length);
-            }
-
-            vList.push(boundaries[i][j][k]);
-          }
-        }
-
-        //get normal of these points
-        var normal = get_normal_newell(pList);
-
-        //convert to 2d (for triangulation)
-        var pv = [];
-        for (k = 0; k < pList.length; k++) {
-          var re = to_2d(pList[k], normal);
-          pv.push(re.x);
-          pv.push(re.y);
-        }
-
-        //triangulate
-        var tr = earcut(pv, holes, 2);
-
-        //create faces based on triangulation
-        for (k = 0; k < tr.length; k += 1) {
-          geom_indices.push(vList[tr[k]]);
-        }
-      }
-    }
-
-    geom.setIndex(
-      new THREE.Float32BufferAttribute(new Uint16Array(geom_indices), 1)
+  if (object["pointcloud-file"] !== undefined) {
+    console.warn(
+      "Warning : Chrome and other browsers might block calls to external URIs. Please consider taking attention to security before proceeding."
+    );
+    const pointcloud_data = await load(
+      object["pointcloud-file"].pointFile,
+      LASLoader,
+      {}
     );
 
-    geom.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute([].concat.apply([], object.vertices), 3)
-    ); // THIS IS 0 0 0
+    var pts = [];
 
-    //needed for shadow
-    geom.computeVertexNormals();
+    for (
+      var i = 0;
+      i < pointcloud_data.attributes.POSITION.value.length;
+      i += 3
+    ) {
+      pts.push(
+        pointcloud_data.attributes.POSITION.value[i],
+        pointcloud_data.attributes.POSITION.value[i + 1],
+        pointcloud_data.attributes.POSITION.value[i + 2]
+      );
+    }
 
-    geom.computeBoundingBox();
+    geom.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
 
-    geoms[object.uid] = geom;
+    geom.computeBoundingSphere();
+
+    var dotMaterial = new THREE.PointsMaterial({
+      size: 0.2,
+      sizeAttenuation: true,
+      color: ALLCOLOURS[object.type],
+    });
+    var dots = new THREE.Points(geom, dotMaterial);
+
+    geoms[object.uid] = dots;
 
     return object.children;
+  }
+
+  if (object.geometry[0] == null) return; // If no geometry (eg: CityObjectGroup (not always true))
+
+  //each geometrytype must be handled different
+  var geomType = object.geometry[0].type;
+
+  for (var vertex in object.vertices) {
+    object.vertices[vertex][0] =
+      object.vertices[vertex][0] * object.transform.scale[0] +
+      object.transform.translate[0];
+    object.vertices[vertex][1] =
+      object.vertices[vertex][1] * object.transform.scale[1] +
+      object.transform.translate[1];
+    object.vertices[vertex][2] =
+      object.vertices[vertex][2] * object.transform.scale[2] +
+      object.transform.translate[2];
+  }
+
+  if (geomType === "Solid") {
+    boundaries = object.geometry[0].boundaries[0];
+  } else if (geomType === "MultiSurface" || geomType === "CompositeSurface") {
+    boundaries = object.geometry[0].boundaries;
+  } else if (geomType === "MultiSolid" || geomType === "CompositeSolid") {
+    boundaries = object.geometry[0].boundaries;
+  } else if (geomType === "MultiPoint") {
+    //return object.children
+    boundaries = object.geometry[0].boundaries;
+
+    const vertices = [];
+
+    for (vertex in boundaries) {
+      if (object.vertices[boundaries[vertex]] !== undefined) {
+        vertices.push(
+          object.vertices[boundaries[vertex]][0],
+          object.vertices[boundaries[vertex]][1],
+          object.vertices[boundaries[vertex]][2]
+        );
+      }
+    }
+
+    await geom.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(vertices, 3)
+    );
+
+    geom.computeBoundingSphere();
+
+    dotMaterial = new THREE.PointsMaterial({
+      size: 4,
+      sizeAttenuation: false,
+      color: ALLCOLOURS[object.type],
+    });
+
+    dots = new THREE.Points(geom, dotMaterial);
+
+    geoms[object.uid] = dots;
+
+    return object.children;
+  }
+
+  var geom_indices = [];
+
+  for (i = 0; i < boundaries.length; i++) {
+    var boundary = [],
+      holes = [];
+
+    boundary = boundaries[i][0];
+
+    if (boundary.length === 3) {
+      geom_indices.push(boundary[0], boundary[1], boundary[2]);
+    } else if (boundary.length > 3) {
+      //create list of points
+      var pList = [],
+        vList = [],
+        k;
+
+      for (var j = 0; j < boundaries[i].length; j++) {
+        for (k = 0; k < boundaries[i][j].length; k++) {
+          pList.push({
+            x: object.vertices[boundaries[i][j][k]][0],
+            y: object.vertices[boundaries[i][j][k]][1],
+            z: object.vertices[boundaries[i][j][k]][2],
+          });
+
+          if (j > 0 && k === 0) {
+            holes.push(vList.length);
+          }
+
+          vList.push(boundaries[i][j][k]);
+        }
+      }
+
+      //get normal of these points
+      var normal = get_normal_newell(pList);
+
+      //convert to 2d (for triangulation)
+      var pv = [];
+      for (k = 0; k < pList.length; k++) {
+        var re = to_2d(pList[k], normal);
+        pv.push(re.x);
+        pv.push(re.y);
+      }
+
+      //triangulate
+      var tr = earcut(pv, holes, 2);
+
+      //create faces based on triangulation
+      for (k = 0; k < tr.length; k += 1) {
+        geom_indices.push(vList[tr[k]]);
+      }
+    }
+  }
+
+  geom.setIndex(
+    new THREE.Float32BufferAttribute(new Uint16Array(geom_indices), 1)
+  );
+
+  geom.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute([].concat.apply([], object.vertices), 3)
+  );
+
+  //needed for shadow
+  geom.computeVertexNormals();
+
+  geom.computeBoundingBox();
+
+  geoms[object.uid] = geom;
+
+  return object.children;
 }
 
 //action if mouseclick (for getting attributes of objects)
