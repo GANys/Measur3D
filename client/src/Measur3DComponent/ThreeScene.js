@@ -21,16 +21,16 @@ class ThreeScene extends Component {
 
     this.element = React.createRef();
 
-    EventEmitter.subscribe("uploadFile", event => this.handleFile(event));
+    EventEmitter.subscribe("uploadFile", (event) => this.handleFile(event));
     this.handleFile = this.handleFile.bind(this);
 
-    EventEmitter.subscribe("reloadScene", event => this.reloadScene(event));
+    EventEmitter.subscribe("reloadScene", (event) => this.reloadScene(event));
     this.reloadScene = this.reloadScene.bind(this);
 
-    EventEmitter.subscribe("loadScene", event => this.loadScene(event));
+    EventEmitter.subscribe("loadScene", (event) => this.loadScene(event));
     this.loadScene = this.loadScene.bind(this);
 
-    EventEmitter.subscribe("deleteObject", event => this.deleteObject(event));
+    EventEmitter.subscribe("deleteObject", (event) => this.deleteObject(event));
     this.deleteObject = this.deleteObject.bind(this);
 
     this.clearScene = this.clearScene.bind(this);
@@ -44,12 +44,8 @@ class ThreeScene extends Component {
       cityModel: false,
       reload: true,
       selectedItem: undefined,
-      isMounted: false
+      isMounted: false,
     };
-
-    // JSON variables
-    this.meshes = []; //contains the meshes of the objects
-    this.geoms = {}; //contains the geometries of the objects
   }
 
   componentDidMount() {
@@ -66,7 +62,7 @@ class ThreeScene extends Component {
     this.camera = new THREE.PerspectiveCamera();
 
     //ADD RENDERER
-    this.renderer = new THREE.WebGLRenderer({ antialias: true});
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor("#000000");
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
@@ -99,13 +95,13 @@ class ThreeScene extends Component {
 
     this.setState({
       isMounted: true,
-      boolJSONload: false
+      boolJSONload: false,
     });
   }
 
   componentWillUnmount() {
     this.setState({
-      isMounted: false
+      isMounted: false,
     });
 
     window.removeEventListener("resize", this.handleWindowResize);
@@ -136,20 +132,20 @@ class ThreeScene extends Component {
     this.renderer.render(this.scene, this.camera);
   };
 
-  reloadScene = async evt => {
+  reloadScene = async (evt) => {
     this.setState({
-      reload: !this.state.reload
+      reload: !this.state.reload,
     });
   };
 
   handleWindowResize() {
     if (this.state.isMounted) {
       this.setState({
-        containerWidth: ReactDOM.findDOMNode(this.mount).offsetWidth
+        containerWidth: ReactDOM.findDOMNode(this.mount).offsetWidth,
       });
 
       this.setState({
-        containerHeight: ReactDOM.findDOMNode(this.mount).offsetHeight
+        containerHeight: ReactDOM.findDOMNode(this.mount).offsetHeight,
       });
 
       this.camera.aspect =
@@ -167,7 +163,7 @@ class ThreeScene extends Component {
 
   debounce = (func, delay) => {
     let debounceTimer;
-    return function() {
+    return function () {
       const context = this;
       const args = arguments;
       clearTimeout(debounceTimer);
@@ -175,23 +171,23 @@ class ThreeScene extends Component {
     };
   };
 
-  handleFile = file => {
+  handleFile = (file) => {
     this.setState({
-      boolJSONload: true
+      boolJSONload: true,
     });
 
     axios
       .post("http://localhost:3001/measur3d/uploadCityModel", {
         json: file.content,
-        cm_uid: file.cm_uid
+        cm_uid: file.cm_uid,
       })
-      .then(res => {
+      .then((res) => {
         EventEmitter.dispatch("success", res.data.success);
         EventEmitter.dispatch("info", "Now loading it into the scene.");
 
         this.setState({
           boolJSONload: false,
-          cityModel: true
+          cityModel: true,
         });
 
         //load the cityObjects into the viewer
@@ -199,11 +195,11 @@ class ThreeScene extends Component {
       });
   };
 
-  loadScene = cm_uid => {
+  loadScene = (cm_uid) => {
     this.clearScene();
 
     this.setState({
-      boolJSONload: true
+      boolJSONload: true,
     });
 
     Functions.loadCityModel(this, cm_uid);
@@ -217,14 +213,12 @@ class ThreeScene extends Component {
     var points = new THREE.Points();
 
     this.scene.children = this.scene.children.filter(
-      value => value.type !== mesh.type && value.type !== points.type
+      (value) => value.type !== mesh.type && value.type !== points.type
     );
   };
 
-  handleClick = evt => {
-    var action_button = document.querySelectorAll(
-      "div > div > span > button"
-    );
+  handleClick = (evt) => {
+    var action_button = document.querySelectorAll("div > div > span > button");
 
     // eslint-disable-next-line
     if (evt != undefined) {
@@ -237,55 +231,32 @@ class ThreeScene extends Component {
 
     if (!this.state.cityModel) return;
 
-    action_button.forEach(function(button) {
+    action_button.forEach(function (button) {
       button.style.visibility = "visible";
     });
     Functions.intersectMeshes(evt, this);
   };
 
-  deleteObject = uid => {
+  deleteObject = (uid) => {
     // Cleaning both Scene and ThreeScene objects -> Collisions seem to work oddly after it.
-
-    console.log(this)
-
     this.setState({
-      boolJSONload: true
+      boolJSONload: true,
     });
 
-    delete this.geoms[uid];
+    // Get mesh to be deleted
+    var object = this.scene.children.filter((obj) => {
+      return obj.uid === uid;
+    });
 
+    // Filter scene deleting objet and its children
     this.scene.children = this.scene.children.filter(
-      value => value.uid !== uid
+      (obj) => !object[0].childrenMeshes.concat(uid).includes(obj.uid)
     );
-
-    var index_mesh;
-
-    for (var el in this.meshes) {
-      // eslint-disable-next-line
-      if (this.meshes[el].uid == uid) {
-        index_mesh = el;
-      }
-    }
-
-    for (var child in this.meshes[index_mesh].childrenMeshes) {
-      for (el in this.meshes) {
-        // eslint-disable-next-line
-        if (this.meshes[el].uid == uid) {
-          index_mesh = el;
-        }
-      }
-
-      if (this.meshes[index_mesh].childrenMeshes[child] !== undefined) {
-        this.deleteObject(this.meshes[index_mesh].childrenMeshes[child]);
-      }
-    }
-
-    this.meshes.splice(index_mesh, 1);
 
     this.renderer.render(this.scene, this.camera); // Cleaning for collisions.
 
     this.setState({
-      boolJSONload: false
+      boolJSONload: false,
     });
   };
 
@@ -293,12 +264,12 @@ class ThreeScene extends Component {
     return (
       <React.Fragment>
         <div
-          ref={mount => {
+          ref={(mount) => {
             if (mount !== null) {
               this.mount = mount;
               if (!this.state.isMounted) {
                 this.setState({
-                  isMounted: true
+                  isMounted: true,
                 });
                 this.handleWindowResize();
                 this.handleClick();

@@ -254,53 +254,36 @@ router.get("/getCityModel", async (req, res) => {
  *           description: Not found - There is no document with that name.
  */
 router.delete("/deleteCityModel", (req, res) => {
-  mongoose.model("CityModel").deleteOne({ name: req.body.name }, (err) => {
-    if (err)
-      return res.status(500).send({
-        error: "/deleteCityModel : there is no document with that name.",
-      });
-  });
-
   mongoose
-    .model("CityObject")
-    .deleteMany({ CityModel: req.body.name }, (err) => {
+    .model("CityModel")
+    .findOneAndDelete(
+      { uid: req.body.cm_uid },
+      { projection: { CityObjects: 1 } }
+    )
+    .lean()
+    .catch((err) => {
       if (err)
         return res.status(500).send({
-          error: "/deleteCityModel : there is no document with that name.",
+          error: "/deleteCityModel : there is no citymodel with that uid.",
         });
+    })
+    .then((citymodel) => {
+      var deletionObjects = [];
+      for (var obj in citymodel.CityObjects) {
+        deletionObjects.push(
+          Functions.smartDeleteObject({
+            _id: citymodel.CityObjects[obj],
+            smart: false,
+          })
+        );
+      }
+
+      Promise.all(deletionObjects).then((data) => {
+        return res.status(200).send({
+          success: "/deleteCityModel : model and objects deleted.",
+        });
+      });
     });
-
-  mongoose.model("Geometry").deleteMany({ CityModel: req.body.name }, (err) => {
-    if (err)
-      return res
-        .status(500)
-        .send({ error: "There is no document with that name." });
-  });
-
-  mongoose
-    .model("GeometryInstance")
-    .deleteMany({ CityModel: req.body.name }, (err) => {
-      if (err)
-        return res
-          .status(500)
-          .send({ error: "There is no document with that name." });
-    });
-
-  mongoose.model("Material").deleteMany({ CityModel: req.body.name }, (err) => {
-    if (err)
-      return res
-        .status(500)
-        .send({ error: "There is no document with that name." });
-  });
-
-  mongoose.model("Texture").deleteMany({ CityModel: req.body.name }, (err) => {
-    if (err)
-      return res
-        .status(500)
-        .send({ error: "There is no document with that name." });
-  });
-
-  return res.json({ success: "City model deleted with success !" });
 });
 
 /**
@@ -381,8 +364,9 @@ router.get("/getObject", (req, res) => {
  */
 router.delete("/deleteObject", (req, res) => {
   // Need of a recursive delete because of children
-  Functions.recursiveDelete({
+  Functions.smartDeleteObject({
     uid: req.body.uid,
+    smart: true,
   }).then(function (data) {
     if (data.error != undefined) return res.status(404).json(data);
     return res.status(200).json(data);

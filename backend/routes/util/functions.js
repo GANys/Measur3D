@@ -18,11 +18,19 @@ function lengthInUtf8Bytes(str) {
   return str.length + (m ? m.length : 0);
 }
 
-function recursiveDelete(params) {
+function smartDeleteObject(params) {
+  var options = {};
+
+  if (params.uid != undefined) {
+    options = { uid: params.uid };
+  } else {
+    options = { _id: params._id };
+  }
+  //params are object.uid and smart
   return new Promise(function (resolve, reject) {
     mongoose
       .model("CityObject")
-      .findOneAndDelete({ uid: params.uid }, { children: 1, parents: 1 })
+      .findOneAndDelete(options)
       .lean()
       .catch((err) => {
         resolve({
@@ -31,57 +39,63 @@ function recursiveDelete(params) {
       })
       .then(function (cityObject) {
         // Recursive deletion of all children of the deleted object
-        if (
-          cityObject.children != undefined &&
-          cityObject.children.length > 0
-        ) {
-          for (var child in cityObject.children) {
-            recursiveDelete({
-              uid: cityObject.children[child],
-            });
+        if (params.smart) {
+          if (
+            cityObject.children != undefined &&
+            cityObject.children.length > 0
+          ) {
+            for (var child in cityObject.children) {
+              smartDeleteObject({
+                uid: cityObject.children[child],
+                smart: true,
+              });
+            }
           }
-        }
 
-        // Update the children value for all parents of the deleted element
-        if (cityObject.parents != undefined && cityObject.parents.length > 0) {
-          for (var parent in cityObject.parents) {
-            mongoose.model("CityObject").updateOne(
-              { uid: cityObject.parents[parent] },
+          // Update the children value for all parents of the deleted element
+          if (
+            cityObject.parents != undefined &&
+            cityObject.parents.length > 0
+          ) {
+            for (var parent in cityObject.parents) {
+              mongoose.model("CityObject").updateOne(
+                { uid: cityObject.parents[parent] },
+                {
+                  $pull: {
+                    children: [{ _id: cityObject.uid }],
+                  },
+                },
+                (err, objectParent) => {
+                  if (err)
+                    resolve({
+                      error:
+                        "/deleteObject: this object is isolated (no parent found).",
+                    });
+                }
+              );
+            }
+          }
+
+          // Delete reference within CityModel document
+          mongoose
+            .model("CityModel")
+            .findOneAndUpdate(
+              { CityObjects: cityObject._id },
               {
                 $pull: {
-                  children: [{ _id: cityObject.uid }],
+                  CityObjects: cityObject._id,
                 },
               },
-              (err, objectParent) => {
+              (err, data_citymodel) => {
                 if (err)
                   resolve({
                     error:
-                      "/deleteObject: this object is isolated (no parent found).",
+                      "/deleteObject: this object is isolated (no city model found).",
                   });
               }
-            );
-          }
+            )
+            .lean();
         }
-
-        // Delete reference within CityModel document
-        mongoose
-          .model("CityModel")
-          .findOne(
-            { CityObjects: cityObject.uid },
-            {
-              $pull: {
-                CityObjects: [{ _id: cityObject.uid }],
-              },
-            },
-            (err, data_citymodel) => {
-              if (err)
-                resolve({
-                  error:
-                    "/deleteObject: this object is isolated (no city model found).",
-                });
-            }
-          )
-          .lean();
 
         mongoose
           .model("Geometry")
@@ -137,4 +151,4 @@ function mapType(type) {
   return type;
 }
 
-module.exports = { formatBytes, lengthInUtf8Bytes, recursiveDelete, mapType };
+module.exports = { formatBytes, lengthInUtf8Bytes, smartDeleteObject, mapType };
