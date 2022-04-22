@@ -34,7 +34,7 @@ function smartDeleteObject(params) {
       .lean()
       .catch((err) => {
         resolve({
-          error: "/deleteObject : there is no object with that name.",
+          error: "/deleteObject : there is no object with that uid.",
         });
       })
       .then(function (cityObject) {

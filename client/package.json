@@ -23,10 +23,10 @@
     "react-dropzone": "^10.2.2",
     "react-onclickoutside": "^6.9.0",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "^5.0.0",
+    "react-scripts": "^5.0.1",
     "react-split-pane": "^0.1.91",
     "react-virtualized": "^9.21.2",
-    "swagger-ui-react": "^3.35.1",
+    "swagger-ui-react": "^4.10.3",
     "three": "^0.126.1"
   },
   "scripts": {

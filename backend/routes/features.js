@@ -339,7 +339,6 @@ router.get("/api", midWareCaching, function (req, res) {
  *       description: NOT AVAILABLE - This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
  *       tags: [Features]
  */
-
 router.get("/api.html", midWareCaching, function (req, res) {
   res.status(400).send("Not yet available");
 });
@@ -483,10 +482,7 @@ router.get("/collections", midWareCaching, async function (req, res) {
  *                     type: string
  *                     example: There is no collection in the database.
  */
-router.get("/collections/:collectionId", midWareCaching, async function (
-  req,
-  res
-) {
+router.get("/collections/:collectionId", midWareCaching, async function (req, res) {
   var urlParts = url.parse(req.url, true);
 
   var collection = await mongoose
@@ -719,10 +715,7 @@ router.get("/collections/:collectionId", midWareCaching, async function (
  *                     type: string
  *                     example: There is no item in the database.
  */
-router.get("/collections/:collectionId/items", midWareCaching, async function (
-  req,
-  res
-) {
+router.get("/collections/:collectionId/items", midWareCaching, async function (req, res) {
   //Next is not implemented. Might be useful in huge datasets.
 
   var urlParts = url.parse(req.url, true);

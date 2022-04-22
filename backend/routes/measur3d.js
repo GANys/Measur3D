@@ -15,16 +15,16 @@ const router = express.Router();
  * @swagger
  * /uploadCityModel:
  *     post:
- *       summary: Uploads a CityModel.
- *       description: This function allows to upload a CityJSON file (v 1.0.x). The file will be processed in order to distribute the information in the different documents in the database following the CityModel, AbstractCityObject and Geometry schemas (other schemas will be supported in further developments).
+ *       summary: Uploads a CityJSON model.
+ *       description: This function allows to upload a CityJSON file (v 1.1.x). The file will be processed in order to store the documents in the various database collections (CityModel, CityObjects and Geometry schemas (other schemas will be supported in further developments)).
  *       tags: [Measur3D]
  *       parameters:
- *       - name: jsonName
- *         description: Name of the CityModel - name of the file in the Measur3D application.
+ *       - name: cm_uid
+ *         description: Unique identifier of the CityModel.
  *         in: body
  *         required: true
  *         type: string
- *       - name: content
+ *       - name: json
  *         description: The content of the JSON file as a JSON object.
  *         in: body
  *         required: true
@@ -41,10 +41,21 @@ const router = express.Router();
  *                 properties:
  *                   success:
  *                     type: string
- *                     default: "File uploaded"
- *               example: {success: "File uploaded"}
- *         408:
- *           description: Request timeout - took over 10 minutes (Uploading a CityModel can be very long).
+ *                     default: "/uploadCityModel : model saved"
+ *               example: { success: "/uploadCityModel : model saved" }
+ *         404:
+ *           description: Timeout after 10 minutes (Need to be tested in prod).
+ *         409:
+ *           description: The model already exists.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: "/uploadCityModel : this model already exists. Consider updating it."
+ *               example: { error: "/uploadCityModel : this model already exists. Consider updating it." }
  */
 router.post("/uploadCityModel", (req, res) => {
   req.setTimeout(10 * 60 * 1000); // Special timeOut
@@ -52,9 +63,6 @@ router.post("/uploadCityModel", (req, res) => {
   mongoose
     .model("CityModel")
     .countDocuments({ uid: req.body.cm_uid }, function (err, count) {
-      if (err) {
-        return res.status(400).json({ error: err });
-      }
       if (count > 0) {
         return res.status(409).json({
           error:
@@ -87,11 +95,20 @@ router.post("/uploadCityModel", (req, res) => {
  *                 items:
  *                   type: object
  *                   properties:
- *                     name:
+ *                     cm_uid:
  *                       type: string
- *               example: [{name: model_1}, {name: model_2}]
+ *               example: [{cm_uid: model_1}, {cm_uid: model_2}]
  *         404:
- *           description: Not found - There is no CityModel in the database.
+ *           description: There is no CityModel in the database.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: "/getCityModelsList : there is no CityModel in the database."
+ *               example: { error: "/getCityModelsList : there is no CityModel in the database." }
  */
 router.get("/getCityModelsList", (req, res) => {
   mongoose
@@ -124,8 +141,8 @@ router.get("/getCityModelsList", (req, res) => {
  *       description: This function allows getting a specific CityModel. It gathers all information related to the model in the different collections from the database.
  *       tags: [Measur3D]
  *       parameters:
- *       - name: name
- *         description: Name of the CityModel - name of the file in the Measur3D application.
+ *       - name: uid
+ *         description: Unique identifier of the CityModel.
  *         in: body
  *         required: true
  *         type: string
@@ -136,8 +153,17 @@ router.get("/getCityModelsList", (req, res) => {
  *             application/json:
  *               schema:
  *                 $ref: '#/components/schemas/CityModel'
- *         500:
- *           description: Not found - There is no CityModel in the database.
+ *         404:
+ *           description: There is no CityModel with this uid in the database.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: "/getCityModel : there is no CityModel with this name in the database."
+ *               example: { error: "/getCityModel : there is no CityModel with this name in the database." }
  */
 router.get("/getCityModel", async (req, res) => {
   try {
@@ -248,10 +274,19 @@ router.get("/getCityModel", async (req, res) => {
  *                 properties:
  *                   success:
  *                     type: string
- *                     default: City model deleted with success !
- *               example: {success: "City model deleted with success !"}
+ *                     default: "/deleteCityModel : model and objects deleted."
+ *               example: {success: "/deleteCityModel : model and objects deleted."}
  *         404:
- *           description: Not found - There is no document with that name.
+ *           description: There is no CityModel with this uid in the database.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: "/getCityModel : there is no CityModel with this name in the database."
+ *               example: { error: "/getCityModel : there is no CityModel with this name in the database." }
  */
 router.delete("/deleteCityModel", (req, res) => {
   mongoose
@@ -294,12 +329,8 @@ router.delete("/deleteCityModel", (req, res) => {
  *       description: This function allows getting a specific CityObject. It gathers the object and its highest lod geometry.
  *       tags: [Measur3D]
  *       parameters:
- *       - name: name
- *         description: Name of the object.
- *         in: body
- *         type: string
- *       - name: id
- *         description: Id of the object.
+ *       - name: uid
+ *         description: Unique identifier of the object.
  *         in: body
  *         type: string
  *       - name: CityObjectType
@@ -314,22 +345,35 @@ router.delete("/deleteCityModel", (req, res) => {
  *             application/json:
  *               schema:
  *                 $ref: '#/components/schemas/AbstractCityObject'
- *         400:
- *           description: Bad request - Params are not valid.
- *           type: object
- *           properties:
- *             error:
- *               type: string
- *               default: "Params are not valid."
+ *         404:
+ *           description: This CityObject does not exist.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: "/getObject : No object exists under these conditions."
+ *               example: { error: "/getObject : No object exists under these conditions." }
  *         500:
- *           description: Internal error - getObject could not find Object in Collection. Error is sent by database.
+ *           description: Error sent by the database.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: error
+ *               example: { error: error }
  */
 router.get("/getObject", (req, res) => {
   if (typeof req.query.uid != "undefined") {
     mongoose
       .model(Functions.mapType(req.query.CityObjectType))
       .findOne({ uid: req.query.uid }, (err, data) => {
-        if (err) return res.status(500).send(err);
+        if (err) return res.status(500).send({error: err});
         return res.json(data);
       })
       .lean();
@@ -345,7 +389,7 @@ router.get("/getObject", (req, res) => {
  * /deleteObject:
  *     delete:
  *       summary: Delete a specific CityObject.
- *       description: This function allows deleting a specific CityObject. It deletes an object and all its related geometries.
+ *       description: This function allows deleting a specific CityObject by uid (children,  and geometries.
  *       tags: [Measur3D]
  *       responses:
  *         200:
@@ -357,10 +401,19 @@ router.get("/getObject", (req, res) => {
  *                 properties:
  *                   success:
  *                     type: string
- *                     default: City model deleted with success !
- *               example: {success: "Object and children deleted !"}
- *         500:
- *           description: Something went bad - error generated by the database.
+ *                     default: "/deleteObject: object and all its dependencies deleted."
+ *               example: {success: "/deleteObject: object and all its dependencies deleted."}
+ *         404:
+ *           description: Something went wrong during the deletion (isolated object, children/geometry not found, ...).
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: "/deleteObject : explicit description of the error."
+ *               example: { error: "/deleteObject : explicit description of the error." }
  */
 router.delete("/deleteObject", (req, res) => {
   // Need of a recursive delete because of children
@@ -381,12 +434,8 @@ router.delete("/deleteObject", (req, res) => {
  *       description: This function allows getting the attributes of a specific CityObject. It gathers the object attributes in order to render in the AttributesManager Component.
  *       tags: [Measur3D]
  *       parameters:
- *       - name: name
- *         description: Name of the object.
- *         in: body
- *         type: string
- *       - name: id
- *         description: Id of the object.
+ *       - name: uid
+ *         description: Unique identifier of the object.
  *         in: body
  *         type: string
  *       - name: CityObjectType
@@ -404,15 +453,28 @@ router.delete("/deleteObject", (req, res) => {
  *                 items:
  *                   type: object
  *               example: Key/Value pairs
- *         400:
- *           description: Bad request - Params are not valid.
- *           type: object
- *           properties:
- *             error:
- *               type: string
- *               default: "Params are not valid."
+ *         404:
+ *           description: Parameters are not valid (no object exists under these conditions).
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: "/getObjectAttributes : parameters are not valid."
+ *               example: { error: "/getObjectAttributes : parameters are not valid." }
  *         500:
- *           description: Internal error - getObjectAttributes could not find Object in Collection. Error is sent by database.
+ *           description: Something went wrong during the query (from database).
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: Error sent by the database
+ *               example: { error: error sent by the database }
  */
 router.get("/getObjectAttributes", (req, res) => {
   if (typeof req.query.uid != "undefined") {
@@ -425,7 +487,7 @@ router.get("/getObjectAttributes", (req, res) => {
       .lean();
   } else {
     return res.status(404).send({
-      error: "Params are not valid (getObjectAttributes).",
+      error: "/getObjectAttributes : parameters are not valid.",
     });
   }
 });
@@ -438,8 +500,8 @@ router.get("/getObjectAttributes", (req, res) => {
  *       description: This function allows updating or deleting a key/value pair in the attributes of a specific CityObject. It corresponds to a modification of a line in the AttributesManager Component. If a new key or value is given, the pair is updated. If a value is not given, the old key is deleted from the document. If a new key is given, the key/value pair is created within the document.
  *       tags: [Measur3D]
  *       parameters:
- *       - name: jsonName
- *         description: Name of the object.
+ *       - name: uid
+ *         description: Unique identifier of the object.
  *         in: body
  *         type: string
  *       - name: CityObjectType
@@ -471,24 +533,37 @@ router.get("/getObjectAttributes", (req, res) => {
  *                 properties:
  *                   success:
  *                     type: string
- *                     default: "Object updated."
+ *                     default: "/updateObjectAttribute : Object updated."
  *               example: Key/Value pairs
- *         400:
- *           description: Bad request - Params are not valid.
- *           type: object
- *           properties:
- *             error:
- *               type: string
- *               default: "Params are not valid."
+ *         404:
+ *           description: Parameters are not valid (no object exists under these conditions).
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: "/updateObjectAttribute : No object exists under this uid."
+ *               example: { error: "/updateObjectAttribute : No object exists under this uid." }
  *         500:
- *           description: Internal error - updateObjectAttribute could not find Object in Collection. Error is sent by database.
+ *           description: Something went wrong during the query (from database).
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     default: Error sent by the database
+ *               example: { error: error sent by the database }
  */
 router.put("/updateObjectAttribute", async (req, res) => {
   mongoose
     .model(Functions.mapType(req.body.CityObjectType))
     .findOne({ uid: req.body.uid }, (err, data) => {
       if (err)
-        return res.status(400).send({
+        return res.status(404).send({
           error: "/updateObjectAttribute : No object exists under this uid.",
         });
 
