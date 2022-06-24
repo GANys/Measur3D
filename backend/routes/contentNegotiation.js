@@ -122,8 +122,8 @@ async function collectionsJSON(collections) {
 
   for (var collection in collections) {
     var item = header(
-      collections[collection].name,
-      "CityModel object - " + collections[collection].name
+      collections[collection].uid,
+      "CityModel object - " + collections[collection].uid
     );
 
     item.version = collections[collection].version;
@@ -175,10 +175,10 @@ async function collectionsJSON(collections) {
 
     item.links.push(
       link(
-        serviceUrl + "/collections/" + collections[collection].name + "/items",
+        serviceUrl + "/collections/" + collections[collection].uid + "/items",
         "items",
         "application/json",
-        "items of " + collections[collection].name
+        "items of " + collections[collection].uid
       )
     );
     json.collections.push(item);
@@ -193,7 +193,7 @@ function collectionsHTML(collections) {
   for (var collection in collections) {
     var item = {};
     item.url = serviceUrl;
-    item.title = collections[collection].name;
+    item.title = collections[collection].uid;
     items.push(item);
   }
 
@@ -216,8 +216,8 @@ async function collectionJSON(collection) {
   var json = {};
 
   var json = header(
-    "Feature collection " + collection.name,
-    "CityModel object - " + collection.name
+    "Feature collection " + collection.uid,
+    "CityModel object - " + collection.uid
   );
 
   json.version = collection.version;
@@ -264,7 +264,7 @@ async function collectionJSON(collection) {
   json.links = [];
   json.links.push(
     link(
-      serviceUrl + "/collections/" + collection.name + "?f=json",
+      serviceUrl + "/collections/" + collection.uid + "?f=json",
       "self",
       "application/json",
       "this document"
@@ -272,7 +272,7 @@ async function collectionJSON(collection) {
   );
   json.links.push(
     link(
-      serviceUrl + "/collections/" + collection.name + "?f=html",
+      serviceUrl + "/collections/" + collection.uid + "?f=html",
       "alternate",
       "text/html",
       "this document as HTML"
@@ -280,7 +280,7 @@ async function collectionJSON(collection) {
   );
   json.links.push(
     link(
-      serviceUrl + "/collections/" + collection.name + "/items",
+      serviceUrl + "/collections/" + collection.uid + "/items",
       "items",
       "application/geo+json",
       "CityObjects"
@@ -293,7 +293,7 @@ async function collectionJSON(collection) {
 function collectionHTML(collectionId) {
   var item = {};
   item.url = serviceUrl;
-  item.title = collectionId.name;
+  item.title = collectionId.uid;
 
   var tmpl = swig.compileFile(__dirname + "/template/collection.template"),
     renderedHtml = tmpl({
@@ -316,7 +316,7 @@ function itemsJSON(self, alternate, collectionId, geojson) {
   item.numberReturned = geojson.length;
   item.numberMatched = geojson.length;
 
-  var json = header(collection.name, "CityObjects from " + collectionId);
+  var json = header(collection.uid, "CityObjects from " + collectionId);
 
   json.items = JSON.parse(JSON.stringify(geojson));
 
@@ -370,7 +370,7 @@ function items(t, self, alternate, collectionId, geojson) {
 function itemJSON(self, alternate, collectionId, geojson) {
   var json = {};
 
-  var json = header(collection.name, "CityObjects from " + collectionId);
+  var json = header(collection.uid, "CityObjects from " + collectionId);
 
   json.links = [];
 

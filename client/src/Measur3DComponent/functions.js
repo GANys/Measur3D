@@ -241,8 +241,19 @@ async function parseObject(object) {
 
     if (object.geometry[0] == null) return; // If no geometry (eg: CityObjectGroup (not always true))
 
+    var lod = 0.0, id = -1.0;
+    // Select higher LoD for each element
+    for(var el in object.geometry){
+      if(Number(object.geometry[el].lod) > lod){
+        lod = Number(object.geometry[el].lod)
+        id = el
+      }
+    }
+
+    var selected_geom = object.geometry[el]
+
     //each geometrytype must be handled different
-    var geomType = object.geometry[0].type;
+    var geomType = selected_geom.type;
 
     for (var vertex in object.vertices) {
       object.vertices[vertex][0] =
@@ -257,14 +268,14 @@ async function parseObject(object) {
     }
 
     if (geomType === "Solid") {
-      boundaries = object.geometry[0].boundaries[0];
+      boundaries = selected_geom.boundaries[0];
     } else if (geomType === "MultiSurface" || geomType === "CompositeSurface") {
-      boundaries = object.geometry[0].boundaries;
+      boundaries = selected_geom.boundaries;
     } else if (geomType === "MultiSolid" || geomType === "CompositeSolid") {
-      boundaries = object.geometry[0].boundaries;
+      boundaries = selected_geom.boundaries;
     } else if (geomType === "MultiPoint") {
       //return object.children
-      boundaries = object.geometry[0].boundaries;
+      boundaries = selected_geom.boundaries;
 
       const vertices = [];
 

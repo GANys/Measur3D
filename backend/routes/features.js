@@ -109,14 +109,14 @@ const specs = swaggerJsdoc(options);
  *         type: object
  *         required:
  *           - type
- *           - id
+ *           - uid
  *           - CityObjects
  *           - vertices
  *         properties:
  *           type:
  *             type: string
  *             default: "CityJSONFeature"
- *           id:
+ *           uid:
  *             type: string
  *             description: Reference to the 1st-level CityObject (not its UUID).
  *           CityObjects:
@@ -155,7 +155,7 @@ const specs = swaggerJsdoc(options);
  *             description: JSON objects representing the textures and/or materials of surfaces.
  */
 
- //-------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
 
 router.post("*", function (req, res) {
   res.status(405).send({ error: "POST requests are not supported." });
@@ -203,6 +203,8 @@ router.post("*", function (req, res) {
  *                         type: string
  *                         example: "Invalid format"
  */
+
+// Can be improved once in prod
 router.get("/", midWareCaching, function (req, res) {
   var contentType = "";
   var accept = req.headers.accept;
@@ -403,29 +405,34 @@ router.get("/api.html", midWareCaching, function (req, res) {
  *                     type: string
  *                     example: There is no collection in the database.
  */
-router.get("/collections", midWareCaching, async function (req, res) {
+router.get("/collections", midWareCaching, function (req, res) {
   var urlParts = url.parse(req.url, true);
 
-  var collections = await mongoose
+  mongoose
     .model("CityModel")
-    .find({}, "name metadata version extensions", async (err, data) => {
-      if (err) {
+    .find({}, "uid metadata version extensions")
+    .lean()
+    .catch((err) => {
+      if (err)
         return res
           .status(404)
           .send({ error: "There is no collection in the database." });
-      }
     })
-    .lean();
-
-  if (null == urlParts.query.f) {
-    res.send(await negoc.collections("html", collections));
-  } else if ("json" == urlParts.query.f) {
-    res.json(await negoc.collections("json", collections));
-  } else if ("html" == urlParts.query.f)
-    res.send(await negoc.collections("html", collections));
-  else
-    res.status(400).json({
-      error: { code: "InvalidParameterValue", description: "Invalid format" },
+    .then(async (collections) => {
+      console.log(collections);
+      if (null == urlParts.query.f) {
+        res.send(await negoc.collections("html", collections));
+      } else if ("json" == urlParts.query.f) {
+        res.json(await negoc.collections("json", collections));
+      } else if ("html" == urlParts.query.f)
+        res.send(await negoc.collections("html", collections));
+      else
+        res.status(400).json({
+          error: {
+            code: "InvalidParameterValue",
+            description: "Invalid format",
+          },
+        });
     });
 });
 
@@ -482,39 +489,38 @@ router.get("/collections", midWareCaching, async function (req, res) {
  *                     type: string
  *                     example: There is no collection in the database.
  */
-router.get("/collections/:collectionId", midWareCaching, async function (req, res) {
+router.get("/collections/:collectionId", midWareCaching, function (req, res) {
   var urlParts = url.parse(req.url, true);
-
-  var collection = await mongoose
+  mongoose
     .model("CityModel")
     .findOne(
-      { name: req.params.collectionId },
-      "name metadata version extensions",
-      async (err, data) => {
-        if (err) {
-          return res.status(404).send({
-            error: "There is no collection " + req.params.collectionId,
-          });
-        }
-      }
+      { uid: req.params.collectionId },
+      "uid metadata version extensions"
     )
-    .lean();
-
-  if (collection == null) {
-    return res.status(404).send({
-      error: "There is no collection " + req.params.collectionId,
-    });
-  }
-
-  if (null == urlParts.query.f)
-    res.send(await negoc.collection("html", collection));
-  else if ("json" == urlParts.query.f)
-    res.json(await negoc.collection("json", collection));
-  else if ("html" == urlParts.query.f)
-    res.send(await negoc.collection("html", collection));
-  else
-    res.status(400).json({
-      error: { code: "InvalidParameterValue", description: "Invalid format" },
+    .lean()
+    .catch((err) => {
+      if (err)
+        return res.status(404).send({
+          error:
+            "There is no collection with the ID (" +
+            req.params.collectionId +
+            ") in the database.",
+        });
+    })
+    .then(async (collection) => {
+      if (null == urlParts.query.f)
+        res.send(await negoc.collection("html", collection));
+      else if ("json" == urlParts.query.f)
+        res.json(await negoc.collection("json", collection));
+      else if ("html" == urlParts.query.f)
+        res.send(await negoc.collection("html", collection));
+      else
+        res.status(400).json({
+          error: {
+            code: "InvalidParameterValue",
+            description: "Invalid format",
+          },
+        });
     });
 });
 
@@ -715,7 +721,10 @@ router.get("/collections/:collectionId", midWareCaching, async function (req, re
  *                     type: string
  *                     example: There is no item in the database.
  */
-router.get("/collections/:collectionId/items", midWareCaching, async function (req, res) {
+router.get("/collections/:collectionId/items", midWareCaching, async function (
+  req,
+  res
+) {
   //Next is not implemented. Might be useful in huge datasets.
 
   var urlParts = url.parse(req.url, true);
@@ -1247,11 +1256,11 @@ router.get(
     }
 
     // might be unused but still guarantes it
-    delete cityJSONFeature.transform
-    delete cityJSONFeature.version
-    delete cityJSONFeature.metadata
-    delete cityJSONFeature["geometry-templates"]
-    delete cityJSONFeature.extensions
+    delete cityJSONFeature.transform;
+    delete cityJSONFeature.version;
+    delete cityJSONFeature.metadata;
+    delete cityJSONFeature["geometry-templates"];
+    delete cityJSONFeature.extensions;
 
     if (null == urlParts.query.f)
       res.send(

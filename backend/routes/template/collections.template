@@ -12,7 +12,7 @@
     <table class="striped">
       <thead>
       <tr>
-        <th>Name</th>
+        <th>UID</th>
         <th>Description</th>
       </tr>
       </thead>
@@ -20,10 +20,10 @@
 
         {% for collection in collections %}
         <tr itemprop="dataset" itemscope="" itemtype="https://schema.org/Dataset">
-          <td data-label="name">
+          <td data-label="uid">
             <meta itemprop="url" content="{{ collection.url }}/collections/{{ collection.title }}">
             <a title="About page" href="{{ collection.url }}/collections/{{ collection.title }}">
-              <span itemprop="name">{{ collection.title }}</span></a>
+              <span itemprop="uid">{{ collection.title }}</span></a>
           </td>
           <td itemprop="description" data-label="description">
             {{ collection.title }}
