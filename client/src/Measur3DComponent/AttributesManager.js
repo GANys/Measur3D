@@ -89,6 +89,16 @@ class BasicMaterialTable extends React.Component {
       attribute["key"] = x;
       attribute["value"] = newData[x];
 
+      // Dynamizer
+      if (attribute["key"] === '+Dynamizer'){
+        console.log(newData[x].attributeRef.split("./")[1])
+        attribute["key"] = newData[x].attributeRef.split("./")[1]
+        attribute["value"] = 'See Chart on right pane.';
+        EventEmitter.dispatch("updateChart", {label: newData[x].attributeRef.split("./")[1], url: newData[x].dynamicData.linkToObservation});
+      } else {
+        EventEmitter.dispatch("resetChart", null);
+      }
+
       attributes.push(attribute);
     }
 

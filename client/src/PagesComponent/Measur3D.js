@@ -6,6 +6,7 @@ import SplitPane from "react-split-pane";
 import ThreeScene from "../Measur3DComponent/ThreeScene";
 import Modal from "../Measur3DComponent/Modal";
 import AttributesManager from "../Measur3DComponent/AttributesManager";
+import Chart from "../Measur3DComponent/Chart";
 import Alert from "@material-ui/lab/Alert";
 import Collapse from "@material-ui/core/Collapse";
 import Container from "@material-ui/core/Container";
@@ -128,7 +129,9 @@ class Measur3D extends Component {
               <div id="AttributesManager">
                 <AttributesManager />
               </div>
-              <img id="logo_app" src={logo_app} className="logo_app" alt="logo_app" />
+              <div id="Chart">
+                <Chart />
+              </div>
             </SplitPane>
             </div>
           <Modal

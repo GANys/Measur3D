@@ -1,36 +1,70 @@
 import React from "react";
 
+import { EventEmitter } from "./events";
+
+import { Chart as ChartJS } from "chart.js/auto";
+import { Line } from "react-chartjs-2";
+
+import axios from "axios";
+
 class Chart extends React.Component {
-  // initialize our state
-  state = {
-    data: []
+  constructor() {
+    super(...arguments);
+    this.primaryxAxis = { valueType: "DateTime", labelFormat: "yMd" };
+    this.tooltip = { enable: true };
+
+    EventEmitter.subscribe("resetChart", (event) => this.resetChart(event));
+    EventEmitter.subscribe("updateChart", (event) => this.updateChart(event));
+  }
+
+  resetChart = () => {
+    this.setState({
+      labels: null,
+      label: null,
+      data: null,
+    });
+  }
+
+  updateChart = (info) => {
+    axios.get(info.url).then((dataset) => {
+      var labels = [],
+        data = [];
+
+      for (const el in dataset.data) {
+        labels.push(Date(dataset.data[el].time.instant));
+        data.push(dataset.data[el].value.value);
+      }
+
+      this.setState({
+        labels: labels,
+        label: info.label,
+        data: data,
+      });
+    });
   };
 
-  // when component mounts, first thing it does is fetch all existing data in our db
-  // then we incorporate a polling logic so that we can easily see if our db has
-  // changed and implement those changes into our UI
-  componentDidMount() { // MERN APP
-    if (!this.state.intervalIsSet) {
-      //let interval = setInterval(this.getDataFromDb, 1000);
-      //this.setState({ intervalIsSet: interval });
-    }
-  }
+  state = {
+    labels: null,
+    label: null,
+    data: null,
+  };
 
-  // never let a process live forever
-  // always kill a process everytime we are done using it
-  componentWillUnmount() {
-    if (this.state.intervalIsSet) {
-      clearInterval(this.state.intervalIsSet);
-      this.setState({ intervalIsSet: null });
-    }
-  }
-
-
-  // here is our UI
-  // it is easy to understand their functions when you
-  // see them render into our screen
   render() {
-    return <div> This panel is left open for future tools. </div>;
+    return (
+      <Line
+        datasetIdKey="id"
+        data={{
+          labels: this.state.labels,
+          datasets: [
+            {
+              id: 1,
+              label: this.state.label,
+              data: this.state.data,
+            },
+          ],
+        }}
+      />
+    );
   }
 }
 

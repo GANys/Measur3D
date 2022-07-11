@@ -68,6 +68,7 @@ a {
   right: 10px;
   height: 48px;
   position: absolute;
+  z-index: 999;
 }
 
 #ThreeScene > a > img {

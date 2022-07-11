@@ -109,6 +109,9 @@ let CityObjectSchema = new mongoose.Schema({
     class: String,
     function: String,
     usage: String,
+    '+Dynamizer':{
+      type: mongoose.Schema.Types.Mixed
+    }
   },
   parents: { type: [String], default: undefined },
   children: { type: [String], default: undefined },
