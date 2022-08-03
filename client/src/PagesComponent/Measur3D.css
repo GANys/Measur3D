@@ -205,3 +205,17 @@ tbody.MuiTableBody-root > tr:hover {
 td:nth-child(2) > h6 {
   font-size: 0.8rem;
 }
+
+/* -------------------------
+  Semantic surface switch
+ ------------------------- */
+
+#ThreeScene > label {
+  position: absolute;
+  padding-top: 50px;
+  z-index: 2
+}
+
+.react-switch-bg > div {
+  width: 108px !important;
+}

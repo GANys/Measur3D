@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Switch from "react-switch";
 import ReactDOM from "react-dom";
 import * as THREE from "three";
 import axios from "axios";
@@ -37,14 +38,19 @@ class ThreeScene extends Component {
 
     this.handleClick = this.handleClick.bind(this);
 
+    this.switchObjSfc = this.switchObjSfc.bind(this);
+
+    this.updateSelection = this.updateSelection.bind(this);
+
     this.state = {
       containerWidth: 0,
       containerHeight: 0,
       boolJSONload: false,
       cityModel: false,
       reload: true,
-      selectedItem: undefined,
       isMounted: false,
+      selectedObj: null,
+      ObjSfc: true,
     };
   }
 
@@ -63,7 +69,7 @@ class ThreeScene extends Component {
 
     //ADD RENDERER
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setClearColor("#000000");
+    this.renderer.setClearColor("#B1E1FF");
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
 
@@ -73,21 +79,28 @@ class ThreeScene extends Component {
     // add raycaster and mouse (for clickable objects)
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
-    this.highlighted = null;
 
     //add AmbientLight (light that is only there that there's a minimum of light and you can see color)
     //kind of the natural daylight
-    this.am_light = new THREE.AmbientLight(0x666666, 0.7); // soft white light
-    this.scene.add(this.am_light);
+    var am_light = new THREE.AmbientLight(0x666666, 1.0); // soft white light
+    this.scene.add(am_light);
+
+    /*
+    const skyColor = 0xB1E1FF;  // light blue
+    const groundColor = 0xB97A20;  // brownish orange
+    const intensity = 1;
+    const hemilight = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+    this.scene.add(hemilight);
+    */
 
     // Add directional light
-    this.spot_light = new THREE.SpotLight(0xdddddd);
-    this.spot_light.position.set(84616, -1, 447422); // Can be problematic because scene is not normalised
-    this.spot_light.target = this.scene;
-    this.spot_light.castShadow = true;
-    this.spot_light.intensity = 0.4;
+    var spot_light = new THREE.SpotLight(0xdddddd);
+    spot_light.position.set(84616, -1, 447422); // Can be problematic because scene is not normalised
+    spot_light.target = this.scene;
+    spot_light.castShadow = true;
+    spot_light.intensity = 0.4;
     //this.spot_light.position.normalize();
-    this.scene.add(this.spot_light);
+    this.scene.add(spot_light);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
@@ -95,7 +108,7 @@ class ThreeScene extends Component {
 
     this.setState({
       isMounted: true,
-      boolJSONload: false,
+      boolJSONload: false
     });
   }
 
@@ -210,10 +223,9 @@ class ThreeScene extends Component {
   clearScene = () => {
     // Be careful to not delete the light ... Speaking from experience
     var mesh = new THREE.Mesh();
-    var points = new THREE.Points();
 
     this.scene.children = this.scene.children.filter(
-      (value) => value.type !== mesh.type && value.type !== points.type
+      (value) => value.type !== mesh.type
     );
   };
 
@@ -231,11 +243,62 @@ class ThreeScene extends Component {
 
     if (!this.state.cityModel) return;
 
+    Functions.intersectMeshes(evt, this);
+
     action_button.forEach(function (button) {
       button.style.visibility = "visible";
     });
-    Functions.intersectMeshes(evt, this);
   };
+
+  switchObjSfc = () => {
+    this.setState({ ObjSfc: !this.state.ObjSfc });
+
+    if (this.state.selectedObj == null) return;
+
+    this.updateSelection();
+  };
+
+  updateSelection = (object) => {
+    if (this.state.selectedObj != undefined) {
+      if (this.state.ObjSfc) {
+        this.state.selectedObj.object.material.color.setHex(Functions.ALLCOLOURS[this.state.selectedObj.object.CityObjectType]);
+      } else {
+        this.highlightFace(new THREE.Color(Functions.ALLCOLOURS[this.state.selectedObj.object.CityObjectType]), object);
+      }
+    }
+
+    if (object != null) {
+      this.setState({
+        selectedObj: object,
+      });
+
+      if (this.state.ObjSfc) {
+        this.state.selectedObj.object.material.color.setHex(0xffff00);
+      } else {
+        this.highlightFace(new THREE.Color('yellow'), object);
+      }
+    } else {
+      this.setState({
+        selectedObj: null,
+      });
+    }
+  };
+
+  highlightFace = (color, intersected) => {
+    const {face} = intersected;
+    const colorAttribute = intersected.object.geometry.getAttribute('color');
+
+    colorAttribute.setXYZ(face.a, color.r, color.g, color.b);
+    colorAttribute.setXYZ(face.b, color.r, color.g, color.b);
+    colorAttribute.setXYZ(face.c, color.r, color.g, color.b);
+
+    var offset = ( face.a % 2 == 0 ) ? 3 : - 3; // <======== CHANGED
+    colorAttribute.setXYZ(face.a + offset, color.r, color.g, color.b);
+    colorAttribute.setXYZ(face.b + offset, color.r, color.g, color.b);
+    colorAttribute.setXYZ(face.c + offset, color.r, color.g, color.b);
+
+    colorAttribute.needsUpdate = true;
+};
 
   deleteObject = (uid) => {
     // Cleaning both Scene and ThreeScene objects -> Collisions seem to work oddly after it.
@@ -263,6 +326,7 @@ class ThreeScene extends Component {
   render() {
     return (
       <React.Fragment>
+        <SwitchExample switchObjSfc={this.switchObjSfc} />
         <div
           ref={(mount) => {
             if (mount !== null) {
@@ -277,8 +341,62 @@ class ThreeScene extends Component {
             }
           }}
         />
+
         {this.state.boolJSONload ? <CircularProgress size={"4rem"} /> : null}
       </React.Fragment>
+    );
+  }
+}
+
+class SwitchExample extends Component {
+  constructor() {
+    super();
+    this.state = { checked: false };
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(checked) {
+    this.setState({ checked });
+  }
+
+  render() {
+    return (
+      <label>
+        <Switch
+          width={136}
+          uncheckedIcon={
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+                fontSize: "0.8rem",
+              }}
+            >
+              Select object
+            </div>
+          }
+          checkedIcon={
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+                fontSize: "0.8rem",
+              }}
+            >
+              Select surface
+            </div>
+          }
+          onChange={(e) => {
+            this.handleChange(e);
+            this.props.switchObjSfc(e);
+          }}
+          checked={this.state.checked}
+        />
+      </label>
     );
   }
 }
