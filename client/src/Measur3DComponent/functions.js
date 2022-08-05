@@ -12,9 +12,6 @@ import axios from "axios";
 
 import { EventEmitter } from "./events";
 
-import { LASLoader } from "@loaders.gl/las";
-import { load } from "@loaders.gl/core";
-
 // From https://doi.org/10.3390/ijgi10030138
 export var ALLCOLOURS = {
   Building: 0x73726f,
@@ -192,6 +189,7 @@ async function parseObject(object) {
 
     if (object.geometry[0] == null) return; // If no geometry (eg: CityObjectGroup (not always true))
 
+    // Will be removed once concurent LoD are supported
     var lod = 0.0,
       id = -1.0;
     // Select higher LoD for each element
@@ -202,7 +200,7 @@ async function parseObject(object) {
       }
     }
 
-    var selected_geom = object.geometry[el];
+    var selected_geom = object.geometry[id];
 
     //each geometrytype must be handled different
     var geomType = selected_geom.type;
@@ -293,9 +291,9 @@ async function parseObject(object) {
 
     geom.computeBoundingBox();
 
-    geom = geom.toNonIndexed()
+    geom.boundaries = boundaries
 
-    if (object.children != undefined) geom.children = object.children;
+    if (object.children !== undefined) geom.children = object.children;
 
     var material = new THREE.MeshPhongMaterial({vertexColors: true, color: new THREE.Color(ALLCOLOURS[object.type])});
 
@@ -342,7 +340,7 @@ export function intersectMeshes(event, threescene) {
   var mesh = new THREE.Mesh();
 
   var meshes = threescene.scene.children.filter(
-    (value) => value.type == mesh.type
+    (value) => value.type === mesh.type
   );
 
   //calculate intersects
@@ -468,6 +466,7 @@ export function intersectMeshes(event, threescene) {
     });
 }
 
+/* Keep it for better LoD support
 function getActiveIntersection(results) {
   // Filters through the results to find the first one for the active LoD
   if (this.activeLod > -1) {
@@ -481,3 +480,4 @@ function getActiveIntersection(results) {
   }
   return results[0];
 }
+*/

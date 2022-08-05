@@ -33,8 +33,7 @@ const actions = [
     name: "load", // Added custom name property so we know which action to check for
     icon: () => <GetAppRoundedIcon />,
     tooltip: "Load City Model",
-    onClick: (event, rowData) =>
-      EventEmitter.dispatch("loadScene", rowData.cm_uid),
+    onClick: (event, rowData) => EventEmitter.dispatch("loadScene", rowData.cm_uid),
     disabled: false, // Set disabled to false by default for all actions
     position: "row",
   },
@@ -61,7 +60,7 @@ class BasicMaterialTable extends React.Component {
       { title: "File Size in Database", field: "filesize" },
     ],
     data: [],
-    tableTitle: "Available city models in the database",
+    tableTitle: "Available city models in the database"
   };
 
   deleteRows = () => {

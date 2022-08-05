@@ -263,7 +263,7 @@ class ThreeScene extends Component {
       if (this.state.ObjSfc) {
         this.state.selectedObj.object.material.color.setHex(Functions.ALLCOLOURS[this.state.selectedObj.object.CityObjectType]);
       } else {
-        this.highlightFace(new THREE.Color(Functions.ALLCOLOURS[this.state.selectedObj.object.CityObjectType]), object);
+        this.highlightFace(new THREE.Color(Functions.ALLCOLOURS[this.state.selectedObj.object.CityObjectType]), this.state.selectedObj);
       }
     }
 
@@ -275,27 +275,31 @@ class ThreeScene extends Component {
       if (this.state.ObjSfc) {
         this.state.selectedObj.object.material.color.setHex(0xffff00);
       } else {
-        this.highlightFace(new THREE.Color('yellow'), object);
+        this.highlightFace(new THREE.Color('yellow'), this.state.selectedObj);
       }
     } else {
       this.setState({
         selectedObj: null,
       });
     }
+
+
   };
 
   highlightFace = (color, intersected) => {
-    const {face} = intersected;
+    const { face } = intersected;
     const colorAttribute = intersected.object.geometry.getAttribute('color');
 
     colorAttribute.setXYZ(face.a, color.r, color.g, color.b);
     colorAttribute.setXYZ(face.b, color.r, color.g, color.b);
     colorAttribute.setXYZ(face.c, color.r, color.g, color.b);
 
+    /*
     var offset = ( face.a % 2 == 0 ) ? 3 : - 3; // <======== CHANGED
     colorAttribute.setXYZ(face.a + offset, color.r, color.g, color.b);
     colorAttribute.setXYZ(face.b + offset, color.r, color.g, color.b);
     colorAttribute.setXYZ(face.c + offset, color.r, color.g, color.b);
+    */
 
     colorAttribute.needsUpdate = true;
 };
