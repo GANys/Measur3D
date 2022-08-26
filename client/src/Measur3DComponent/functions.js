@@ -36,6 +36,22 @@ var ALLCOLOURS = {
   WaterBody: 0x4da6ff,
 };
 
+var SURFACECOLOURS = {
+  GroundSurface: 0x999999,
+  WallSurface: 0xffffff,
+  RoofSurface: 0xff0000,
+  TrafficArea: 0x6e6e6e,
+  AuxiliaryTrafficArea: 0x2c8200,
+  Window: 0x0059ff,
+  Door: 0x640000
+};
+
+var ROADCOLOURS = {
+  sidewalk: 0xC9CBC9,
+  road: 0x848784,
+  'green areas': 0x32AC2E
+}
+
 //convert CityObjects to mesh and add them to the viewer
 export async function loadCityObjects(threescene, cm_name) {
   await axios
@@ -67,6 +83,7 @@ export async function loadCityObjects(threescene, cm_name) {
 
       //iterate through all cityObjects
       for (var cityObj in json.CityObjects) {
+        var boundaries = json.CityObjects[cityObj].geometry[0].boundaries;
         var cityObjectType = json.CityObjects[cityObj].type;
 
         switch (cityObjectType) {
@@ -92,59 +109,65 @@ export async function loadCityObjects(threescene, cm_name) {
 
         var childrenMeshes = [];
 
+        var surfaces = json.CityObjects[cityObj].geometry[0].semantics.surfaces;
+        var values = json.CityObjects[cityObj].geometry[0].semantics.values;
+
+        var idx = 0;
         //parse cityObj that it can be displayed in three js
-        var returnChildren = await parseObject(
-          json.CityObjects[cityObj],
-          json.transform,
-          cityObj,
-          threescene.geoms
-        );
+        boundaries.forEach(surface => {
+          var returnChildren = parseSurface(
+            json.CityObjects[cityObj],
+            surface,
+            json.transform,
+            cityObj,
+            threescene.geoms
+          );
 
-        //if object has children add them to the childrendict
-        for (var i in returnChildren) {
-          childrenMeshes.push(returnChildren[i]);
-        }
-        /*} catch (e) {
-          var error_message = "ERROR at creating: " + cityObj;
-          console.log(error_message);
-          EventEmitter.dispatch("error", error_message);
-          continue;
-        }*/
+          var color;
+          var type;
 
-        var coType = json.CityObjects[cityObj].type;
+          //if object has children add them to the childrendict
+           for (var i in returnChildren) {
+            childrenMeshes.push(returnChildren[i]);
+          }
 
-        //set color of object
-        if (json.CityObjects[cityObj].geometry[0].type !== "MultiPoint") {
+          var value = values[idx];
+          if (value !== null) {
+            type = surfaces[value].function;
+            color = ROADCOLOURS[type];
+          } else {
+            type = json.CityObjects[cityObj].type;
+            color = ALLCOLOURS[type];
+          }
+
+
+          //set color of object
           var material = new THREE.MeshStandardMaterial();
-          material.color.setHex(ALLCOLOURS[coType]);
+          material.color.setHex(color);
 
           //create mesh
-          var coMesh = new THREE.Mesh(threescene.geoms[cityObj], material);
+          var coMesh = new THREE.Mesh(threescene.geoms[surface], material);
 
           // Added by Measur3D
           coMesh.name = cityObj;
           coMesh.CityObjectClass = json.CityObjects[cityObj].type;
           coMesh.jsonName = json.name;
+
+          if (value !== null) {
+            coMesh.type = surfaces[value].type;
+            coMesh.function = surfaces[value].function;
+            coMesh.surfaceMaterial = surfaces[value].surfaceMaterial;
+          }
+
           coMesh.childrenMeshes = childrenMeshes;
 
           coMesh.castShadow = true;
           coMesh.receiveShadow = true;
           threescene.scene.add(coMesh);
           threescene.meshes.push(coMesh);
-        } else {
-          var dotGeometry = threescene.geoms[cityObj];
 
-          // Added by Measur3D
-          dotGeometry.name = cityObj;
-          dotGeometry.CityObjectClass = json.CityObjects[cityObj].type;
-          dotGeometry.jsonName = json.name;
-          dotGeometry.childrenMeshes = childrenMeshes;
-
-          dotGeometry.castShadow = true;
-          dotGeometry.receiveShadow = true;
-          threescene.scene.add(dotGeometry);
-          threescene.meshes.push(dotGeometry);
-        }
+          idx++;
+        })       
       }
     })
     .then(() => {
@@ -199,10 +222,8 @@ function to_2d(p, n) {
 }
 
 //convert json file to viewer-object
-async function parseObject(object, transform, cityObj, geoms) {
+async function parseSurface(object, surface, transform, cityObj, geoms) {
   // CityObject JSON, transform, CityObject name, threeScene.Geoms
-  var boundaries;
-
   if (object["pointcloud-file"] !== undefined) console.log(object["pointcloud-file"])
 
   //create geometry and empty list for the vertices
@@ -216,111 +237,71 @@ async function parseObject(object, transform, cityObj, geoms) {
   var object_vertices = object.vertices;
   var face_vertices = [];
 
-  if (geomType === "Solid") {
-    boundaries = object.geometry[0].boundaries[0];
-  } else if (geomType === "MultiSurface" || geomType === "CompositeSurface") {
-    boundaries = object.geometry[0].boundaries;
-  } else if (geomType === "MultiSolid" || geomType === "CompositeSolid") {
-    boundaries = object.geometry[0].boundaries;
-  } else if (geomType === "MultiPoint") {
-    //return object.children
-    boundaries = object.geometry[0].boundaries;
+  var boundaries = object.geometry[0].boundaries;
 
-    var dotGeometry = new THREE.BufferGeometry();
-
-    const vertices = [];
-
-    for (var vertex in boundaries) {
-      if (object_vertices[boundaries[vertex]] !== undefined) {
-        vertices.push(
-          object_vertices[boundaries[vertex]][0],
-          object_vertices[boundaries[vertex]][1],
-          object_vertices[boundaries[vertex]][2]
-        );
-      }
-    }
-
-    dotGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(vertices, 3)
-    );
-
-    dotGeometry.computeBoundingSphere();
-
-    var dotMaterial = new THREE.PointsMaterial({
-      size: 4,
-      sizeAttenuation: false,
-      color: ALLCOLOURS[object.type],
-    });
-    var dots = new THREE.Points(dotGeometry, dotMaterial);
-
-    geoms[object.name] = dots;
-
-    return object.children;
-  }
-
-  for (var i = 0; i < boundaries.length; i++) {
     var boundary = [],
-      holes = [];
-    for (var j = 0; j < boundaries[i].length; j++) {
-      if (boundary.length > 0) {
-        holes.push(boundary.length);
+        holes = []
+        if (boundary.length > 0) {
+          holes.push(boundary.length);
+        }
+
+          var new_boundary = decomposeFaces(
+            geom,
+            surface[0],
+            face_vertices,
+            object_vertices,
+            transform
+          );
+          boundary.push(...new_boundary);
+      
+      
+      if (boundary.length === 3) {
+        geom.faces.push(new THREE.Face3(boundary[0], boundary[1], boundary[2]));
+      } else if (boundary.length > 3) {
+        //create list of points
+        var pList = [],
+          k;
+
+        for (k = 0; k < boundary.length; k++) {
+          pList.push({
+            x: object_vertices[face_vertices[boundary[k]]][0],
+            y: object_vertices[face_vertices[boundary[k]]][1],
+            z: object_vertices[face_vertices[boundary[k]]][2],
+          });
+        }
+        //get normal of these points
+        var normal = get_normal_newell(pList);
+
+        //convert to 2d (for triangulation)
+        var pv = [];
+        for (k = 0; k < pList.length; k++) {
+          var re = to_2d(pList[k], normal);
+          pv.push(re.x);
+          pv.push(re.y);
+        }
+
+        //triangulate
+        var tr = earcut(pv, holes, 2);
+
+        //create faces based on triangulation
+        for (k = 0; k < tr.length; k += 3) {
+          geom.faces.push(
+            new THREE.Face3(
+              boundary[tr[k]],
+              boundary[tr[k + 1]],
+              boundary[tr[k + 2]]
+            )
+          );
+        }
       }
-      var new_boundary = decomposeFaces(
-        geom,
-        boundaries[i][j],
-        face_vertices,
-        object_vertices,
-        transform
-      );
-      boundary.push(...new_boundary);
-    }
-    if (boundary.length === 3) {
-      geom.faces.push(new THREE.Face3(boundary[0], boundary[1], boundary[2]));
-    } else if (boundary.length > 3) {
-      //create list of points
-      var pList = [],
-        k;
+    
 
-      for (k = 0; k < boundary.length; k++) {
-        pList.push({
-          x: object_vertices[face_vertices[boundary[k]]][0],
-          y: object_vertices[face_vertices[boundary[k]]][1],
-          z: object_vertices[face_vertices[boundary[k]]][2],
-        });
-      }
-      //get normal of these points
-      var normal = await get_normal_newell(pList);
+    //needed for shadow
+    geom.computeFaceNormals();
+    //geom.computeVertexNormals();
 
-      //convert to 2d (for triangulation)
-      var pv = [];
-      for (k = 0; k < pList.length; k++) {
-        var re = await to_2d(pList[k], normal);
-        pv.push(re.x);
-        pv.push(re.y);
-      }
-
-      //triangulate
-      var tr = await earcut(pv, holes, 2);
-
-      //create faces based on triangulation
-      for (k = 0; k < tr.length; k += 3) {
-        geom.faces.push(
-          new THREE.Face3(
-            boundary[tr[k]],
-            boundary[tr[k + 1]],
-            boundary[tr[k + 2]]
-          )
-        );
-      }
-    }
-  }
-
-  //needed for shadow
-  geom.computeFaceNormals();
-  //geom.computeVertexNormals();
-
-  geoms[object.name] = geom;
+    geoms[surface] = geom;
+  
 
   return object.children;
 }
@@ -409,7 +390,7 @@ export async function intersectMeshes(event, threescene) {
 
   if (intersects.length > 0) {
     // eslint-disable-next-line
-    if (threescene.HIGHLIGHTED != intersects[0].object) {
+    if (threescene.HIGHLIGHTED !== intersects[0].object) {
       if (threescene.HIGHLIGHTED !== null) {
         if (threescene.HIGHLIGHTED.material.emissive !== undefined) {
           threescene.HIGHLIGHTED.material.emissive.setHex(
@@ -426,11 +407,11 @@ export async function intersectMeshes(event, threescene) {
 
       if (threescene.HIGHLIGHTED.material.emissive !== undefined) {
         threescene.HIGHLIGHTED.currentHex = threescene.HIGHLIGHTED.material.emissive.getHex();
-        threescene.HIGHLIGHTED.material.emissive.setHex(0xffffff);
-        threescene.HIGHLIGHTED.material.emissiveIntensity = 0.2;
+        threescene.HIGHLIGHTED.material.emissive.setHex(0xffff00);
+        threescene.HIGHLIGHTED.material.emissiveIntensity = 0.3;
       } else {
         threescene.HIGHLIGHTED.currentHex = threescene.HIGHLIGHTED.material.color.getHex();
-        threescene.HIGHLIGHTED.material.color.setHex(0xffffff);
+        threescene.HIGHLIGHTED.material.color.setHex(0xffff00);
       }
     }
   } else {
@@ -474,6 +455,13 @@ export async function intersectMeshes(event, threescene) {
     default:
   }
 
+
+  var semantics = { 
+    "type": intersects[0].object.type,
+    "surfaceMaterial": intersects[0].object.surfaceMaterial,
+    "function": intersects[0].object.function
+  };
+
   axios
     .get("http://localhost:3001/measur3d/getObjectAttributes", {
       params: {
@@ -482,8 +470,20 @@ export async function intersectMeshes(event, threescene) {
       },
     })
     .then((response) => {
-      EventEmitter.dispatch("attObject", response.data.attributes);
+      if (semantics.type !== "Mesh") {
+        var data = extend(response.data.attributes, semantics);
+      } else {
+        var data = response.data.attributes;
+      }
+      EventEmitter.dispatch("attObject", data);
     });
 
   return intersects[0].object.name;
 }
+
+function extend(dest, src) { 
+    for(var key in src) { 
+        dest[key] = src[key]; 
+    } 
+    return dest; 
+} 

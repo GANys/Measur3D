@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import Switch from "react-switch";
 import * as THREE from "three";
 import axios from "axios";
 
@@ -73,7 +74,7 @@ class ThreeScene extends Component {
 
     //ADD RENDERER
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setClearColor("#000000");
+    this.renderer.setClearColor("#cfe5e8");
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
 
@@ -295,6 +296,7 @@ class ThreeScene extends Component {
   render() {
     return (
       <React.Fragment>
+        <SwitchExample />
         <div
           ref={mount => {
             if (mount !== null) {
@@ -311,6 +313,59 @@ class ThreeScene extends Component {
         />
         {this.state.boolJSONload ? <CircularProgress size={"4rem"} /> : null}
       </React.Fragment>
+    );
+  }
+}
+
+class SwitchExample extends Component {
+  constructor() {
+    super();
+    this.state = { checked: false };
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(checked) {
+    this.setState({ checked });
+  }
+
+  render() {
+    return (
+      <label>
+        <Switch
+          width={136}
+          uncheckedIcon={
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+                fontSize: "0.8rem",
+              }}
+            >
+              Select object
+            </div>
+          }
+          checkedIcon={
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+                fontSize: "0.8rem",
+              }}
+            >
+              Select surface
+            </div>
+          }
+          onChange={(e) => {
+            this.handleChange(e);
+            this.props.switchObjSfc(e);
+          }}
+          checked={this.state.checked}
+        />
+      </label>
     );
   }
 }
