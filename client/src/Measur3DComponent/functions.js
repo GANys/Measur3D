@@ -67,6 +67,9 @@ export async function loadCityModel(threescene, cm_uid) {
       //enable movement parallel to ground
       threescene.controls.screenSpacePanning = true;
 
+      const cityObjects = new THREE.Group();
+      cityObjects.name = "cityObjects"
+
       //iterate through all cityObjects
       for (var cityObj in json.CityObjects) {
         var cityobjectType = json.CityObjects[cityObj].type;
@@ -87,8 +90,11 @@ export async function loadCityModel(threescene, cm_uid) {
 
         coMesh.castShadow = true;
         coMesh.receiveShadow = true;
-        threescene.scene.add(coMesh);
+        cityObjects.add(coMesh);
       }
+
+      //Group of CityObjects
+      threescene.scene.add(cityObjects)
     })
     .then(() => {
       threescene.setState({
@@ -138,7 +144,7 @@ function fitCameraToObject(camera, boundingBox, offset, controls) {
 }
 
 //-- calculate normal of a set of points
-function get_normal_newell(indices) {
+export function get_normal_newell(indices) {
   // find normal with Newell's method
   var n = [0.0, 0.0, 0.0];
 
@@ -159,7 +165,7 @@ function get_normal_newell(indices) {
   return b.normalize();
 }
 
-function to_2d(p, n) {
+export function to_2d(p, n) {
   p = new THREE.Vector3(p.x, p.y, p.z);
   var x3 = new THREE.Vector3(1.1, 1.1, 1.1);
   if (x3.distanceTo(n) < 0.01) {
@@ -202,7 +208,7 @@ async function parseObject(object) {
 
     var selected_geom = object.geometry[id];
 
-    //each geometrytype must be handled different
+    //each GeometryType must be handled different
     var geomType = selected_geom.type;
 
     for (var vertex in object.vertices) {
@@ -242,6 +248,7 @@ async function parseObject(object) {
           k;
 
         for (var j = 0; j < boundaries[i].length; j++) {
+
           for (k = 0; k < boundaries[i][j].length; k++) {
             pList.push({
               x: object.vertices[boundaries[i][j][k]][0],
@@ -282,40 +289,28 @@ async function parseObject(object) {
       new THREE.Uint32BufferAttribute(new Uint16Array(geom_indices), 1)
     );
 
+    var positions = new THREE.Float32BufferAttribute([].concat.apply([], object.vertices), 3)
+
     geom.setAttribute(
       "position",
-      new THREE.Float32BufferAttribute([].concat.apply([], object.vertices), 3)
+      positions
     );
 
     geom.computeVertexNormals();
 
     geom.computeBoundingBox();
 
-    geom.boundaries = boundaries
+    geom.boundaries = boundaries;
 
     if (object.children !== undefined) geom.children = object.children;
 
-    var material = new THREE.MeshPhongMaterial({vertexColors: true, color: new THREE.Color(ALLCOLOURS[object.type])});
+    var material = new THREE.MeshPhongMaterial({
+      color: new THREE.Color(ALLCOLOURS[object.type])
+    });
 
     var coMesh = new THREE.Mesh(geom, material);
 
     coMesh.childrenMeshes = geom.children;
-
-    var positionAttribute = geom.getAttribute("position");
-
-    const colors = [];
-
-    const color = new THREE.Color(ALLCOLOURS[object.cityobjectType]);
-    for (let i = 0; i < positionAttribute.count; i += 3) {
-      colors.push(color.r, color.g, color.b);
-      colors.push(color.r, color.g, color.b);
-      colors.push(color.r, color.g, color.b);
-    }
-
-    coMesh.geometry.setAttribute(
-      "color",
-      new THREE.Float32BufferAttribute(colors, 3)
-    );
 
     resolve(coMesh);
   });
@@ -337,14 +332,12 @@ export function intersectMeshes(event, threescene) {
   //get cameraposition
   threescene.raycaster.setFromCamera(threescene.mouse, threescene.camera);
 
-  var mesh = new THREE.Mesh();
-
-  var meshes = threescene.scene.children.filter(
-    (value) => value.type === mesh.type
-  );
+  var meshes = threescene.scene.children.filter(obj => {
+    return obj.name === "cityObjects"
+  })
 
   //calculate intersects
-  var intersects = threescene.raycaster.intersectObjects(meshes);
+  var intersects = threescene.raycaster.intersectObjects(meshes, true);
 
   //if clicked on nothing return
   // eslint-disable-next-line
@@ -364,55 +357,7 @@ export function intersectMeshes(event, threescene) {
     return;
   }
 
-  /*
-
-  if (intersects.length > 0) {
-    // eslint-disable-next-line
-    if (threescene.selectedObj != intersects[0].object) {
-      if (threescene.selectedObj !== null) {
-        if (threescene.selectedObj.material.emissive !== undefined) {
-          threescene.selectedObj.material.emissive.setHex(
-            threescene.selectedObj.currentHex
-          );
-        } else {
-          threescene.selectedObj.material.color.setHex(
-            threescene.selectedObj.currentHex
-          );
-        }
-      }
-
-      threescene.selectedObj = intersects[0].object;
-
-      if (threescene.selectedObj.material.emissive !== undefined) {
-        threescene.selectedObj.currentHex = threescene.selectedObj.material.emissive.getHex();
-        threescene.selectedObj.material.emissive.setHex(0xffffff);
-        threescene.selectedObj.material.emissiveIntensity = 0.2;
-      } else {
-        threescene.selectedObj.currentHex = threescene.selectedObj.material.color.getHex();
-        threescene.selectedObj.material.color.setHex(0xffffff);
-      }
-    }
-  } else {
-    if (threescene.selectedObj !== null) {
-      if (threescene.selectedObj.material.emissive !== undefined) {
-        threescene.selectedObj.material.emissive.setHex(
-          threescene.selectedObj.currentHex
-        );
-      } else {
-        threescene.selectedObj.material.color.setHex(
-          threescene.selectedObj.currentHex
-        );
-      }
-    }
-
-    threescene.selectedObj = null;
-  }
-
-  */
-
   threescene.updateSelection(intersects[0]);
-
-  // HERE
 
   // Used in Ninja to handle LoDs
   //const { face, object } = getActiveIntersection(intersects);

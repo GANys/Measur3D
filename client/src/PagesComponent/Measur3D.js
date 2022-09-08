@@ -13,7 +13,6 @@ import Container from "@material-ui/core/Container";
 import { EventEmitter } from "../Measur3DComponent/events";
 
 import logo_ugeom from "../images/logo_geomatics.png";
-import logo_app from "../images/logo_app_white.png";
 
 // eslint-disable-next-line
 import styles from "./Measur3D.css";

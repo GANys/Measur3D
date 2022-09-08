@@ -1,5 +1,4 @@
 import React from "react";
-import axios from "axios";
 import Dropzone from "react-dropzone";
 
 import GetAppRoundedIcon from '@material-ui/icons/GetAppRounded';
@@ -16,7 +15,7 @@ class BasicDropzone extends React.Component {
   onDrop = async acceptedFile => {
     //acceptedFile is a File Object
     if (
-      (acceptedFile[0].type != "application/json" && acceptedFile[0].type != "application/city+json") ||
+      (acceptedFile[0].type !== "application/json" && acceptedFile[0].type !== "application/city+json") ||
       // eslint-disable-next-line
       acceptedFile[0] == undefined ||
       // eslint-disable-next-line

@@ -4,6 +4,8 @@ import ReactDOM from "react-dom";
 import * as THREE from "three";
 import axios from "axios";
 
+import * as earcut from "./earcut";
+
 import { EventEmitter } from "./events";
 import * as Functions from "./functions";
 
@@ -49,7 +51,6 @@ class ThreeScene extends Component {
       cityModel: false,
       reload: true,
       isMounted: false,
-      selectedObj: null,
       ObjSfc: true,
     };
   }
@@ -68,7 +69,7 @@ class ThreeScene extends Component {
     this.camera = new THREE.PerspectiveCamera();
 
     //ADD RENDERER
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
     this.renderer.setClearColor("#B1E1FF");
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
@@ -252,57 +253,134 @@ class ThreeScene extends Component {
 
   switchObjSfc = () => {
     this.setState({ ObjSfc: !this.state.ObjSfc });
-
-    if (this.state.selectedObj == null) return;
-
-    this.updateSelection();
   };
 
-  updateSelection = (object) => {
-    if (this.state.selectedObj != undefined) {
+  updateSelection = (intersection) => {
+    var prev_intersection = this.selectedObj;
+
+    // Reset selection color
+    // eslint-disable-next-line
+    if (this.selectedObj != undefined) {
       if (this.state.ObjSfc) {
-        this.state.selectedObj.object.material.color.setHex(Functions.ALLCOLOURS[this.state.selectedObj.object.CityObjectType]);
+        prev_intersection.object.material = new THREE.MeshPhongMaterial({color: new THREE.Color( Functions.ALLCOLOURS[prev_intersection.object.CityObjectType] )})
       } else {
-        this.highlightFace(new THREE.Color(Functions.ALLCOLOURS[this.state.selectedObj.object.CityObjectType]), this.state.selectedObj);
+        this.scene.remove(this.scene.getObjectByName("Highlighted_face"));
       }
     }
 
-    if (object != null) {
-      this.setState({
-        selectedObj: object,
-      });
+    // Highlight selection
+    if (intersection != null) {
+      this.selectedObj =  intersection;
 
       if (this.state.ObjSfc) {
-        this.state.selectedObj.object.material.color.setHex(0xffff00);
+        intersection.object.material = new THREE.MeshPhongMaterial({color: new THREE.Color( 0xffff00)})
       } else {
-        this.highlightFace(new THREE.Color('yellow'), this.state.selectedObj);
+        var boundaries = intersection.object.geometry.boundaries;
+        var vertices = [intersection.face.a * 3, intersection.face.b * 3, intersection.face.c * 3];
+        var mother_vertices = intersection.object.geometry.attributes.position.array;
+
+        var geom_indices = [];
+        var geom_vertices = [];
+
+        for (let i = 0; i < boundaries.length; i++) {
+          let boundary = [],
+            holes = [];
+
+          boundary = boundaries[i][0];
+
+          if (boundary.length === 3 && vertices.every( r => boundary.includes(r / 3))) {
+              geom_indices.push(
+                geom_vertices.length,
+                geom_vertices.length + 1,
+                geom_vertices.length + 2
+              );
+              for (var bound of boundary) {
+                geom_vertices.push([
+                  mother_vertices[bound * 3],
+                  mother_vertices[bound * 3 + 1],
+                  mother_vertices[bound * 3 + 2]
+                ]);
+              }
+          } else if (boundary.length > 3) {
+            //create list of points
+            var pList = [],
+              vList = [],
+              k;
+
+            for (let j = 0; j < boundaries[i].length; j++) {
+
+              for (k = 0; k < boundaries[i][j].length; k++) {
+                if(vertices.every( r => boundaries[i][j].includes(r / 3))) {
+                  pList.push({
+                    x: intersection.object.geometry.attributes.position.array[boundaries[i][j][k] * 3],
+                    y: intersection.object.geometry.attributes.position.array[boundaries[i][j][k] * 3 + 1],
+                    z: intersection.object.geometry.attributes.position.array[boundaries[i][j][k] * 3 + 2],
+                  });
+
+                  if (j > 0 && k === 0) {
+                    holes.push(vList.length);
+                  }
+
+                  vList.push(boundaries[i][j][k]);
+                }
+              }
+            }
+
+            //get normal of these points
+            var normal = Functions.get_normal_newell(pList);
+
+            //convert to 2d (for triangulation)
+            var pv = [];
+            for (k = 0; k < pList.length; k++) {
+              var re = Functions.to_2d(pList[k], normal);
+              pv.push(re.x);
+              pv.push(re.y);
+            }
+
+            //triangulate
+            var tr = earcut(pv, holes, 2);
+
+            //create faces based on triangulation
+            for (k = 0; k < tr.length; k += 1) {
+              geom_indices.push(geom_vertices.length);
+              geom_vertices.push([
+                mother_vertices[vList[tr[k]] * 3],
+                mother_vertices[vList[tr[k]] * 3 + 1],
+                mother_vertices[vList[tr[k]] * 3 + 2]
+              ]);
+            }
+          }
+        }
+
+        var bg = new THREE.BufferGeometry( );
+        var material_h = new THREE.MeshPhongMaterial({
+          color: new THREE.Color( 0xffff00 ),
+          polygonOffset: true,
+          polygonOffsetUnits: -0.1,
+          polygonOffsetFactor: -0.1
+        });
+
+        bg.setIndex(
+          new THREE.Uint32BufferAttribute(new Uint16Array(geom_indices), 1)
+        );
+
+        var positions = new THREE.Float32BufferAttribute([].concat.apply([], geom_vertices), 3)
+
+        bg.setAttribute("position", positions);
+
+        bg.computeVertexNormals();
+
+        bg.computeBoundingBox();
+
+        var mesh_h = new THREE.Mesh(bg, material_h);
+        mesh_h.name = "Highlighted_face";
+
+        this.scene.add(mesh_h);
       }
     } else {
-      this.setState({
-        selectedObj: null,
-      });
+      this.selectedObj = null;
     }
-
-
   };
-
-  highlightFace = (color, intersected) => {
-    const { face } = intersected;
-    const colorAttribute = intersected.object.geometry.getAttribute('color');
-
-    colorAttribute.setXYZ(face.a, color.r, color.g, color.b);
-    colorAttribute.setXYZ(face.b, color.r, color.g, color.b);
-    colorAttribute.setXYZ(face.c, color.r, color.g, color.b);
-
-    /*
-    var offset = ( face.a % 2 == 0 ) ? 3 : - 3; // <======== CHANGED
-    colorAttribute.setXYZ(face.a + offset, color.r, color.g, color.b);
-    colorAttribute.setXYZ(face.b + offset, color.r, color.g, color.b);
-    colorAttribute.setXYZ(face.c + offset, color.r, color.g, color.b);
-    */
-
-    colorAttribute.needsUpdate = true;
-};
 
   deleteObject = (uid) => {
     // Cleaning both Scene and ThreeScene objects -> Collisions seem to work oddly after it.
@@ -310,17 +388,21 @@ class ThreeScene extends Component {
       boolJSONload: true,
     });
 
+    // Get the CityObjects Group
+    var cityObjects = this.scene.children.filter(obj => {
+      return obj.name === "cityObjects"
+    });
+
     // Get mesh to be deleted
-    var object = this.scene.children.filter((obj) => {
+    var object = cityObjects[0].children.filter(obj => {
       return obj.uid === uid;
     });
 
-    // Filter scene deleting objet and its children
-    this.scene.children = this.scene.children.filter(
-      (obj) => !object[0].childrenMeshes.concat(uid).includes(obj.uid)
-    );
-
-    this.renderer.render(this.scene, this.camera); // Cleaning for collisions.
+    if(object[0].childrenMeshes != undefined) {
+      cityObjects[0].children = cityObjects[0].children.filter( obj => {
+        return !object[0].childrenMeshes.concat(uid).includes(obj.uid)
+      });
+    }
 
     this.setState({
       boolJSONload: false,
@@ -361,6 +443,7 @@ class SwitchExample extends Component {
 
   handleChange(checked) {
     this.setState({ checked });
+    this.props.switchObjSfc()
   }
 
   render() {
@@ -396,7 +479,6 @@ class SwitchExample extends Component {
           }
           onChange={(e) => {
             this.handleChange(e);
-            this.props.switchObjSfc(e);
           }}
           checked={this.state.checked}
         />
