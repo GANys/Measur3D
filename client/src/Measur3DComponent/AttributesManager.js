@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React from "react";
 import MaterialTable from "material-table";
 import tableIcons from "./MaterialTableIcons";
 

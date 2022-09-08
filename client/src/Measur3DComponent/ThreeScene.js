@@ -388,6 +388,8 @@ class ThreeScene extends Component {
       boolJSONload: true,
     });
 
+    console.log(uid)
+
     // Get the CityObjects Group
     var cityObjects = this.scene.children.filter(obj => {
       return obj.name === "cityObjects"
@@ -398,11 +400,19 @@ class ThreeScene extends Component {
       return obj.uid === uid;
     });
 
+    console.log(object[0])
+
+    // Delete its children from Scene
     if(object[0].childrenMeshes != undefined) {
       cityObjects[0].children = cityObjects[0].children.filter( obj => {
         return !object[0].childrenMeshes.concat(uid).includes(obj.uid)
       });
     }
+
+    // Delete the mesh
+    cityObjects[0].children = cityObjects[0].children.filter( obj => {
+      return uid !== obj.uid
+    });
 
     this.setState({
       boolJSONload: false,
