@@ -48,25 +48,6 @@ export async function loadCityModel(threescene, cm_uid) {
     .then(async (responseCity) => {
       var json = responseCity.data;
 
-      var ext = json.metadata.geographicalExtent;
-
-      const ext_min = new THREE.Vector3(ext[0], ext[1], ext[2]);
-      const ext_max = new THREE.Vector3(ext[3], ext[4], ext[5]);
-      const cityModelBBOX = new THREE.Box3(ext_min, ext_max);
-
-      // Changes the UP vector to Z rather than Y
-      threescene.camera.up = new THREE.Vector3(0, 0, 1);
-
-      fitCameraToObject(
-        threescene.camera,
-        cityModelBBOX,
-        1,
-        threescene.controls
-      );
-
-      //enable movement parallel to ground
-      threescene.controls.screenSpacePanning = true;
-
       const cityObjects = new THREE.Group();
       cityObjects.name = "cityObjects"
 
@@ -101,10 +82,17 @@ export async function loadCityModel(threescene, cm_uid) {
         boolJSONload: false, // enable clicking functions
         cityModel: true,
       });
+
+      threescene.resetCamera();
     });
 }
 
-function fitCameraToObject(camera, boundingBox, offset, controls) {
+export function fitCameraToObject(camera, boundingBox, offset, controls) {
+  // Changes the UP vector to Z rather than Y
+  camera.up = new THREE.Vector3(0, 0, 1);
+
+  controls.screenSpacePanning = true;
+
   // Need to rework
   offset = offset || 1.25;
 
@@ -137,6 +125,7 @@ function fitCameraToObject(camera, boundingBox, offset, controls) {
     // prevent camera from zooming out far enough to create far plane cutoff
     controls.maxDistance = cameraToFarEdge * 2;
 
+    controls.update();
     controls.saveState();
   } else {
     camera.lookAt(center);

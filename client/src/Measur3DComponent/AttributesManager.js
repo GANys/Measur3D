@@ -134,13 +134,13 @@ class BasicMaterialTable extends React.Component {
           search: true,
           paging: false,
           draggable: false,
-          sorting: false
+          sorting: true
           //maxBodyHeight: 200 As a reminder
         }}
         actions={[
           {
             icon: tableIcons.Delete,
-            tooltip: "Delete object",
+            tooltip: "Delete object from database",
             position: "toolbar",
             onClick: async data => {
               let confirmDelete = window.confirm("Delete this object?");
@@ -176,7 +176,7 @@ class BasicMaterialTable extends React.Component {
         ]}
         title={
           <div style={{ display: "flex", alignItems: "center" }}>
-            <div className="COClassIcon">{map[this.state.CityObjectType]}</div>
+            <div title={this.state.CityObjectType} className="COClassIcon">{map[this.state.CityObjectType]}</div>
             {this.state.tableTitle}
           </div>
         }

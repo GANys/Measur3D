@@ -14,6 +14,25 @@ import { EventEmitter } from "../Measur3DComponent/events";
 
 import logo_ugeom from "../images/logo_geomatics.png";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+import {
+  faBuilding,
+  faArchway,
+  faStoreAlt,
+  faCubes,
+  faCube,
+  faImage,
+  faLeaf,
+  faTree,
+  faMountain,
+  faCar,
+  faTrain,
+  faDotCircle,
+  faWater,
+  faUndo
+} from "@fortawesome/free-solid-svg-icons";
+
 // eslint-disable-next-line
 import styles from "./Measur3D.css";
 
@@ -24,6 +43,8 @@ class Measur3D extends Component {
     this.showSuccess = this.showSuccess.bind();
     this.showInfo = this.showInfo.bind();
     this.showModal = this.showModal.bind();
+
+    this.resetCamera = this.resetCamera.bind();
 
     this.showError = this.debounce(this.showError.bind(this), 3000);
 
@@ -112,6 +133,10 @@ class Measur3D extends Component {
     this.setState({ file: file });
   };
 
+  resetCamera = () => {
+    EventEmitter.dispatch("resetCamera", {});
+  }
+
   render() {
     return (
       <Container>
@@ -121,6 +146,7 @@ class Measur3D extends Component {
                 <img src={logo_ugeom} className="logo_ugeom" alt="logo_ugeom" />
               </a>
               <ThreeScene />
+              <button className="resetCAmera" onClick={this.resetCamera}> <FontAwesomeIcon icon={faUndo} />Reset Camera</button>
             </div>
             <div id="bottomPane">
             <SplitPane split="vertical" minSize="50%" defaultSize="50%">

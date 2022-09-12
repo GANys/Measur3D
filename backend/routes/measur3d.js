@@ -113,7 +113,7 @@ router.post("/uploadCityModel", (req, res) => {
 router.get("/getCityModelsList", (req, res) => {
   mongoose
     .model("CityModel")
-    .find({}, "uid", async (err, data) => {
+    .find({}, {uid: 1, CityObjects: 1}, async (err, data) => {
       if (err) {
         return res.status(404).send({
           error: "/getCityModelsList : there is no CityModel in the database.",
@@ -125,6 +125,7 @@ router.get("/getCityModelsList", (req, res) => {
       for (var i = 0; i < data.length; ++i) {
         responseCities.push({
           cm_uid: data[i].uid, // Possible to add more information
+          nbr_el: Object.keys(data[i].CityObjects).length
         });
       }
 

@@ -1,7 +1,7 @@
 
 :root {
   --background-color: rgba(54, 54, 54, 1);
-  --background-color-hover: rgba(62, 62, 62, 0.75);
+  --background-color-hover: rgba(82, 82, 82, 0.75);
   --border-color: rgba(18, 18, 18, 0.75);
   --font-color: rgba(255, 255, 255, 1);
   --font-color-highlight: rgba(255, 255, 255, 0.75);
@@ -48,15 +48,12 @@ body {
   position: absolute;
 }
 
-/* Dropzone dimension */
-#NavBar > header > div > div.dropzone {
+
+#NavBar > header > div > div.Menu_String {
   padding: 6px 8px;
   font-size: 0.875rem;
   min-width: 64px;
   box-sizing: border-box;
-  transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
-    box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
-    border 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
   font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   line-height: 1.75;
   border-radius: 4px;
@@ -64,19 +61,45 @@ body {
   text-transform: uppercase;
 }
 
-#NavBar > header > div > div.dropzone > div {
+/* Dropzone dimension */
+#NavBar > header > div > div.AppRoute-rightToolbar-1 > div {
+  padding: 6px 8px;
+  font-size: 0.875rem;
+  min-width: 64px;
+  box-sizing: border-box;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  line-height: 1.75;
+  border-radius: 4px;
+  letter-spacing: 0.02857em;
+  text-transform: uppercase;
+}
+
+#NavBar > header > div > div.AppRoute-rightToolbar-1 > div > div {
   display: flex;
   align-items: center;
   outline: none
 }
 
-#NavBar > header > div > div.dropzone:hover {
+#NavBar > header > div > div.AppRoute-rightToolbar-1 > div:hover,
+#NavBar > header > div > svg:hover {
   background: var(--background-color-hover);
   cursor: pointer;
+}
+
+#NavBar > header > div > div.AppRoute-rightToolbar-1 {
+  display: inline-flex;
+}
+
+#NavBar > header > div > div.AppRoute-rightToolbar-1 > div > div > svg {
+    padding-left: 4px;
 }
 
 #simple-menu
   > div.MuiPaper-root.MuiMenu-paper.MuiPopover-paper.MuiPaper-elevation8.MuiPaper-rounded {
   background-color: var(--background-color);
   color: var(--font-color);
+}
+
+.MuiInputBase-input {
+  border-bottom: none !important;
 }

@@ -36,6 +36,9 @@ class ThreeScene extends Component {
     EventEmitter.subscribe("deleteObject", (event) => this.deleteObject(event));
     this.deleteObject = this.deleteObject.bind(this);
 
+    EventEmitter.subscribe("resetCamera", (event) => this.resetCamera(event));
+    this.resetCamera = this.resetCamera.bind(this);
+
     this.clearScene = this.clearScene.bind(this);
 
     this.handleClick = this.handleClick.bind(this);
@@ -141,6 +144,26 @@ class ThreeScene extends Component {
 
     this.controls.update();
   };
+
+  resetCamera = () => {
+    var cityObjects = this.scene.children.filter(obj => {
+      return obj.name === "cityObjects"
+    });
+
+    if (!this.state.cityModel) {
+      return;
+    }
+
+    const bbox_cityobjects = new THREE.Box3();
+    bbox_cityobjects.setFromObject( cityObjects[0] );
+
+    Functions.fitCameraToObject(
+      this.camera,
+      bbox_cityobjects,
+      1,
+      this.controls
+    );
+  }
 
   renderScene = () => {
     this.renderer.render(this.scene, this.camera);
@@ -388,8 +411,6 @@ class ThreeScene extends Component {
       boolJSONload: true,
     });
 
-    console.log(uid)
-
     // Get the CityObjects Group
     var cityObjects = this.scene.children.filter(obj => {
       return obj.name === "cityObjects"
@@ -400,7 +421,11 @@ class ThreeScene extends Component {
       return obj.uid === uid;
     });
 
-    console.log(object[0])
+    var vegetations = cityObjects[0].children.filter(obj => {
+      return obj.CityObjectType === "SolitaryVegetationObject"
+    });
+
+    console.log(vegetations)
 
     // Delete its children from Scene
     if(object[0].childrenMeshes != undefined) {

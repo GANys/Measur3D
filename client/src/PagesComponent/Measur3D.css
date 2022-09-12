@@ -76,6 +76,34 @@ a {
   width: auto;
 }
 
+#ThreeScene > button {
+  background: none;
+  border: none;
+  color: var(--background-color);
+  bottom: 10px;
+  right: 10px;
+  height: 48px;
+  position: absolute;
+  z-index: 999;
+  font-size: 0.875rem;
+  min-width: 64px;
+  box-sizing: border-box;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  letter-spacing: 0.02857em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#ThreeScene > button > svg {
+  padding-right: 10px
+}
+
+#ThreeScene > button:active {
+  opacity: 0;
+  transition: 250ms
+}
+
+
 /* -------------------------
   Elements color
  ------------------------- */

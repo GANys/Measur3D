@@ -84,8 +84,6 @@ class AppRoute extends React.Component {
           <AppBar>
             <Toolbar variant="dense">
               <MenuIcon
-                aria-controls="simple-menu"
-                aria-haspopup="true"
                 onClick={this.handleClick}
               />
               <Menu
@@ -102,8 +100,9 @@ class AppRoute extends React.Component {
                   <Link to="/api-docs">API Documentation</Link>
                 </MenuItem>
               </Menu>
-              <Dropzone />
+              <div className="Menu_String">Menu</div>
               <div className={classes.rightToolbar}>
+                <Dropzone />
                 <Button onClick={() => this.showModal('Models')}>Models</Button>
                 <Button onClick={() => this.showModal('Export')}>Export</Button>
                 <Button onClick={() => this.showModal('GitHub')}>GitHub</Button>

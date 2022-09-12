@@ -1,6 +1,7 @@
 let mongoose = require("mongoose");
 const axios = require("axios");
 let proj4 = require("proj4");
+const uuid = require('uuid');
 
 let Geometry = require("./geometry.js");
 let CityObject = require("./abstractcityobject.js");
@@ -431,7 +432,7 @@ module.exports = {
 
       for ([key, element] of Object.entries(citymodel.CityObjects)) {
         temp_keys.push(key);
-        temp_objects.push(saveCityObject(citymodel, element));
+        temp_objects.push(saveCityObject(citymodel, key, element));
       }
 
       Promise.allSettled(temp_objects).then((resolved_objects) => {
@@ -497,7 +498,7 @@ function switchGeometry(array, min_index) {
   return array;
 }
 
-async function saveCityObject(citymodel, object) {
+async function saveCityObject(citymodel, key, object) {
   return new Promise(async function (resolve, reject) {
     var min_index = Infinity,
       max_index = -Infinity;
@@ -510,6 +511,8 @@ async function saveCityObject(citymodel, object) {
       max_z = -Infinity;
 
     object.vertices = [];
+
+    object["uid"] = key;
 
     // Help extracting vertices between the min and max index in all geometries
     // It is the complex part
@@ -532,6 +535,8 @@ async function saveCityObject(citymodel, object) {
 
         object.geometry[geometry] = instance[0];
         object.vertices = object.vertices.concat(instance[1]);
+
+        object["uid"] = uuid.v4(); // Without it, the GML_ID of template will be replicated
       } else {
         [min_index, max_index] = getExtreme(
           object.geometry[geometry].boundaries,
@@ -637,8 +642,6 @@ async function saveCityObject(citymodel, object) {
     //}
 
     object.location = location;
-
-    object["uid"] = key;
 
     var temp_object_id;
 
