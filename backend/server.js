@@ -88,13 +88,18 @@ const options = {
         url: "http://localhost:3001/features",
         description: "OGC API - Features",
       },
+      {
+        url: "http://localhost:3001/cerbere",
+        description: "A Cerbere Mock Up",
+      },
     ],
-    tags: ["Measur3D", "Features"],
+    tags: ["Measur3D", "Features", "Cerbere"],
   },
   apis: [
     "./server.js",
     "./routes/measur3d.js",
     "./routes/features.js",
+    "./routes/cerbere.js",
     "./src/Schemas/citymodel.js",
     "./src/Schemas/abstractcityobject.js",
     "./src/Schemas/geometry.js",
@@ -161,6 +166,7 @@ app.get("/api-docs", (req, res) => {
 // append /api for our http requests
 app.use("/measur3d", require("./routes/measur3d"));
 app.use("/features", require("./routes/features"));
+app.use("/cerbere", require("./routes/cerbere"));
 
 app.get('*', function(req, res, next) {
   res.status(404);
