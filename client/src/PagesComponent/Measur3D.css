@@ -55,12 +55,9 @@ a {
   padding-right: 10px;
 }
 
-#logo_app {
-  height: 120px;
-  width: auto;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+#bottomPane > div > div.Pane.vertical.Pane2 > div > img {
+  width: 100%;
+  height: auto;
 }
 
 #ThreeScene > a {

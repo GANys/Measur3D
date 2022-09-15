@@ -536,7 +536,7 @@ async function saveCityObject(citymodel, key, object) {
         object.geometry[geometry] = instance[0];
         object.vertices = object.vertices.concat(instance[1]);
 
-        object["uid"] = uuid.v4(); // Without it, the GML_ID of template will be replicated
+        object["uid"] = 'UUID_' + String(uuid.v4()); // Without it, the GML_ID of template will be replicated
       } else {
         [min_index, max_index] = getExtreme(
           object.geometry[geometry].boundaries,

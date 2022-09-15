@@ -204,7 +204,6 @@ router.post("*", function (req, res) {
  *                         example: "Invalid format"
  */
 
-// Can be improved once in prod
 router.get("/", midWareCaching, function (req, res) {
   var contentType = "";
   var accept = req.headers.accept;
@@ -410,30 +409,29 @@ router.get("/collections", midWareCaching, function (req, res) {
 
   mongoose
     .model("CityModel")
-    .find({}, "uid metadata version extensions")
-    .lean()
-    .catch((err) => {
-      if (err)
+    .find({}, "uid metadata version extensions", async function (err, data) {
+      if (err) {
         return res
           .status(404)
           .send({ error: "There is no collection in the database." });
-    })
-    .then(async (collections) => {
-      console.log(collections);
+      }
+      // Could be useful if HTML is no more default
       if (null == urlParts.query.f) {
-        res.send(await negoc.collections("html", collections));
+        res.send(await negoc.collections("html", data));
       } else if ("json" == urlParts.query.f) {
-        res.json(await negoc.collections("json", collections));
-      } else if ("html" == urlParts.query.f)
-        res.send(await negoc.collections("html", collections));
-      else
+        res.json(await negoc.collections("json", data));
+      } else if ("html" == urlParts.query.f) {
+        res.send(await negoc.collections("html", data));
+      } else {
         res.status(400).json({
           error: {
             code: "InvalidParameterValue",
             description: "Invalid format",
           },
         });
-    });
+      }
+    })
+    .lean();
 });
 
 /**
@@ -495,33 +493,33 @@ router.get("/collections/:collectionId", midWareCaching, function (req, res) {
     .model("CityModel")
     .findOne(
       { uid: req.params.collectionId },
-      "uid metadata version extensions"
+      "uid metadata version extensions",
+      async function (err, data) {
+        if (err) {
+          return res.status(404).send({
+            error:
+              "There is no collection with the ID (" +
+              req.params.collectionId +
+              ") in the database.",
+          });
+        }
+
+        if (null == urlParts.query.f)
+          res.send(await negoc.collection("html", data));
+        else if ("json" == urlParts.query.f)
+          res.json(await negoc.collection("json", data));
+        else if ("html" == urlParts.query.f)
+          res.send(await negoc.collection("html", data));
+        else
+          res.status(400).json({
+            error: {
+              code: "InvalidParameterValue",
+              description: "Invalid format",
+            },
+          });
+      }
     )
-    .lean()
-    .catch((err) => {
-      if (err)
-        return res.status(404).send({
-          error:
-            "There is no collection with the ID (" +
-            req.params.collectionId +
-            ") in the database.",
-        });
-    })
-    .then(async (collection) => {
-      if (null == urlParts.query.f)
-        res.send(await negoc.collection("html", collection));
-      else if ("json" == urlParts.query.f)
-        res.json(await negoc.collection("json", collection));
-      else if ("html" == urlParts.query.f)
-        res.send(await negoc.collection("html", collection));
-      else
-        res.status(400).json({
-          error: {
-            code: "InvalidParameterValue",
-            description: "Invalid format",
-          },
-        });
-    });
+    .lean();
 });
 
 /**
@@ -725,18 +723,19 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
   req,
   res
 ) {
-  //Next is not implemented. Might be useful in huge datasets.
+  //Next is not implemented because of NoSQL BASE. Might be useful in huge datasets.
 
   var urlParts = url.parse(req.url, true);
 
   var limit, offset, bbox;
   var default_limit = 10;
 
-  if (urlParts.query.datetime != undefined) {
+  if (urlParts.query.datetime) {
     return res
       .status(400)
       .send({ error: "Error: datetime is not supported yet." });
 
+    /* If it is supported one day
     if (
       !/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(
         String(urlParts.query.datetime)
@@ -748,9 +747,10 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
           description: "Invalid datetime format",
         },
       });
+      */
   }
 
-  if (urlParts.query.limit != undefined) {
+  if (urlParts.query.limit) {
     limit = Number(urlParts.query.limit);
     if (limit == NaN || limit % 1 !== 0) {
       return res.status(400).send({
@@ -764,27 +764,43 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
     limit = default_limit;
   }
 
-  if (urlParts.query.offset != undefined) {
+  if (urlParts.query.offset) {
     offset = Number(urlParts.query.offset);
   } else {
     offset = 0;
   }
 
-  var find_objects = {};
+  var find_options = {};
   var key;
 
-  find_objects.CityModel = req.params.collectionId;
+  find_options.CityModel = req.params.collectionId;
 
-  for (var i = 0; i < Object.keys(urlParts.query).length; i++) {
+  for (let i = 0; i < Object.keys(urlParts.query).length; i++) {
     key = Object.keys(urlParts.query)[i];
 
     if (!["f", "limit", "offset", "bbox", "datetime"].includes(key)) {
-      find_objects[key] = urlParts.query[key];
+      find_options[key] = urlParts.query[key];
     }
   }
 
+  // baiscally the WHOLE world
+  var bbox = {
+    type: "Polygon",
+    coordinates: [
+      [
+        [-180, -90],
+        [-180, 90],
+        [180, 90],
+        [180, -90],
+        [-180, -90],
+      ],
+    ],
+  };
+
+  var query = mongoose.model("CityObject").find(find_options);
+
   if (urlParts.query.bbox != undefined) {
-    var bbox = urlParts.query.bbox;
+    bbox = urlParts.query.bbox;
 
     if (!/((\d)+(\.)?(\d)*\,){3,}((\d)+(\.)?(\d)*){1}/.test(String(bbox)))
       return res.status(400).send({
@@ -870,147 +886,111 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
         ],
       ],
     };
-
-    var abstractCityObjects = await mongoose
-      .model("CityObject")
-      .find(find_objects, async (err, data) => {
-        if (err) {
-          return res
-            .status(404)
-            .send({ error: "Error: There is no item in this collection." });
-        }
-      })
-      .where("location")
-      .within(bbox)
-      .limit(limit)
-      .skip(offset)
-      .lean();
+    query.where("location").within(bbox).limit(limit).skip(offset).lean();
   } else {
-    var abstractCityObjects = await mongoose
-      .model("CityObject")
-      .find(find_objects, async (err, data) => {
-        if (err) {
-          return res
-            .status(404)
-            .send({ error: "Error: There is no item in this collection." });
-        }
-      })
-      .limit(limit)
-      .skip(offset)
-      .lean();
+    query.limit(limit).skip(offset).lean();
   }
 
-  if (
-    Object.keys(abstractCityObjects).length == 0 ||
-    abstractCityObjects == null ||
-    abstractCityObjects == undefined
-  ) {
-    res.status(404).send({
-      error:
-        "Error: there is no items in this collection under these conditions.",
-    });
-    return;
-  }
-
-  for (var object in abstractCityObjects) {
-    var geometries = [];
-
-    for (var geom in abstractCityObjects[object].geometry) {
-      geometries.push(
-        await mongoose // Get geometries for the CityObject
-          .model("Geometry")
-          .findOne(
-            { _id: abstractCityObjects[object].geometry[geom] },
-            async (err, res_geom) => {
-              if (err) return res.status(500).send(err);
-
-              return res_geom;
-            }
-          )
-          .lean()
-      );
+  query.exec(async function (err, abstractCityObjects) {
+    if (err) {
+      return res
+        .status(404)
+        .send({ error: "Error: There is no item in this collection." });
     }
 
-    var max_lod = 0;
-    var max_id = -1;
+    if (
+      Object.keys(abstractCityObjects).length == 0 ||
+      abstractCityObjects == null ||
+      abstractCityObjects == undefined
+    ) {
+      res.status(404).send({
+        error:
+          "Error: there is no items in this collection under these conditions.",
+      });
+      return;
+    }
 
-    for (var geom in geometries) {
-      // Extract the highest LoD only
-      if (geometries[geom].lod > Number(max_lod)) {
-        max_lod = Number(geometries[geom].lod);
-        max_id = geom;
+    // Not "populate" because a Feature should only provide ONE geometry
+    for (var object in abstractCityObjects) {
+      abstractCityObjects[object].geometry = await mongoose // Get geometries for the CityObject
+        .model("Geometry")
+        .find({ _id: abstractCityObjects[object].geometry })
+        .sort("-lod")
+        .limit(1)
+        .lean()
+        .exec();
+    }
+
+    for (var object in abstractCityObjects) {
+      var vertices = abstractCityObjects[object].vertices;
+      var transform = abstractCityObjects[object].transform;
+
+      delete abstractCityObjects[object].transform;
+
+      for (var vertex in vertices) {
+        (vertices[vertex][0] =
+          vertices[vertex][0] * transform.scale[0] + transform.translate[0]),
+          (vertices[vertex][1] =
+            vertices[vertex][1] * transform.scale[1] + transform.translate[1]),
+          (vertices[vertex][2] =
+            vertices[vertex][2] * transform.scale[2] + transform.translate[2]);
       }
     }
 
-    abstractCityObjects[object].geometry = [geometries[max_id]];
-  }
+    var self = "",
+      alternate = ""; // Care of encoding
 
-  for (var object in abstractCityObjects) {
-    var vertices = abstractCityObjects[object].vertices;
-    var transform = abstractCityObjects[object].transform;
-
-    delete abstractCityObjects[object].transform;
-
-    for (var vertex in vertices) {
-      (vertices[vertex][0] =
-        vertices[vertex][0] * transform.scale[0] + transform.translate[0]),
-        (vertices[vertex][1] =
-          vertices[vertex][1] * transform.scale[1] + transform.translate[1]),
-        (vertices[vertex][2] =
-          vertices[vertex][2] * transform.scale[2] + transform.translate[2]);
+    if (urlParts.search != undefined) {
+      self = urlParts.search.replace("?", "");
+      alternate = urlParts.search.replace("?", "");
     }
-  }
 
-  var self = "",
-    alternate = ""; // Care of encoding
+    if (null == urlParts.query.f) {
+      self = self + "&f=html";
+      alternate = alternate + "&f=json";
 
-  if (urlParts.search != undefined) {
-    self = urlParts.search.replace("?", "");
-    alternate = urlParts.search.replace("?", "");
-  }
+      res.send(
+        negoc.items(
+          "html",
+          self,
+          alternate,
+          req.params.collectionId,
+          abstractCityObjects
+        )
+      );
+    } else if ("json" == urlParts.query.f) {
+      alternate = alternate.replace("f=json", "f=html");
 
-  if (null == urlParts.query.f) {
-    self = self + "&f=html";
-    alternate = alternate + "&f=json";
+      res.json(
+        negoc.items(
+          "json",
+          self,
+          alternate,
+          req.params.collectionId,
+          abstractCityObjects
+        )
+      );
+    } else if ("html" == urlParts.query.f) {
+      alternate = alternate.replace("f=html", "f=json");
 
-    res.send(
-      negoc.items(
-        "html",
-        self,
-        alternate,
-        req.params.collectionId,
-        abstractCityObjects
-      )
-    );
-  } else if ("json" == urlParts.query.f) {
-    alternate = alternate.replace("f=json", "f=html");
-
-    res.json(
-      negoc.items(
-        "json",
-        self,
-        alternate,
-        req.params.collectionId,
-        abstractCityObjects
-      )
-    );
-  } else if ("html" == urlParts.query.f) {
-    alternate = alternate.replace("f=html", "f=json");
-
-    res.send(
-      negoc.items(
-        "html",
-        self,
-        alternate,
-        req.params.collectionId,
-        abstractCityObjects
-      )
-    );
-  } else {
-    res.status(400).json({
-      error: { code: "InvalidParameterValue", description: "Invalid format" },
-    });
-  }
+      res.send(
+        negoc.items(
+          "html",
+          self,
+          alternate,
+          req.params.collectionId,
+          abstractCityObjects
+        )
+      );
+    } else {
+      res.status(400).json({
+        error: {
+          code: "InvalidParameterValue",
+          description: "Invalid format",
+        },
+      });
+    }
+  });
 });
 
 /**
@@ -1069,232 +1049,170 @@ router.get("/collections/:collectionId/items", midWareCaching, async function (
  *                         type: string
  *                         example: "Invalid format"
  */
-router.get(
-  "/collections/:collectionId/items/:item",
-  midWareCaching,
-  async function (req, res) {
-    var urlParts = url.parse(req.url, true);
+router.get("/collections/:collectionId/items/:item", midWareCaching, function (
+  req,
+  res
+) {
+  var urlParts = url.parse(req.url, true);
 
-    var abstractCityObject = await mongoose
-      .model("CityObject")
-      .findOne({ name: req.params.item }, async (err, data) => {
-        if (err) {
-          return res.status(404).send({ error: "Error: " + err });
-        }
-      })
-      .lean();
-
-    if (abstractCityObject == null) {
-      return res.status(404).send({
-        error: "This item does not exist in this collection.",
-      });
-    }
-
-    var authorised_type = [
-      "Building",
-      "Bridge",
-      "CityObjectGroup",
-      "CityFurniture",
-      "GenericCityObject",
-      "LandUse",
-      "PlantCover",
-      "Railway",
-      "Road",
-      "SolitaryVegetationObject",
-      "TINRelief",
-      "TransportSquare",
-      "Tunnel",
-      "WaterBody",
-    ];
-
-    if (!authorised_type.includes(abstractCityObject.type)) {
-      res.status(400).json({
-        error:
-          "This object is not a 1st-level city objects and thus is not queriable.",
-      });
-      return;
-    }
-
-    var geometries = [];
-
-    for (var geom in abstractCityObject.geometry) {
-      geometries.push(
-        await mongoose // Get geometries for the CityObject
-          .model("Geometry")
-          .findOne(
-            { _id: abstractCityObject.geometry[geom] },
-            async (err, res_geom) => {
-              if (err) return res.status(500).send(err);
-
-              return res_geom;
-            }
-          )
-          .lean()
-      );
-    }
-
-    var max_lod = 0;
-    var max_id = -1;
-
-    for (var geom in geometries) {
-      // Extract the highest LoD only
-      if (geometries[geom].lod > Number(max_lod)) {
-        max_lod = Number(geometries[geom].lod);
-        max_id = geom;
+  mongoose
+    .model("CityObject")
+    .findOne({ uid: req.params.item }, (err, abstractCityObject) => {
+      if (err) {
+        return res.status(404).send({ error: "Error: " + err });
       }
-    }
 
-    abstractCityObject.geometry = [geometries[max_id]];
+      // ATESTER
+      if (abstractCityObject == null) {
+        return res.status(404).send({
+          error: "This item does not exist in this collection.",
+        });
+      }
 
-    var vertices = abstractCityObject.vertices;
-    var transform = abstractCityObject.transform;
+      var authorised_type = [
+        "Building",
+        "Bridge",
+        "CityObjectGroup",
+        "CityFurniture",
+        "GenericCityObject",
+        "LandUse",
+        "PlantCover",
+        "Railway",
+        "Road",
+        "SolitaryVegetationObject",
+        "TINRelief",
+        "TransportSquare",
+        "Tunnel",
+        "WaterBody",
+      ];
 
-    delete abstractCityObject.transform;
+      if (!authorised_type.includes(abstractCityObject.type)) {
+        res.status(400).json({
+          error:
+            "This object is not a 1st-level city objects and thus is not queriable.",
+        });
+        return;
+      }
 
-    for (var vertex in vertices) {
-      (vertices[vertex][0] =
-        vertices[vertex][0] * transform.scale[0] + transform.translate[0]),
-        (vertices[vertex][1] =
-          vertices[vertex][1] * transform.scale[1] + transform.translate[1]),
-        (vertices[vertex][2] =
-          vertices[vertex][2] * transform.scale[2] + transform.translate[2]);
-    }
+      // Without deepcloning element, it simply never worked. Easy way out.
+      let clone_object = JSON.parse(JSON.stringify(abstractCityObject))
 
-    // Creating the CityJSONFeature
+      // Not "populate" because Feature should provide only ONE geometry
+      mongoose // Get geometries for the CityObject
+        .model("Geometry")
+        .find({ _id: { $in: abstractCityObject.geometry } })
+        .sort("-lod")
+        .limit(1)
+        .lean()
+        .exec(function (err, geometry) {
+          clone_object.geometry = geometry;
 
-    var cityJSONFeature = {};
+          var vertices = clone_object.vertices;
+          var transform = clone_object.transform;
 
-    cityJSONFeature.type = "CityJSONFeature";
-    cityJSONFeature.id = abstractCityObject.name;
+          delete clone_object.transform;
 
-    cityJSONFeature.CityObjects = {};
-
-    cityJSONFeature.vertices = abstractCityObject.vertices;
-    cityJSONFeature.appearance = abstractCityObject.appearance;
-
-    delete abstractCityObject.vertices;
-    delete abstractCityObject.appearance;
-
-    cityJSONFeature.CityObjects[abstractCityObject.name] = abstractCityObject;
-
-    if (abstractCityObject.children != undefined) {
-      for (var child in abstractCityObject.children) {
-        var child_object = await mongoose // Get geometries for the CityObject
-          .model("CityObject")
-          .findOne(
-            { name: abstractCityObject.children[child] },
-            async (err, res_geom) => {
-              if (err) return res.status(500).send(err);
-
-              return res_geom;
-            }
-          )
-          .lean();
-
-        var geometries = [];
-
-        for (var geom in child_object.geometry) {
-          geometries.push(
-            await mongoose // Get geometries for the CityObject
-              .model("Geometry")
-              .findOne(
-                { _id: child_object.geometry[geom] },
-                async (err, res_geom) => {
-                  if (err) return res.status(500).send(err);
-
-                  return res_geom;
-                }
-              )
-              .lean()
-          );
-        }
-
-        var max_lod = 0;
-        var max_id = -1;
-
-        for (var geom in geometries) {
-          // Extract the highest LoD only
-          if (geometries[geom].lod > Number(max_lod)) {
-            max_lod = Number(geometries[geom].lod);
-            max_id = geom;
+          for (var vertex in vertices) {
+            (vertices[vertex][0] =
+              vertices[vertex][0] * transform.scale[0] +
+              transform.translate[0]),
+              (vertices[vertex][1] =
+                vertices[vertex][1] * transform.scale[1] +
+                transform.translate[1]),
+              (vertices[vertex][2] =
+                vertices[vertex][2] * transform.scale[2] +
+                transform.translate[2]);
           }
-        }
 
-        var child_vertices = child_object.vertices;
-        transform = child_object.transform;
+          // Creating the CityJSONFeature
+          let cityJSONFeature = {};
 
-        delete child_object.transform;
+          cityJSONFeature.type = "CityJSONFeature";
+          cityJSONFeature.id = clone_object.uid;
 
-        for (var vertex in child_vertices) {
-          (child_vertices[vertex][0] =
-            child_vertices[vertex][0] * transform.scale[0] +
-            transform.translate[0]),
-            (child_vertices[vertex][1] =
-              child_vertices[vertex][1] * transform.scale[1] +
-              transform.translate[1]),
-            (child_vertices[vertex][2] =
-              child_vertices[vertex][2] * transform.scale[2] +
-              transform.translate[2]);
-        }
+          cityJSONFeature.vertices = clone_object.vertices;
+          cityJSONFeature.appearance = clone_object.appearance;
 
-        var vertices_length = cityJSONFeature.vertices.length;
+          delete clone_object.vertices;
+          delete clone_object.appearance;
 
-        var new_boundaries = await switchGeometries(
-          geometries[max_id].boundaries,
-          vertices_length
-        );
+          cityJSONFeature.CityObjects = {};
 
-        child_object.geometry = [new_boundaries];
+          cityJSONFeature.CityObjects[
+            clone_object.uid
+          ] = clone_object;
 
-        cityJSONFeature.vertices.concat(child_vertices);
-        // Appearrances ?! Dont have so cant try.
+          var children = [];
 
-        delete child_object.vertices;
+          if (clone_object.children != undefined) {
+            for (var child of clone_object.children) {
+              children.push(populateChildren(child, cityJSONFeature));
+            }
+          }
 
-        cityJSONFeature.CityObjects[child_object.name] = child_object;
-      }
-    }
+          Promise.all(children).then(async (values) => {
+            for (var val of values) {
+              var new_boundaries = await switchGeometries(
+                val.object.boundaries,
+                cityJSONFeature.vertices.length
+              );
 
-    // might be unused but still guarantes it
-    delete cityJSONFeature.transform;
-    delete cityJSONFeature.version;
-    delete cityJSONFeature.metadata;
-    delete cityJSONFeature["geometry-templates"];
-    delete cityJSONFeature.extensions;
+              val.object.geometry.boundaries = [new_boundaries];
 
-    if (null == urlParts.query.f)
-      res.send(
-        await negoc.item(
-          "html",
-          req.params.collectionId,
-          abstractCityObject.name,
-          cityJSONFeature
-        )
-      );
-    else if ("json" == urlParts.query.f)
-      res.json(
-        await negoc.item(
-          "json",
-          req.params.collectionId,
-          abstractCityObject.name,
-          cityJSONFeature
-        )
-      );
-    else if ("html" == urlParts.query.f)
-      res.send(
-        await negoc.item(
-          "html",
-          req.params.collectionId,
-          abstractCityObject.name,
-          cityJSONFeature
-        )
-      );
-    else
-      res.status(400).json({
-        error: { code: "InvalidParameterValue", description: "Invalid format" },
-      });
-  }
-);
+              cityJSONFeature.vertices = cityJSONFeature.vertices.concat(val.vertices);
+
+              console.log(cityJSONFeature.vertices.length)
+
+              delete val.object.vertices;
+
+              cityJSONFeature.CityObjects[val.object.uid] = val.object;
+            }
+
+            // might be unused but still guarantes it
+            delete cityJSONFeature.transform;
+            delete cityJSONFeature.version;
+            delete cityJSONFeature.metadata;
+            delete cityJSONFeature["geometry-templates"];
+            delete cityJSONFeature.extensions;
+
+            if (null == urlParts.query.f)
+              res.send(
+                await negoc.item(
+                  "html",
+                  req.params.collectionId,
+                  abstractCityObject.uid,
+                  cityJSONFeature
+                )
+              );
+            else if ("json" == urlParts.query.f)
+              res.json(
+                await negoc.item(
+                  "json",
+                  req.params.collectionId,
+                  abstractCityObject.uid,
+                  cityJSONFeature
+                )
+              );
+            else if ("html" == urlParts.query.f)
+              res.send(
+                await negoc.item(
+                  "html",
+                  req.params.collectionId,
+                  abstractCityObject.uid,
+                  cityJSONFeature
+                )
+              );
+            else
+              res.status(400).json({
+                error: {
+                  code: "InvalidParameterValue",
+                  description: "Invalid format",
+                },
+              });
+          });
+        });
+    });
+});
 
 module.exports = router;
 
@@ -1308,4 +1226,45 @@ async function switchGeometries(array, index) {
   }
 
   return array;
+}
+
+function populateChildren(child, cityJSONFeature) {
+  return new Promise(function (resolve, reject) {
+    mongoose // Get geometries for the CityObject
+      .model("CityObject")
+      .findOne({ uid: child })
+      .lean()
+      .exec(async function (err, child_object) {
+        // Not "populate" because Feature should provide only ONE geometry
+        mongoose // Get geometries for the CityObject
+          .model("Geometry")
+          .find({ _id: { $in: child_object.geometry } })
+          .sort("-lod")
+          .limit(1)
+          .lean()
+          .exec(function (err, child_geometry) {
+            transform = child_object.transform;
+
+            delete child_object.transform;
+
+            var child_vertices = child_object.vertices;
+
+            for (var vertex in child_vertices) {
+              (child_vertices[vertex][0] =
+                child_vertices[vertex][0] * transform.scale[0] +
+                transform.translate[0]),
+                (child_vertices[vertex][1] =
+                  child_vertices[vertex][1] * transform.scale[1] +
+                  transform.translate[1]),
+                (child_vertices[vertex][2] =
+                  child_vertices[vertex][2] * transform.scale[2] +
+                  transform.translate[2]);
+            }
+
+            child_object.geometry = child_geometry;
+
+            resolve({ object: child_object, vertices: child_vertices });
+          });
+      });
+  });
 }

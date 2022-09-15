@@ -75,7 +75,7 @@ router.post("/uploadCityModel", (req, res) => {
           .status(201)
           .json({ success: "/uploadCityModel : model saved" });
       });
-    });
+    }).lean();
 });
 
 /**
