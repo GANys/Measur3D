@@ -97,6 +97,8 @@ class BasicMaterialTable extends React.Component {
                 }
               );
 
+              EventEmitter.dispatch("clearScene")
+
               setTimeout(() => {
                 resolve();
                 this.setState((prevState) => {

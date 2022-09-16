@@ -1,5 +1,4 @@
 var express = require("express");
-var router = express.Router();
 const mongoose = require("mongoose");
 var url = require("url");
 var fs = require("fs");
@@ -7,6 +6,8 @@ var negoc = require("./contentNegotiation");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const yaml = require("js-yaml");
+
+var router = express.Router();
 
 //-------------------------------------------------------------------------------------
 // Web caching Middleware - clear after 15 minutes

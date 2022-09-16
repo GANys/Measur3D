@@ -155,7 +155,7 @@ class Measur3D extends Component {
                 <AttributesManager />
               </div>
               <div>
-                <img src={logo_app} class="logo_app" alt="Measur3D" />
+                <img src={logo_app} className="logo_app" alt="Measur3D" />
               </div>
             </SplitPane>
             </div>

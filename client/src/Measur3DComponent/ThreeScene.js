@@ -39,6 +39,7 @@ class ThreeScene extends Component {
     EventEmitter.subscribe("resetCamera", (event) => this.resetCamera(event));
     this.resetCamera = this.resetCamera.bind(this);
 
+    EventEmitter.subscribe("clearScene", (event) => this.clearScene(event));
     this.clearScene = this.clearScene.bind(this);
 
     this.handleClick = this.handleClick.bind(this);
@@ -246,7 +247,7 @@ class ThreeScene extends Component {
 
   clearScene = () => {
     // Be careful to not delete the light ... Speaking from experience
-    var mesh = new THREE.Mesh();
+    var mesh = new THREE.Group();
 
     this.scene.children = this.scene.children.filter(
       (value) => value.type !== mesh.type

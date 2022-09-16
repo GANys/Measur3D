@@ -1,7 +1,7 @@
 let mongoose = require("mongoose");
 const axios = require("axios");
 let proj4 = require("proj4");
-const uuid = require('uuid');
+const uuid = require("uuid");
 
 let Geometry = require("./geometry.js");
 let CityObject = require("./abstractcityobject.js");
@@ -536,7 +536,7 @@ async function saveCityObject(citymodel, key, object) {
         object.geometry[geometry] = instance[0];
         object.vertices = object.vertices.concat(instance[1]);
 
-        object["uid"] = 'UUID_' + String(uuid.v4()); // Without it, the GML_ID of template will be replicated
+        object["uid"] = "UUID_" + String(uuid.v4()); // Without it, the GML_ID of template will be replicated
       } else {
         [min_index, max_index] = getExtreme(
           object.geometry[geometry].boundaries,
@@ -707,13 +707,23 @@ async function saveCityObject(citymodel, key, object) {
           temp_object_id = await WaterBody.insertWaterBody(object);
           break;
         default:
-          return reject(
-            "/uploadCityModel : " +
-              key +
-              " is not a supported CityObject (" +
-              object.type +
-              ")."
-          );
+          if (object.type.startsWith("+")) {
+            return reject(
+              "/uploadCityModel : " +
+                key +
+                " is part of an unsupported extension (" +
+                object.type +
+                ")."
+            );
+          } else {
+            return reject(
+              "/uploadCityModel : " +
+                key +
+                " is not a supported CityObject (" +
+                object.type +
+                ")."
+            );
+          }
       }
 
       resolve(mongoose.Types.ObjectId(temp_object_id));

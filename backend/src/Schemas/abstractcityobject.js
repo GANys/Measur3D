@@ -109,9 +109,6 @@ let CityObjectSchema = new mongoose.Schema({
     class: String,
     function: String,
     usage: String,
-    '+Dynamizer':{
-      type: mongoose.Schema.Types.Mixed
-    }
   },
   parents: { type: [String], default: undefined },
   children: { type: [String], default: undefined },
@@ -130,7 +127,6 @@ let CityObjectSchema = new mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Geometry",
-      // ref: 'Post',
       required: true,
       index: true,
     },
@@ -151,12 +147,15 @@ let CityObjectSchema = new mongoose.Schema({
           return this["translate"].length == 3;
         },
       },
+        _id: false
     },
   },
   vertices: [[Number]],
+}, {
+  collection: "cityobjects"
 });
 
-//CityObjectSchema.index({ location: "2dsphere" });
+CityObjectSchema.index({ location: "2dsphere" });
 
 CityObjectSchema.pre("validate", function (next) {
   next();

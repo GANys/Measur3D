@@ -1,4 +1,8 @@
 const express = require("express");
+const mongoose = require("mongoose");
+
+let CityObject = require("../src/Schemas_alternate/abstractcityobject_alternate.js");
+let Building = require("../src/Schemas_alternate/building_alternate.js");
 
 const router = express.Router();
 
@@ -23,11 +27,27 @@ const router = express.Router();
  *                     type: string
  *                     example: "Basics to create a new Head for CERBERE"
  */
-router.get("/", async (req, res) => {
-  return res.status(200).json({
-    cerbere:
-      "Basics to create a new Head for CERBERE",
-  });
-});
+ router.get("/", async (req, res) => {
+   return res.status(200).json({
+     cerbere:
+       "Basics to create a new Head for CERBERE",
+   });
+ });
+
+ router.get("/getBuilding_alternate", async (req, res) => {
+   mongoose
+     .model("CityObject_alternate")
+     .find({}, function (err, data) {
+       if (!data) {
+         return res.status(404).json({
+           error:
+             "/cerbere/Building : there is no building in the DB.",
+         });
+       }
+       return res.status(200).json(data);
+     })
+     .limit(1)
+     .lean();
+ });
 
 module.exports = router;
